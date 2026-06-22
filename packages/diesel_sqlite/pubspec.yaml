@@ -1,0 +1,15 @@
+name: diesel_sqlite
+description: SQLite backend (driver + dialect) for the Diesel Dart ORM.
+version: 0.0.1
+
+environment:
+  sdk: ">=3.5.0 <4.0.0"
+
+resolution: workspace
+
+dependencies:
+  diesel: ^0.0.1
+  sqlite3: ^2.4.0
+
+dev_dependencies:
+  test: ^1.26.3
