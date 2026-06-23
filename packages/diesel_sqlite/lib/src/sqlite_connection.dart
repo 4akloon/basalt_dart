@@ -45,6 +45,17 @@ final class SqliteConnection implements Connection {
   }
 
   @override
+  Future<List<Map<String, Object?>>> queryRaw(String sql,
+      [List<Object?> params = const []]) async {
+    final result = params.isEmpty ? _db.select(sql) : _db.select(sql, params);
+    final names = result.columnNames;
+    return [
+      for (final row in result)
+        {for (var i = 0; i < names.length; i++) names[i]: row.values[i]},
+    ];
+  }
+
+  @override
   Future<void> executeSql(String sql, [List<Object?> params = const []]) async {
     if (params.isEmpty) {
       _db.execute(sql);
@@ -80,6 +91,56 @@ final class SqliteConnection implements Connection {
     } finally {
       _txDepth--;
     }
+  }
+
+  @override
+  Future<List<IntrospectedTable>> introspect() async {
+    final tableRows = _db.select(
+      "SELECT name FROM sqlite_master WHERE type = 'table' "
+      "AND name NOT LIKE 'sqlite_%' "
+      "AND name <> '__diesel_schema_migrations' ORDER BY name",
+    );
+
+    final tables = <IntrospectedTable>[];
+    for (final tableRow in tableRows) {
+      final tableName = tableRow['name'] as String;
+      final columnRows = _db.select('PRAGMA table_info("$tableName")');
+      final fkRows = _db.select('PRAGMA foreign_key_list("$tableName")');
+
+      final fkByColumn = <String, ForeignKey>{
+        for (final fk in fkRows)
+          fk['from'] as String:
+              ForeignKey(fk['table'] as String, (fk['to'] as String?) ?? ''),
+      };
+
+      tables.add(IntrospectedTable(tableName, [
+        for (final c in columnRows)
+          IntrospectedColumn(
+            name: c['name'] as String,
+            rawType: (c['type'] as String?) ?? '',
+            type: _affinity((c['type'] as String?) ?? ''),
+            isNullable: (c['notnull'] as int) == 0,
+            isPrimaryKey: (c['pk'] as int) != 0,
+            foreignKey: fkByColumn[c['name'] as String],
+          ),
+      ]));
+    }
+    return tables;
+  }
+
+  /// SQLite type affinity → canonical [ColumnType]. SQLite has no native
+  /// boolean/timestamp, so those are indistinguishable from integer/text here.
+  static ColumnType _affinity(String declared) {
+    final t = declared.toUpperCase();
+    if (t.contains('INT')) return ColumnType.integer;
+    if (t.contains('CHAR') || t.contains('CLOB') || t.contains('TEXT')) {
+      return ColumnType.text;
+    }
+    if (t.contains('REAL') || t.contains('FLOA') || t.contains('DOUB')) {
+      return ColumnType.real;
+    }
+    if (t.contains('BLOB') || t.isEmpty) return ColumnType.blob;
+    return ColumnType.text; // NUMERIC / unknown
   }
 
   @override

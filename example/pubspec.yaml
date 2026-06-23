@@ -1,0 +1,17 @@
+name: diesel_example
+description: Example app — the diesel_dart CLI migration workflow plus typed queries.
+version: 0.0.1
+publish_to: none
+
+environment:
+  sdk: ">=3.5.0 <4.0.0"
+
+resolution: workspace
+
+dependencies:
+  diesel: ^0.0.1
+  diesel_sqlite: ^0.0.1
+
+dev_dependencies:
+  # Provides the `diesel_dart` migration CLI: dart run diesel_cli:diesel_dart ...
+  diesel_cli: ^0.0.1

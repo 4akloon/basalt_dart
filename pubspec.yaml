@@ -11,3 +11,5 @@ dev_dependencies:
 workspace:
   - packages/diesel
   - packages/diesel_sqlite
+  - packages/diesel_cli
+  - example

@@ -12,6 +12,7 @@ export 'src/expression/expression.dart';
 export 'src/query/query.dart';
 export 'src/query/row_reader.dart';
 export 'src/query/write.dart';
+export 'src/schema/introspection.dart';
 export 'src/schema/table.dart';
 export 'src/serialize/query_builder.dart' show CompiledQuery, QueryBuilder;
 export 'src/serialize/sql_dialect.dart';

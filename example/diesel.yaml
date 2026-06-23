@@ -1,0 +1,3 @@
+# Config read by the `diesel_dart` CLI (run from this directory).
+database_url: example.db
+migrations_dir: migrations
