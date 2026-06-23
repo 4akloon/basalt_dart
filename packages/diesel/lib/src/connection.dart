@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'query/select.dart';
+import 'query/query.dart';
 import 'query/write.dart';
 
 /// Database-agnostic execution surface. The query builder produces statements;

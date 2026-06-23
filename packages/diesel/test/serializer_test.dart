@@ -21,14 +21,19 @@ CompiledQuery compileSelect(SelectQuery<dynamic> s) =>
 CompiledQuery compileWrite(WriteStatement s) =>
     QueryBuilder(const _TestDialect()).buildWrite(s);
 
+// The decoder is irrelevant to SQL generation, so SQL tests use a trivial one.
+int _ignore(RowReader _) => 0;
+
 void main() {
   group('SELECT serialization', () {
     test('projection + where + order + limit', () {
       final (sql, params) = compileSelect(
-        select2(Users.name, Users.age)
+        from(Users.table)
+            .select([Users.name, Users.age])
             .where(Users.age.ge(18))
             .orderBy(Users.age.desc())
-            .limit(10),
+            .limit(10)
+            .map(_ignore),
       );
       expect(
         sql,
@@ -40,7 +45,10 @@ void main() {
 
     test('combined predicates with and/or and operator sugar', () {
       final (sql, params) = compileSelect(
-        select1(Users.id).where(Users.age.gt(21).and(Users.name.like('A%'))),
+        from(Users.table)
+            .select([Users.id])
+            .where(Users.age.gt(21).and(Users.name.like('A%')))
+            .map(_ignore),
       );
       expect(
         sql,
@@ -52,10 +60,10 @@ void main() {
 
     test('IN, BETWEEN, IS NULL, bool encoding', () {
       final (sql, params) = compileSelect(
-        select1(Users.id).where(Users.id
+        from(Users.table).select([Users.id]).where(Users.id
             .isIn([1, 2, 3])
             .and(Users.age.between(18, 65))
-            .and(Users.active.eq(true))),
+            .and(Users.active.eq(true))).map(_ignore),
       );
       expect(
         sql,
@@ -64,6 +72,18 @@ void main() {
         'AND ("users"."active" = ?))',
       );
       expect(params, [1, 2, 3, 18, 65, 1]); // true -> 1
+    });
+
+    test('auto-projection maps all columns of the table', () {
+      final (sql, params) = compileSelect(
+        from(Users.table).where(Users.age.ge(18)).map(readUser),
+      );
+      expect(
+        sql,
+        'SELECT "users"."id", "users"."name", "users"."age", "users"."active" '
+        'FROM "users" WHERE ("users"."age" >= ?)',
+      );
+      expect(params, [18]);
     });
   });
 
@@ -93,12 +113,13 @@ void main() {
   });
 
   group('JOIN serialization', () {
-    test('INNER JOIN with ON and cross-table where', () {
+    test('INNER JOIN with explicit ON and cross-table where', () {
       final (sql, params) = compileSelect(
-        Users.table
+        from(Users.table)
             .innerJoin(Posts.table, on: Users.id.eqColumn(Posts.authorId))
-            .select2(Users.name, Posts.title)
-            .where(Posts.views.gt(100)),
+            .select([Users.name, Posts.title])
+            .where(Posts.views.gt(100))
+            .map(_ignore),
       );
       expect(
         sql,
@@ -109,9 +130,12 @@ void main() {
       expect(params, [100]);
     });
 
-    test('FK-driven innerJoinOn derives target table and ON', () {
+    test('FK-driven join (onFk) derives the ON condition', () {
       final (sql, _) = compileSelect(
-        Posts.table.innerJoinOn(Posts.authorId).select2(Posts.title, Users.name),
+        from(Posts.table)
+            .innerJoin(Users.table, onFk: Posts.authorId)
+            .select([Posts.title, Users.name])
+            .map(_ignore),
       );
       expect(
         sql,
@@ -122,9 +146,10 @@ void main() {
 
     test('LEFT JOIN', () {
       final (sql, _) = compileSelect(
-        Users.table
+        from(Users.table)
             .leftJoin(Posts.table, on: Users.id.eqColumn(Posts.authorId))
-            .select1(Users.name),
+            .select([Users.name])
+            .map(_ignore),
       );
       expect(
         sql,
@@ -133,15 +158,67 @@ void main() {
       );
     });
 
+    test('chained joins across three tables (two FK joins)', () {
+      final (sql, _) = compileSelect(
+        from(Comments.table)
+            .innerJoin(Posts.table, onFk: Comments.postId)
+            .innerJoin(Users.table, onFk: Posts.authorId)
+            .select([Comments.body, Posts.title, Users.name])
+            .map(_ignore),
+      );
+      expect(
+        sql,
+        'SELECT "comments"."body", "posts"."title", "users"."name" '
+        'FROM "comments" '
+        'INNER JOIN "posts" ON ("comments"."post_id" = "posts"."id") '
+        'INNER JOIN "users" ON ("posts"."author_id" = "users"."id")',
+      );
+    });
+
+    test('self-join aliases the same table twice', () {
+      final sender = Users.table.aliased('sender');
+      final recipient = Users.table.aliased('recipient');
+      final (sql, _) = compileSelect(
+        from(Messages.table)
+            .innerJoin(sender, on: Messages.senderId.eqColumn(sender.col(Users.id)))
+            .innerJoin(recipient,
+                on: Messages.recipientId.eqColumn(recipient.col(Users.id)))
+            .select([Messages.body, sender.col(Users.name), recipient.col(Users.name)])
+            .map(_ignore),
+      );
+      expect(
+        sql,
+        'SELECT "messages"."body", "sender"."name", "recipient"."name" '
+        'FROM "messages" '
+        'INNER JOIN "users" AS "sender" ON ("messages"."sender_id" = "sender"."id") '
+        'INNER JOIN "users" AS "recipient" ON ("messages"."recipient_id" = "recipient"."id")',
+      );
+    });
+
     test('rejects a column from a table not in the FROM/JOIN clause', () {
       expect(
         () => compileSelect(
-          Users.table
+          from(Users.table)
               .innerJoin(Posts.table, on: Users.id.eqColumn(Posts.authorId))
-              .select1(Users.name)
-              .where(Comments.id.eq(1)),
+              .select([Users.id])
+              .where(Comments.id.eq(1))
+              .map(_ignore),
         ),
         throwsStateError,
+      );
+    });
+
+    test('auto-projection across a join maps both tables', () {
+      final (sql, _) = compileSelect(
+        from(Posts.table)
+            .innerJoin(Users.table, onFk: Posts.authorId)
+            .map((r) => readPost(r).withAuthor(readUser(r))),
+      );
+      expect(
+        sql,
+        'SELECT "posts"."id", "posts"."author_id", "posts"."title", "posts"."views", '
+        '"users"."id", "users"."name", "users"."age", "users"."active" '
+        'FROM "posts" INNER JOIN "users" ON ("posts"."author_id" = "users"."id")',
       );
     });
   });

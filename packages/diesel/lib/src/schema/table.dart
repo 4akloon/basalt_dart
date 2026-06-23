@@ -112,9 +112,50 @@ final class ColumnValue<Tbl> {
   const ColumnValue(this.column, this.encoded);
 }
 
-/// Lightweight table descriptor used by `insertInto`/`update`/`deleteFrom` and
-/// as the FROM clause of joins.
-final class TableRef<Tbl> {
+/// Something a query can read FROM or JOIN: a real table ([TableRef]) or an
+/// aliased one ([TableAlias]). `columns` are bound to the source's effective
+/// name (`alias ?? table`), so reads/predicates address the right instance.
+abstract interface class QuerySource<Tbl> {
+  String get table; // real table name (FROM/JOIN target)
+  String? get alias; // alias, or null
+  List<Column<Object?, Object?>> get columns;
+}
+
+/// Table descriptor: its name and full column list (the default projection for
+/// `from`/joins). Cycle-safe even with foreign keys because [Ref] points at a
+/// [PrimaryKey] leaf, not back at a `TableRef`.
+final class TableRef<Tbl> implements QuerySource<Tbl> {
   final String name;
-  const TableRef(this.name);
+  @override
+  final List<Column<Object?, Object?>> columns;
+  const TableRef(this.name, this.columns);
+
+  @override
+  String get table => name;
+  @override
+  String? get alias => null;
+
+  /// Alias this table for a self-join — `Users.table.alias('sender')`.
+  TableAlias<Tbl> aliased(String alias) => TableAlias(alias, this);
+}
+
+/// An aliased table for self-joins (the same table joined more than once).
+/// Columns are rebound to the alias, so `sender.col(Users.id)` serializes as
+/// `"sender"."id"` and is distinct from `recipient.col(Users.id)`.
+final class TableAlias<Tbl> implements QuerySource<Tbl> {
+  @override
+  final String alias;
+  final TableRef<Tbl> base;
+  const TableAlias(this.alias, this.base);
+
+  @override
+  String get table => base.name;
+
+  @override
+  List<Column<Object?, Object?>> get columns =>
+      [for (final c in base.columns) ValueColumn<Object?, Tbl>(alias, c.name, c.type)];
+
+  /// An alias-bound version of one of the base table's columns.
+  Column<T, Tbl> col<T>(Column<T, Tbl> column) =>
+      ValueColumn<T, Tbl>(alias, column.name, column.type);
 }

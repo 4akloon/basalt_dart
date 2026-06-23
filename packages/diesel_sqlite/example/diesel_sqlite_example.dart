@@ -8,7 +8,7 @@ abstract final class Users {
   static const id = PrimaryKey<int, Users>(_t, 'id', SqlType.integer);
   static const name = ValueColumn<String, Users>(_t, 'name', SqlType.text);
   static const age = ValueColumn<int, Users>(_t, 'age', SqlType.integer);
-  static const table = TableRef<Users>(_t);
+  static const table = TableRef<Users>(_t, [id, name, age]);
 }
 
 Future<void> main() async {
@@ -25,12 +25,13 @@ Future<void> main() async {
     await tx.execute(insertInto(Users.table).value(Users.id.set(3)).value(Users.name.set('Carol')).value(Users.age.set(42)));
   });
 
-  // SELECT — record-typed projection, type-safe WHERE/ORDER BY/LIMIT.
+  // SELECT — one `map` for any shape. Here a record; the reader is typed.
   final adults = await db.fetch(
-    select2(Users.name, Users.age)
+    from(Users.table)
+        .select([Users.name, Users.age])
         .where(Users.age.ge(18))
         .orderBy(Users.age.desc())
-        .limit(10),
+        .map((r) => (r.get(Users.name), r.get(Users.age))),
   );
   print('Adults (name, age): $adults'); // [(Carol, 42), (Bob, 30)]
   for (final (name, age) in adults) {
@@ -45,7 +46,9 @@ Future<void> main() async {
   final deleted = await db.execute(deleteFrom(Users.table).where(Users.age.lt(18)));
   print('Rows deleted: $deleted');
 
-  final names = await db.fetch(select1(Users.name).orderBy(Users.name.asc()));
+  final names = await db.fetch(
+    from(Users.table).orderBy(Users.name.asc()).map((r) => r.get(Users.name)),
+  );
   print('Remaining names: $names'); // [Bob, Carol]
 
   await db.close();

@@ -1,5 +1,5 @@
 import '../ast/sql_node.dart';
-import '../query/select.dart';
+import '../query/query.dart';
 import '../query/write.dart';
 import 'sql_dialect.dart';
 
@@ -24,14 +24,24 @@ final class QueryBuilder {
     _sql
       ..write(' FROM ')
       ..write(dialect.quoteIdentifier(stmt.fromTable));
+    if (stmt.fromAlias case final alias?) {
+      _sql
+        ..write(' AS ')
+        ..write(dialect.quoteIdentifier(alias));
+    }
     for (final join in stmt.joins) {
       _sql
         ..write(switch (join.kind) {
           JoinKind.inner => ' INNER JOIN ',
           JoinKind.left => ' LEFT JOIN ',
         })
-        ..write(dialect.quoteIdentifier(join.table))
-        ..write(' ON ');
+        ..write(dialect.quoteIdentifier(join.table));
+      if (join.alias case final alias?) {
+        _sql
+          ..write(' AS ')
+          ..write(dialect.quoteIdentifier(alias));
+      }
+      _sql.write(' ON ');
       _writeNode(join.on);
     }
     if (stmt.whereNode case final where?) {
@@ -61,7 +71,11 @@ final class QueryBuilder {
   /// clause — the runtime safety net for joined queries (single-table queries
   /// are already guaranteed by the type system).
   void _validateScope(SelectQuery<dynamic> stmt) {
-    final allowed = {stmt.fromTable, for (final j in stmt.joins) j.table};
+    // Columns address a source by its effective name (alias when aliased).
+    final allowed = {
+      stmt.fromAlias ?? stmt.fromTable,
+      for (final j in stmt.joins) j.alias ?? j.table,
+    };
     for (final column in stmt.projection) {
       _checkColumn(column, allowed);
     }

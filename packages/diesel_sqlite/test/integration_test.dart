@@ -15,6 +15,11 @@ void main() {
     await db.executeSql('CREATE TABLE posts ('
         'id INTEGER PRIMARY KEY, author_id INTEGER NOT NULL, '
         'title TEXT NOT NULL, views INTEGER NOT NULL)');
+    await db.executeSql('CREATE TABLE comments ('
+        'id INTEGER PRIMARY KEY, post_id INTEGER NOT NULL, body TEXT NOT NULL)');
+    await db.executeSql('CREATE TABLE messages ('
+        'id INTEGER PRIMARY KEY, sender_id INTEGER NOT NULL, '
+        'recipient_id INTEGER NOT NULL, body TEXT NOT NULL)');
   });
 
   tearDown(() => db.close());
@@ -25,24 +30,28 @@ void main() {
     await db.execute(insertInto(Users.table).value(Users.id.set(3)).value(Users.name.set('Carol')).value(Users.age.set(42)).value(Users.active.set(true)));
   }
 
-  test('round-trip: insert then typed select', () async {
+  test('round-trip: insert then typed select (record via map)', () async {
     await seed();
     final rows = await db.fetch(
-      select2(Users.name, Users.age)
+      from(Users.table)
+          .select([Users.name, Users.age])
           .where(Users.age.ge(18))
-          .orderBy(Users.age.desc()),
+          .orderBy(Users.age.desc())
+          .map((r) => (r.get(Users.name), r.get(Users.age))),
     );
     expect(rows, [('Carol', 42), ('Bob', 30)]);
-    // Statically a (String, int) record:
-    final (firstName, firstAge) = rows.first;
+    final (firstName, firstAge) = rows.first; // statically (String, int)
     expect(firstName, isA<String>());
     expect(firstAge, isA<int>());
   });
 
-  test('bool and decoding round-trips', () async {
+  test('bool decoding round-trips', () async {
     await seed();
     final actives = await db.fetch(
-      select1(Users.name).where(Users.active.eq(true)).orderBy(Users.name.asc()),
+      from(Users.table)
+          .where(Users.active.eq(true))
+          .orderBy(Users.name.asc())
+          .map((r) => r.get(Users.name)),
     );
     expect(actives, ['Bob', 'Carol']);
   });
@@ -51,14 +60,96 @@ void main() {
     await seed();
     final n = await db.execute(update(Users.table).value(Users.age.set(31)).where(Users.name.eq('Bob')));
     expect(n, 1);
-    expect(await db.fetch(select1(Users.age).where(Users.name.eq('Bob'))), [31]);
+    expect(
+      await db.fetch(from(Users.table).where(Users.name.eq('Bob')).map((r) => r.get(Users.age))),
+      [31],
+    );
   });
 
   test('delete returns affected rows', () async {
     await seed();
     final n = await db.execute(deleteFrom(Users.table).where(Users.age.lt(18)));
     expect(n, 1);
-    expect((await db.fetch(select1(Users.id))).length, 2);
+    expect((await db.fetch(from(Users.table).map((r) => r.get(Users.id)))).length, 2);
+  });
+
+  test('selectModel returns data class instances (mapWith)', () async {
+    await seed();
+    final users = await db.fetch(
+      from(Users.table).where(Users.age.ge(18)).orderBy(Users.name.asc()).mapWith(userQueryable),
+    );
+    expect(users.map((u) => u.name), ['Bob', 'Carol']);
+    expect(users.first, isA<User>());
+    expect(users.first.active, isTrue);
+  });
+
+  test('join nests the author User inside Post', () async {
+    await seed();
+    await db.execute(insertInto(Posts.table).value(Posts.id.set(1)).value(Posts.authorId.set(1)).value(Posts.title.set('Hello')).value(Posts.views.set(150)));
+    await db.execute(insertInto(Posts.table).value(Posts.id.set(2)).value(Posts.authorId.set(3)).value(Posts.title.set('World')).value(Posts.views.set(50)));
+
+    final List<Post> posts = await db.fetch(
+      from(Posts.table)
+          .innerJoin(Users.table, onFk: Posts.authorId)
+          .where(Posts.views.gt(100))
+          .map((r) => readPost(r).withAuthor(readUser(r))),
+    );
+
+    expect(posts.length, 1);
+    final post = posts.single;
+    expect(post.title, 'Hello');
+    final author = post.author; // the User lives inside Post
+    expect(author, isA<User>());
+    expect(author?.name, 'Bob');
+  });
+
+  test('chained joins (two joins) nest Comment -> Post -> User', () async {
+    await seed();
+    await db.execute(insertInto(Posts.table).value(Posts.id.set(1)).value(Posts.authorId.set(1)).value(Posts.title.set('Hello')).value(Posts.views.set(150)));
+    await db.execute(insertInto(Posts.table).value(Posts.id.set(2)).value(Posts.authorId.set(3)).value(Posts.title.set('World')).value(Posts.views.set(50)));
+    await db.execute(insertInto(Comments.table).value(Comments.id.set(1)).value(Comments.postId.set(1)).value(Comments.body.set('Nice')));
+    await db.execute(insertInto(Comments.table).value(Comments.id.set(2)).value(Comments.postId.set(2)).value(Comments.body.set('Meh')));
+
+    final List<Comment> comments = await db.fetch(
+      from(Comments.table)
+          .innerJoin(Posts.table, onFk: Comments.postId) // comments -> posts
+          .innerJoin(Users.table, onFk: Posts.authorId) // posts -> users
+          .orderBy(Comments.id.asc())
+          .map((r) => readComment(r).withPost(readPost(r).withAuthor(readUser(r)))),
+    );
+
+    expect(comments.length, 2);
+    expect(comments[0].body, 'Nice');
+    expect(comments[0].post?.title, 'Hello');
+    expect(comments[0].post?.author?.name, 'Bob');
+    expect(comments[1].post?.title, 'World');
+    expect(comments[1].post?.author?.name, 'Carol');
+  });
+
+  test('self-join: two FKs to the same table via aliases', () async {
+    await seed(); // Bob=1, Alice=2, Carol=3
+    await db.execute(insertInto(Messages.table).value(Messages.id.set(1)).value(Messages.senderId.set(1)).value(Messages.recipientId.set(3)).value(Messages.body.set('Hi Carol')));
+
+    final sender = Users.table.aliased('sender');
+    final recipient = Users.table.aliased('recipient');
+
+    final List<Message> messages = await db.fetch(
+      from(Messages.table)
+          .innerJoin(sender, on: Messages.senderId.eqColumn(sender.col(Users.id)))
+          .innerJoin(recipient, on: Messages.recipientId.eqColumn(recipient.col(Users.id)))
+          .map((r) => Message(
+                r.get(Messages.id),
+                r.get(Messages.body),
+                sender: readUserFrom(sender, r),
+                recipient: readUserFrom(recipient, r),
+              )),
+    );
+
+    expect(messages.length, 1);
+    final m = messages.single;
+    expect(m.body, 'Hi Carol');
+    expect(m.sender.name, 'Bob'); // resolved from the "sender" alias
+    expect(m.recipient.name, 'Carol'); // resolved from the "recipient" alias
   });
 
   test('transaction rolls back on error', () async {
@@ -70,40 +161,10 @@ void main() {
       }),
       throwsStateError,
     );
-    // The insert must have been rolled back.
-    expect(await db.fetch(select1(Users.id).where(Users.id.eq(99))), isEmpty);
-  });
-
-  test('inner join returns combined records', () async {
-    await seed(); // Bob=1, Alice=2, Carol=3
-    await db.execute(insertInto(Posts.table).value(Posts.id.set(1)).value(Posts.authorId.set(1)).value(Posts.title.set('Hello')).value(Posts.views.set(150)));
-    await db.execute(insertInto(Posts.table).value(Posts.id.set(2)).value(Posts.authorId.set(3)).value(Posts.title.set('World')).value(Posts.views.set(50)));
-
-    final rows = await db.fetch(
-      Users.table
-          .innerJoin(Posts.table, on: Users.id.eqColumn(Posts.authorId))
-          .select3(Users.name, Posts.title, Posts.views)
-          .where(Posts.views.gt(100))
-          .orderBy(Posts.views.desc()),
+    expect(
+      await db.fetch(from(Users.table).where(Users.id.eq(99)).map((r) => r.get(Users.id))),
+      isEmpty,
     );
-
-    expect(rows, [('Bob', 'Hello', 150)]);
-    final (name, title, views) = rows.first; // statically (String, String, int)
-    expect(name, 'Bob');
-    expect(title, 'Hello');
-    expect(views, 150);
-  });
-
-  test('FK-driven join (innerJoinOn) derives the ON condition', () async {
-    await seed();
-    await db.execute(insertInto(Posts.table).value(Posts.id.set(1)).value(Posts.authorId.set(1)).value(Posts.title.set('Hello')).value(Posts.views.set(150)));
-    await db.execute(insertInto(Posts.table).value(Posts.id.set(2)).value(Posts.authorId.set(3)).value(Posts.title.set('World')).value(Posts.views.set(50)));
-
-    final rows = await db.fetch(
-      Posts.table.innerJoinOn(Posts.authorId).select2(Users.name, Posts.title).orderBy(Posts.title.asc()),
-    );
-
-    expect(rows, [('Bob', 'Hello'), ('Carol', 'World')]);
   });
 
   test('nested transaction (savepoint) rolls back inner only', () async {
@@ -119,7 +180,13 @@ void main() {
         // swallow: outer continues
       }
     });
-    expect(await db.fetch(select1(Users.name).where(Users.id.eq(10))), ['Outer']);
-    expect(await db.fetch(select1(Users.id).where(Users.id.eq(11))), isEmpty);
+    expect(
+      await db.fetch(from(Users.table).where(Users.id.eq(10)).map((r) => r.get(Users.name))),
+      ['Outer'],
+    );
+    expect(
+      await db.fetch(from(Users.table).where(Users.id.eq(11)).map((r) => r.get(Users.id))),
+      isEmpty,
+    );
   });
 }
