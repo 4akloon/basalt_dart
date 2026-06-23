@@ -38,7 +38,7 @@ void main() {
   });
 
   test('generateSchema emits tables-only Dart (no data classes)', () async {
-    final source = generateSchema(await db.introspect());
+    final source = const SchemaGenerator().generate(await db.introspect());
 
     expect(source, contains("import 'package:diesel/diesel.dart';"));
     expect(source, contains('abstract final class Users {'));

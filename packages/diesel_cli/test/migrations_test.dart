@@ -101,7 +101,7 @@ void main() {
   });
 
   test('generateMigration scaffolds up.sql and down.sql', () {
-    final dir = generateMigration('add_things', tmp.path);
+    final dir = const MigrationScaffolder().scaffold('add_things', tmp.path);
     expect(Directory(dir).existsSync(), isTrue);
     expect(p.basename(dir), endsWith('_add_things'));
     expect(File(p.join(dir, 'up.sql')).existsSync(), isTrue);

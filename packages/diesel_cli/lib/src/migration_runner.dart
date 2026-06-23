@@ -3,32 +3,9 @@ import 'dart:io';
 import 'package:diesel/diesel.dart';
 import 'package:path/path.dart' as p;
 
-/// The migrations bookkeeping table (mirrors Diesel's `__diesel_schema_migrations`).
-/// Defined with the query builder so the CLI dogfoods the ORM itself.
-abstract final class _SchemaMigrations {
-  static const _t = '__diesel_schema_migrations';
-  static const version =
-      ValueColumn<String, _SchemaMigrations>(_t, 'version', SqlType.text);
-  static const runOn =
-      ValueColumn<String, _SchemaMigrations>(_t, 'run_on', SqlType.text);
-  static const table = TableRef<_SchemaMigrations>(_t, [version, runOn]);
-}
-
-/// One on-disk migration: `<dir>/<version>_<name>/{up,down}.sql`.
-final class Migration {
-  final String version;
-  final String name;
-  final File upFile;
-  final File downFile;
-
-  Migration(this.version, this.name, this.upFile, this.downFile);
-
-  String get up => upFile.readAsStringSync();
-  String? get down => downFile.existsSync() ? downFile.readAsStringSync() : null;
-}
-
-/// Snapshot of which migrations have run and which are pending.
-typedef MigrationStatus = ({List<String> applied, List<Migration> pending});
+import 'migration.dart';
+import 'migration_status.dart';
+import 'schema_migrations_table.dart';
 
 /// Driver-agnostic migration engine: runs SQL files against any [Connection]
 /// and tracks applied versions. The actual filesystem layout is discovered from
@@ -46,9 +23,9 @@ final class MigrationRunner {
 
   /// Applied versions, ascending.
   Future<List<String>> appliedVersions() => connection.fetch(
-        from(_SchemaMigrations.table)
-            .orderBy(_SchemaMigrations.version.asc())
-            .map((r) => r.get(_SchemaMigrations.version)),
+        from(SchemaMigrationsTable.table)
+            .orderBy(SchemaMigrationsTable.version.asc())
+            .map((r) => r.get(SchemaMigrationsTable.version)),
       );
 
   /// Migrations found on disk, ascending by version.
@@ -92,9 +69,9 @@ final class MigrationRunner {
       if (applied.contains(migration.version)) continue;
       await connection.transaction((tx) async {
         await tx.executeSql(migration.up);
-        await tx.execute(insertInto(_SchemaMigrations.table)
-            .value(_SchemaMigrations.version.set(migration.version))
-            .value(_SchemaMigrations.runOn
+        await tx.execute(insertInto(SchemaMigrationsTable.table)
+            .value(SchemaMigrationsTable.version.set(migration.version))
+            .value(SchemaMigrationsTable.runOn
                 .set(DateTime.now().toUtc().toIso8601String())));
       });
       ran.add(migration.version);
@@ -122,26 +99,9 @@ final class MigrationRunner {
       if (down case final sql? when sql.trim().isNotEmpty) {
         await tx.executeSql(sql);
       }
-      await tx.execute(deleteFrom(_SchemaMigrations.table)
-          .where(_SchemaMigrations.version.eq(version)));
+      await tx.execute(deleteFrom(SchemaMigrationsTable.table)
+          .where(SchemaMigrationsTable.version.eq(version)));
     });
     return version;
   }
-}
-
-/// Scaffolds `<migrationsDir>/<timestamp>_<name>/{up,down}.sql` and returns the
-/// created directory path.
-String generateMigration(String name, String migrationsDir) {
-  final now = DateTime.now().toUtc();
-  String two(int v) => v.toString().padLeft(2, '0');
-  final version =
-      '${now.year}${two(now.month)}${two(now.day)}${two(now.hour)}${two(now.minute)}${two(now.second)}';
-
-  final dir = Directory(p.join(migrationsDir, '${version}_$name'));
-  dir.createSync(recursive: true);
-  File(p.join(dir.path, 'up.sql'))
-      .writeAsStringSync('-- Write the SQL to apply this migration here.\n');
-  File(p.join(dir.path, 'down.sql'))
-      .writeAsStringSync('-- Write the SQL to revert this migration here.\n');
-  return dir.path;
 }
