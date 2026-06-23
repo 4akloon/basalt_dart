@@ -61,3 +61,13 @@ final class Ordering {
   final bool ascending;
   const Ordering(this.column, {this.ascending = true});
 }
+
+enum JoinKind { inner, left }
+
+/// A single `JOIN <table> ON <condition>` in a query's FROM clause.
+final class Join {
+  final JoinKind kind;
+  final String table;
+  final SqlNode on;
+  const Join(this.kind, this.table, this.on);
+}

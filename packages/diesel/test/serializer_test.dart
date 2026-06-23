@@ -15,7 +15,7 @@ final class _TestDialect implements SqlDialect {
   String placeholder(int index) => '?';
 }
 
-CompiledQuery compileSelect(SelectStatement<dynamic, dynamic> s) =>
+CompiledQuery compileSelect(SelectQuery<dynamic> s) =>
     QueryBuilder(const _TestDialect()).buildSelect(s);
 
 CompiledQuery compileWrite(WriteStatement s) =>
@@ -89,6 +89,60 @@ void main() {
           compileWrite(deleteFrom(Users.table).where(Users.age.lt(18)));
       expect(sql, 'DELETE FROM "users" WHERE ("users"."age" < ?)');
       expect(params, [18]);
+    });
+  });
+
+  group('JOIN serialization', () {
+    test('INNER JOIN with ON and cross-table where', () {
+      final (sql, params) = compileSelect(
+        Users.table
+            .innerJoin(Posts.table, on: Users.id.eqColumn(Posts.authorId))
+            .select2(Users.name, Posts.title)
+            .where(Posts.views.gt(100)),
+      );
+      expect(
+        sql,
+        'SELECT "users"."name", "posts"."title" FROM "users" '
+        'INNER JOIN "posts" ON ("users"."id" = "posts"."author_id") '
+        'WHERE ("posts"."views" > ?)',
+      );
+      expect(params, [100]);
+    });
+
+    test('FK-driven innerJoinOn derives target table and ON', () {
+      final (sql, _) = compileSelect(
+        Posts.table.innerJoinOn(Posts.authorId).select2(Posts.title, Users.name),
+      );
+      expect(
+        sql,
+        'SELECT "posts"."title", "users"."name" FROM "posts" '
+        'INNER JOIN "users" ON ("posts"."author_id" = "users"."id")',
+      );
+    });
+
+    test('LEFT JOIN', () {
+      final (sql, _) = compileSelect(
+        Users.table
+            .leftJoin(Posts.table, on: Users.id.eqColumn(Posts.authorId))
+            .select1(Users.name),
+      );
+      expect(
+        sql,
+        'SELECT "users"."name" FROM "users" '
+        'LEFT JOIN "posts" ON ("users"."id" = "posts"."author_id")',
+      );
+    });
+
+    test('rejects a column from a table not in the FROM/JOIN clause', () {
+      expect(
+        () => compileSelect(
+          Users.table
+              .innerJoin(Posts.table, on: Users.id.eqColumn(Posts.authorId))
+              .select1(Users.name)
+              .where(Comments.id.eq(1)),
+        ),
+        throwsStateError,
+      );
     });
   });
 }

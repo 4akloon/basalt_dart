@@ -12,6 +12,9 @@ void main() {
     await db.executeSql('CREATE TABLE users ('
         'id INTEGER PRIMARY KEY, name TEXT NOT NULL, '
         'age INTEGER NOT NULL, active INTEGER NOT NULL)');
+    await db.executeSql('CREATE TABLE posts ('
+        'id INTEGER PRIMARY KEY, author_id INTEGER NOT NULL, '
+        'title TEXT NOT NULL, views INTEGER NOT NULL)');
   });
 
   tearDown(() => db.close());
@@ -69,6 +72,38 @@ void main() {
     );
     // The insert must have been rolled back.
     expect(await db.fetch(select1(Users.id).where(Users.id.eq(99))), isEmpty);
+  });
+
+  test('inner join returns combined records', () async {
+    await seed(); // Bob=1, Alice=2, Carol=3
+    await db.execute(insertInto(Posts.table).value(Posts.id.set(1)).value(Posts.authorId.set(1)).value(Posts.title.set('Hello')).value(Posts.views.set(150)));
+    await db.execute(insertInto(Posts.table).value(Posts.id.set(2)).value(Posts.authorId.set(3)).value(Posts.title.set('World')).value(Posts.views.set(50)));
+
+    final rows = await db.fetch(
+      Users.table
+          .innerJoin(Posts.table, on: Users.id.eqColumn(Posts.authorId))
+          .select3(Users.name, Posts.title, Posts.views)
+          .where(Posts.views.gt(100))
+          .orderBy(Posts.views.desc()),
+    );
+
+    expect(rows, [('Bob', 'Hello', 150)]);
+    final (name, title, views) = rows.first; // statically (String, String, int)
+    expect(name, 'Bob');
+    expect(title, 'Hello');
+    expect(views, 150);
+  });
+
+  test('FK-driven join (innerJoinOn) derives the ON condition', () async {
+    await seed();
+    await db.execute(insertInto(Posts.table).value(Posts.id.set(1)).value(Posts.authorId.set(1)).value(Posts.title.set('Hello')).value(Posts.views.set(150)));
+    await db.execute(insertInto(Posts.table).value(Posts.id.set(2)).value(Posts.authorId.set(3)).value(Posts.title.set('World')).value(Posts.views.set(50)));
+
+    final rows = await db.fetch(
+      Posts.table.innerJoinOn(Posts.authorId).select2(Users.name, Posts.title).orderBy(Posts.title.asc()),
+    );
+
+    expect(rows, [('Bob', 'Hello'), ('Carol', 'World')]);
   });
 
   test('nested transaction (savepoint) rolls back inner only', () async {

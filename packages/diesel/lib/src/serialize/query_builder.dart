@@ -17,12 +17,23 @@ final class QueryBuilder {
 
   QueryBuilder(this.dialect);
 
-  CompiledQuery buildSelect(SelectStatement<dynamic, dynamic> stmt) {
+  CompiledQuery buildSelect(SelectQuery<dynamic> stmt) {
+    _validateScope(stmt);
     _sql.write('SELECT ');
-    _sql.write(stmt.projection.map((c) => _column(c)).join(', '));
+    _sql.write(stmt.projection.map(_column).join(', '));
     _sql
       ..write(' FROM ')
-      ..write(dialect.quoteIdentifier(stmt.table));
+      ..write(dialect.quoteIdentifier(stmt.fromTable));
+    for (final join in stmt.joins) {
+      _sql
+        ..write(switch (join.kind) {
+          JoinKind.inner => ' INNER JOIN ',
+          JoinKind.left => ' LEFT JOIN ',
+        })
+        ..write(dialect.quoteIdentifier(join.table))
+        ..write(' ON ');
+      _writeNode(join.on);
+    }
     if (stmt.whereNode case final where?) {
       _sql.write(' WHERE ');
       _writeNode(where);
@@ -44,6 +55,51 @@ final class QueryBuilder {
         ..write(_bind(offset));
     }
     return _result();
+  }
+
+  /// Verifies every referenced column belongs to a table in the FROM/JOIN
+  /// clause — the runtime safety net for joined queries (single-table queries
+  /// are already guaranteed by the type system).
+  void _validateScope(SelectQuery<dynamic> stmt) {
+    final allowed = {stmt.fromTable, for (final j in stmt.joins) j.table};
+    for (final column in stmt.projection) {
+      _checkColumn(column, allowed);
+    }
+    for (final ordering in stmt.orderings) {
+      _checkColumn(ordering.column, allowed);
+    }
+    for (final join in stmt.joins) {
+      _checkNode(join.on, allowed);
+    }
+    if (stmt.whereNode case final where?) {
+      _checkNode(where, allowed);
+    }
+  }
+
+  void _checkColumn(ColumnNode column, Set<String> allowed) {
+    if (!allowed.contains(column.table)) {
+      throw StateError(
+          'Column "${column.table}"."${column.name}" is not in the query\'s '
+          'FROM/JOIN clause (tables in scope: ${allowed.join(', ')})');
+    }
+  }
+
+  void _checkNode(SqlNode node, Set<String> allowed) {
+    switch (node) {
+      case ColumnNode():
+        _checkColumn(node, allowed);
+      case ParamNode():
+        break;
+      case BinaryNode(:final left, :final right):
+        _checkNode(left, allowed);
+        _checkNode(right, allowed);
+      case InNode(:final target):
+        _checkNode(target, allowed);
+      case NullCheckNode(:final target):
+        _checkNode(target, allowed);
+      case BetweenNode(:final target):
+        _checkNode(target, allowed);
+    }
   }
 
   CompiledQuery buildWrite(WriteStatement stmt) => switch (stmt) {

@@ -26,10 +26,10 @@ final class SqliteConnection implements Connection {
       SqliteConnection._(sqlite3.open(path), const SqliteDialect());
 
   @override
-  Future<List<R>> fetch<R>(SelectStatement<R, dynamic> statement) async {
+  Future<List<R>> fetch<R>(SelectQuery<R> statement) async {
     final (sql, params) = QueryBuilder(_dialect).buildSelect(statement);
     final result = _db.select(sql, params);
-    return [for (final row in result) statement.decodeRow(row.values)];
+    return [for (final row in result) statement.rowDecoder(row.values)];
   }
 
   @override

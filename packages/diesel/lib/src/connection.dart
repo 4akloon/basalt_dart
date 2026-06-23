@@ -11,8 +11,8 @@ import 'query/write.dart';
 /// exact same signatures with no breaking change. `FutureOr` appears only on the
 /// transaction callback, so both sync and async bodies work.
 abstract interface class Connection {
-  /// Runs a `SELECT` and maps each row to `R`.
-  Future<List<R>> fetch<R>(SelectStatement<R, dynamic> statement);
+  /// Runs a `SELECT` (single-table or joined) and maps each row to `R`.
+  Future<List<R>> fetch<R>(SelectQuery<R> statement);
 
   /// Runs an INSERT/UPDATE/DELETE and returns the affected-row count.
   Future<int> execute(WriteStatement statement);
