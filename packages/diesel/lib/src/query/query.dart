@@ -63,6 +63,18 @@ final class Query<Scope> {
   Query<Scope> limit(int count) => _copy(limitCount: count);
   Query<Scope> offset(int count) => _copy(offsetCount: count);
 
+  /// diesel-style `filter`: ANDs with any existing predicate (unlike [where],
+  /// which replaces). `filter(a).filter(b)` ⇒ `WHERE a AND b`.
+  Query<Scope> filter(Expression<bool, Scope> predicate) {
+    final existing = whereNode;
+    return existing == null
+        ? where(predicate)
+        : _copy(whereNode: BinaryNode(existing, 'AND', predicate.node));
+  }
+
+  /// diesel-style alias for [orderBy] (appends an ordering).
+  Query<Scope> order(Ordering ordering) => orderBy(ordering);
+
   /// Narrow the projection to exactly [columns] (default is all columns of the
   /// involved tables).
   Query<Scope> select(List<TableColumn<Object?, Object?>> columns) =>
@@ -184,4 +196,11 @@ final class MappedQuery<R> implements SelectQuery<R> {
 
   MappedQuery<R> where(Expression<bool, dynamic> predicate) =>
       MappedQuery._(_query.where(predicate), _decode);
+
+  /// diesel-style `filter`: ANDs with any existing predicate (see [Query.filter]).
+  MappedQuery<R> filter(Expression<bool, dynamic> predicate) =>
+      MappedQuery._(_query.filter(predicate), _decode);
+
+  /// diesel-style alias for [orderBy] (appends an ordering).
+  MappedQuery<R> order(Ordering ordering) => orderBy(ordering);
 }

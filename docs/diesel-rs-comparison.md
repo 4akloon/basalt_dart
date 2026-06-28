@@ -24,37 +24,36 @@ Dart generics + phantom types + `build_runner`/`source_gen` codegen. The goal is
 
 | Concept | diesel-rs | diesel_dart | Status |
 |---|---|---|---|
-| Filter | `users.filter(age.gt(18))` | `from(Users.table).where(Users.age.gt(18))` | ✅ (name differs) |
+| Filter | `users.filter(age.gt(18))` | `.where(...)` (replaces) or `.filter(...)` (ANDs, like diesel) | ✅ |
 | Operators | `.eq/.ne/.gt/.ge/.lt/.le` | same, plus `>`,`<`,`>=`,`<=` sugar | ✅ |
 | AND / OR | `.and()`/`.or()` | `.and()`/`.or()` and `&` / `\|` | ✅ |
-| IN | `.eq_any(v)` | `.isIn(v)` | ✅ (name differs) |
+| IN | `.eq_any(v)` | `.isIn(v)` / `.eqAny(v)` | ✅ |
 | LIKE / BETWEEN / NULL | `.like`, `.between`, `.is_null` | `.like`, `.between`, `.isNull`/`.isNotNull` | ✅ |
-| Ordering | `.order(name.asc())` | `.orderBy(Users.name.asc())` | ✅ (name differs) |
+| Ordering | `.order(name.asc())` | `.orderBy(...)` / `.order(...)` | ✅ |
 | Limit / offset | `.limit/.offset` | `.limit/.offset` | ✅ |
 | Projection | `.select((id, name))` | `.select([Users.id, Users.name])` | ✅ |
 | Inner/left join | `.inner_join/.left_join` | `.innerJoin/.leftJoin` (`on:` / `onFk:`) | ✅ |
 | Self-join / aliases | table aliasing | `Users.table.aliased('mgr')` + `alias.col(...)` | ✅ |
-| `find(pk)` | `users.find(1)` | — | ✗ (ROADMAP M2) |
-| `first` / `optional` | `.first(conn)` / `.optional()` | — | ✗ (ROADMAP M2) |
+| `find(pk)` | `users.find(1)` | — | ✗ (ROADMAP M4 — needs typed PK) |
+| `first` / `optional` | `.first(conn)` / `.optional()` | `query.first(db)` / `query.optional(db)` | ✅ |
 | distinct | `.distinct()` | — | ✗ (ROADMAP M3) |
 | Aggregates / group by / having | `count`, `sum`, `.group_by`, `.having` | — | ✗ (ROADMAP M3) |
 | Subqueries / EXISTS | supported | — | ✗ |
 | Raw typed SQL | `sql::<T>("…")` | `executeSql`/`queryRaw` (untyped) | ◑ (typed fragments: ROADMAP M3) |
 
-> **Behavioral note:** in diesel-rs, repeated `.filter()` calls AND together. In diesel_dart, repeated
-> `.where()` calls **replace** the predicate — combine with `&` instead. (ROADMAP M2 will add a diesel-like
-> `filter` that ANDs.)
+> **Behavioral note:** diesel_dart provides `.filter()` (ANDs repeated calls, like diesel-rs) alongside
+> `.where()` (replaces the predicate — combine with `&` for a single call).
 
 ## Execution
 
 | Concept | diesel-rs | diesel_dart | Status |
 |---|---|---|---|
-| Load rows | `.load::<T>(conn)` / `.get_results` | `db.fetch(query.map(...))` | ✅ (shape differs) |
+| Load rows | `.load::<T>(conn)` / `.get_results` | `db.fetch(...)`, or `query.load(db)` / `first(db)` / `optional(db)` | ✅ |
 | Run write | `.execute(conn)` | `db.execute(stmt)` → affected rows | ✅ |
 | RETURNING | `.get_result(conn)` after insert | — | ✗ (ROADMAP M3) |
 | Batch insert | `insert_into(t).values(vec)` | one row per `InsertStatement` | ✗ (ROADMAP M3) |
 | Upsert / ON CONFLICT | `.on_conflict(...)` | — | ✗ (ROADMAP M3) |
-| Transactions | `conn.transaction(|| …)` | `db.transaction((tx) async { … })` | ✅ |
+| Transactions | `conn.transaction(\|\| …)` | `db.transaction((tx) async { … })` | ✅ |
 | Nested tx (savepoints) | yes | yes | ✅ |
 | Raw SQL | `sql_query` | `executeSql` / `queryRaw` | ✅ |
 | Connection pooling | r2d2 / deadpool | — | ✗ (ROADMAP M6) |

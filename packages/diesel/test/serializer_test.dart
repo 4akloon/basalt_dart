@@ -230,4 +230,52 @@ void main() {
       );
     });
   });
+
+  group('diesel-style aliases', () {
+    test('filter / order / eqAny match where / orderBy / isIn', () {
+      final (aSql, aParams) = compileSelect(
+        from(Users.table)
+            .select([Users.id])
+            .filter(Users.id.eqAny([1, 2]))
+            .order(Users.age.desc())
+            .map(_ignore),
+      );
+      final (cSql, cParams) = compileSelect(
+        from(Users.table)
+            .select([Users.id])
+            .where(Users.id.isIn([1, 2]))
+            .orderBy(Users.age.desc())
+            .map(_ignore),
+      );
+      expect(aSql, cSql);
+      expect(aParams, cParams);
+    });
+
+    test('repeated filter() ANDs, unlike where() (diesel semantics)', () {
+      final (sql, params) = compileSelect(
+        from(Users.table)
+            .select([Users.id])
+            .filter(Users.age.gt(18))
+            .filter(Users.active.eq(true))
+            .map(_ignore),
+      );
+      expect(
+        sql,
+        'SELECT "users"."id" FROM "users" '
+        'WHERE (("users"."age" > ?) AND ("users"."active" = ?))',
+      );
+      expect(params, [18, 1]);
+    });
+
+    test('update set() matches value()', () {
+      final (aSql, aParams) = compileWrite(
+        update(Users.table).set(Users.age.set(31)).where(Users.id.eq(1)),
+      );
+      final (cSql, cParams) = compileWrite(
+        update(Users.table).value(Users.age.set(31)).where(Users.id.eq(1)),
+      );
+      expect(aSql, cSql);
+      expect(aParams, cParams);
+    });
+  });
 }

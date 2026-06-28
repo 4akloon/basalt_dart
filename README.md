@@ -117,9 +117,9 @@ See [`example/`](example) for a complete, runnable tour (joins, relations, trans
 ## Status & roadmap
 
 SQLite-first; Postgres is stubbed and on the roadmap. diesel-rs **database compatibility** is in place on
-SQLite — the Rust `diesel` CLI and `diesel_dart` produce an interchangeable migrations directory and
-`__diesel_schema_migrations` table ([ROADMAP M1](docs/ROADMAP.md) done). Next: **mirror-behavior API aliases**
-(M2), then a Postgres backend (M5).
+SQLite (M1), and **diesel-style API aliases** (`filter`/`order`/`eqAny`/`set`/`load`/`first`/`optional`) read
+like diesel-rs (M2). Next: SQLite query parity (M3), then a Postgres backend (M5). See the
+[roadmap](docs/ROADMAP.md).
 
 ## License
 

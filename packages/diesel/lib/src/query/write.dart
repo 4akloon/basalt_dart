@@ -44,6 +44,9 @@ final class UpdateStatement<Tbl> extends WriteStatement {
     return this;
   }
 
+  /// diesel-style alias for [value] (`update(t).set(col.set(v))`).
+  UpdateStatement<Tbl> set(ColumnValue<Tbl> assignment) => value(assignment);
+
   UpdateStatement<Tbl> where(Expression<bool, Tbl> predicate) {
     whereNode = predicate.node;
     return this;

@@ -37,6 +37,9 @@ sealed class TableColumn<T, Tbl> {
   Expression<bool, Tbl> isIn(List<T> values) =>
       Expression(InNode(node, values.map(type.encode).toList()));
 
+  /// diesel-style alias for [isIn] (`eq_any`).
+  Expression<bool, Tbl> eqAny(List<T> values) => isIn(values);
+
   Expression<bool, Tbl> between(T low, T high) =>
       Expression(BetweenNode(node, type.encode(low), type.encode(high)));
 

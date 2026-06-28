@@ -210,4 +210,36 @@ void main() {
       isEmpty,
     );
   });
+
+  test('diesel-style terminals: load / first / optional', () async {
+    await seed(); // Bob=30, Alice=17, Carol=42
+
+    // filter/order aliases + load terminal.
+    final all = await from(Users.table)
+        .filter(Users.age.ge(18))
+        .order(Users.age.desc())
+        .map((r) => r.get(Users.name))
+        .load(db);
+    expect(all, ['Carol', 'Bob']);
+
+    final top = await from(Users.table)
+        .order(Users.age.desc())
+        .map((r) => r.get(Users.name))
+        .first(db);
+    expect(top, 'Carol');
+
+    final none = await from(Users.table)
+        .where(Users.age.gt(100))
+        .map((r) => r.get(Users.name))
+        .optional(db);
+    expect(none, isNull);
+
+    await expectLater(
+      from(Users.table)
+          .where(Users.age.gt(100))
+          .map((r) => r.get(Users.id))
+          .first(db),
+      throwsStateError,
+    );
+  });
 }

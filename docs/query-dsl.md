@@ -57,8 +57,9 @@ Combine predicates with `&` (AND) / `\|` (OR), or `.and()` / `.or()`:
 from(Users.table).where((Users.age > 28) & Users.active.eq(1));
 ```
 
-> **Gotcha:** chaining `.where(a).where(b)` **replaces** the predicate (the last one wins) — it does *not*
-> AND them. Always combine in a single `.where(...)` with `&`/`|`.
+> **`where` vs `filter`:** chaining `.where(a).where(b)` **replaces** the predicate (last wins) — use a single
+> `.where(...)` with `&`/`|`, or use the diesel-style `.filter(...)`, which **ANDs** repeated calls
+> (`filter(a).filter(b)` ⇒ `WHERE a AND b`). See [diesel-style aliases](#diesel-style-aliases).
 
 ## Ordering, limit, offset
 
@@ -130,3 +131,33 @@ await db.close();
 
 The API is async-first; SQLite returns completed futures, and an async backend (Postgres) implements the same
 `Connection` interface unchanged.
+
+## diesel-style aliases
+
+If you're coming from diesel-rs, several methods read the same way (the Dart-idiomatic names still work too):
+
+| diesel-rs | diesel_dart |
+|---|---|
+| `users.filter(p)` | `from(Users.table).filter(p)` — ANDs repeated calls |
+| `.order(col.asc())` | `.order(Users.col.asc())` — alias for `orderBy` |
+| `col.eq_any([...])` | `Users.col.eqAny([...])` — alias for `isIn` |
+| `update(t).set(col.eq(v))` | `update(Users.table).set(Users.col.set(v))` |
+| `query.load(conn)` | `query.load(db)` |
+| `query.first(conn)` | `query.first(db)` — throws if no rows |
+| `query.first(conn).optional()` | `query.optional(db)` — `null` if no rows |
+
+```dart
+final adults = await from(Users.table)
+    .filter(Users.age.ge(18))
+    .order(Users.name.asc())
+    .map(userMapper.read)
+    .load(db);
+
+final bob = await from(Users.table)
+    .filter(Users.id.eqAny([1]))
+    .map(userMapper.read)
+    .optional(db);
+```
+
+`find(pk)` (filter by primary key) is planned for a later milestone, once the schema models the primary key
+in a type-safe way — see the [roadmap](ROADMAP.md).

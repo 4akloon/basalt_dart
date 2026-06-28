@@ -39,14 +39,18 @@ table on SQLite — the same database and `migrations/` directory can be driven 
 
 > Config stays on `diesel.yaml` by design — `diesel.toml` support is intentionally **not** planned.
 
-## ⬜ M2 — Mirror-behavior API aliases (non-breaking)
+## ✅ M2 — Mirror-behavior API aliases (non-breaking) — done
 
-Add diesel-named aliases so code reads like diesel-rs, keeping the current Dart-idiomatic names:
+diesel-named methods alongside the Dart-idiomatic ones, so code reads like diesel-rs:
 
-- `filter` = `where`, `order`/`orderBy`, `values`/`value`, `set`, `eq_any` = `isIn`.
-- `find(pk)` (where on the primary key), `first()` / `optional()` execution helpers.
-- A `load`-style execution convenience (e.g. on `MappedQuery`/`Connection`).
-- Document the full name mapping in [`diesel-rs-comparison.md`](diesel-rs-comparison.md).
+- `filter` — ANDs repeated calls (like diesel; distinct from `where`, which replaces).
+- `order` (alias for `orderBy`), `eqAny` (alias for `isIn`), `update().set()` (alias for `value`).
+- Execution terminals `query.load(db)` / `first(db)` / `optional(db)`, as an extension that keeps the core
+  query builder free of any `Connection` dependency.
+- Name mapping documented in [`diesel-rs-comparison.md`](diesel-rs-comparison.md) and [`query-dsl.md`](query-dsl.md).
+
+Deferred: insert `values([...])` (the manual builder's `values` field name clashes; `value()` and the generated
+`toInsert()` already cover it), and `find(pk)` (moved to M4 — needs a type-safe primary key).
 
 ## ⬜ M3 — SQLite query parity
 
@@ -62,6 +66,7 @@ Add diesel-named aliases so code reads like diesel-rs, keeping the current Dart-
 - `Selectable`-style subset/embedded structs (project a column subset into a class).
 - `Identifiable` (primary-key identity) and richer Associations (`belongs_to`, grouped child loads) beyond
   today's read-only `@Relation` nesting.
+- `find(pk)` filter-by-primary-key, enabled by the type-safe `Identifiable` PK (deferred here from M2).
 - Custom type-codec registry (enums, value objects) layered on `SqlType`.
 
 ## ⬜ M5 — Postgres backend (`diesel_postgres`)

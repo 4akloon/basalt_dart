@@ -55,7 +55,8 @@ Dart SDK constraint: `>=3.5.0 <4.0.0`.
   **three** generators (`QueryableGenerator`, `InsertableGenerator`, `AsChangesetGenerator`) registered in
   `builder.dart`. Emitters are pure and unit-tested; generators are thin analyzer bridges.
 - **GOTCHA: chained `.where().where()` REPLACES the predicate (last wins), it does not AND.** Combine with
-  `&`: `q.where(a.eq(1) & b.isNotNull())`. (`Query.where` does `_copy(whereNode: ...)`.)
+  `&` (`q.where(a.eq(1) & b.isNotNull())`), or use `.filter()` — the diesel-style method that ANDs repeated
+  calls. (`Query.where` does `_copy(whereNode: ...)`; `filter` ANDs onto the existing `whereNode`.)
 - **Avoid `!`** — prefer `if (x case final y?)` / pattern matching for null handling (project style).
 
 ## Where things live (core, `packages/diesel/lib/src/`)
@@ -92,5 +93,6 @@ Dart SDK constraint: `>=3.5.0 <4.0.0`.
 
 This project deliberately mirrors diesel-rs concepts. See [`docs/diesel-rs-comparison.md`](docs/diesel-rs-comparison.md)
 for the parity matrix and [`docs/ROADMAP.md`](docs/ROADMAP.md) for the planned alignment (DB compatibility,
-diesel-style API aliases, Postgres). Migration version/tracker formats are diesel-rs-compatible on SQLite
-(ROADMAP M1 done); next is diesel-style API aliases (M2).
+diesel-style API aliases, Postgres). Migration formats are diesel-rs-compatible on SQLite (M1 done) and
+diesel-style aliases exist — `filter`/`order`/`eqAny`/`set`/`load`/`first`/`optional` (M2 done). Next: SQLite
+query parity (M3).
