@@ -104,7 +104,26 @@ void main() {
     final dir = const MigrationScaffolder().scaffold('add_things', tmp.path);
     expect(Directory(dir).existsSync(), isTrue);
     expect(p.basename(dir), endsWith('_add_things'));
+    // diesel-rs-compatible version format (%Y-%m-%d-%H%M%S).
+    expect(p.basename(dir),
+        matches(RegExp(r'^\d{4}-\d{2}-\d{2}-\d{6}_add_things$')));
     expect(File(p.join(dir, 'up.sql')).existsSync(), isTrue);
     expect(File(p.join(dir, 'down.sql')).existsSync(), isTrue);
+  });
+
+  test('records run_on in diesel-compatible YYYY-MM-DD HH:MM:SS format',
+      () async {
+    // Also exercises discover() reading diesel's dashed version prefix.
+    writeMigration(tmp.path, '2020-01-01-000000', 'create_widgets',
+        up: 'CREATE TABLE widgets (id INTEGER PRIMARY KEY, name TEXT NOT NULL);',
+        down: 'DROP TABLE widgets;');
+
+    final ran = await runner.runPending();
+    expect(ran, ['2020-01-01-000000']);
+
+    final rows =
+        await db.queryRaw('SELECT run_on FROM __diesel_schema_migrations');
+    expect(rows.single['run_on'],
+        matches(RegExp(r'^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$')));
   });
 }

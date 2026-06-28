@@ -18,7 +18,8 @@ final class MigrationRunner {
 
   Future<void> ensureTrackerTable() => connection.executeSql(
         'CREATE TABLE IF NOT EXISTS __diesel_schema_migrations '
-        '(version TEXT NOT NULL PRIMARY KEY, run_on TEXT NOT NULL)',
+        '(version VARCHAR(50) PRIMARY KEY NOT NULL, '
+        'run_on TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP)',
       );
 
   /// Applied versions, ascending.
@@ -71,8 +72,7 @@ final class MigrationRunner {
         await tx.executeSql(migration.up);
         await tx.execute(insertInto(SchemaMigrationsTable.table)
             .value(SchemaMigrationsTable.version.set(migration.version))
-            .value(SchemaMigrationsTable.runOn
-                .set(DateTime.now().toUtc().toIso8601String())));
+            .value(SchemaMigrationsTable.runOn.set(_runOn())));
       });
       ran.add(migration.version);
     }
@@ -103,5 +103,14 @@ final class MigrationRunner {
           .where(SchemaMigrationsTable.version.eq(version)));
     });
     return version;
+  }
+
+  /// `run_on` value in the same shape as diesel-rs / SQLite `CURRENT_TIMESTAMP`
+  /// (UTC `YYYY-MM-DD HH:MM:SS`), so the tracker table is interchangeable.
+  static String _runOn() {
+    final t = DateTime.now().toUtc();
+    String two(int v) => v.toString().padLeft(2, '0');
+    return '${t.year}-${two(t.month)}-${two(t.day)} '
+        '${two(t.hour)}:${two(t.minute)}:${two(t.second)}';
   }
 }

@@ -2,7 +2,10 @@ import 'dart:io';
 
 import 'package:path/path.dart' as p;
 
-/// Scaffolds `<migrationsDir>/<timestamp>_<name>/{up,down}.sql`.
+/// Scaffolds `<migrationsDir>/<version>_<name>/{up,down}.sql`, where `<version>`
+/// is a diesel-rs-compatible UTC timestamp (`%Y-%m-%d-%H%M%S`, e.g.
+/// `2024-01-15-123456`) so the directory layout interoperates with the Rust
+/// `diesel` CLI.
 final class MigrationScaffolder {
   const MigrationScaffolder();
 
@@ -10,8 +13,8 @@ final class MigrationScaffolder {
   String scaffold(String name, String migrationsDir) {
     final now = DateTime.now().toUtc();
     String two(int v) => v.toString().padLeft(2, '0');
-    final version =
-        '${now.year}${two(now.month)}${two(now.day)}${two(now.hour)}${two(now.minute)}${two(now.second)}';
+    final version = '${now.year}-${two(now.month)}-${two(now.day)}-'
+        '${two(now.hour)}${two(now.minute)}${two(now.second)}';
 
     final dir = Directory(p.join(migrationsDir, '${version}_$name'));
     dir.createSync(recursive: true);
