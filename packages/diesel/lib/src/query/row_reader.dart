@@ -12,7 +12,7 @@ final class RowReader {
 
   const RowReader(this._columnIndex, this._row);
 
-  T get<T>(Column<T, Object?> column) {
+  T get<T>(TableColumn<T, Object?> column) {
     final index = _columnIndex['${column.table}.${column.name}'];
     if (index == null) {
       throw StateError('Column "${column.table}.${column.name}" is not in the '

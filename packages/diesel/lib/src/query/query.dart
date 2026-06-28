@@ -37,7 +37,7 @@ final class Query<Scope> {
   final String fromTable;
   final String? fromAlias;
   final List<Join> joins;
-  final List<Column<Object?, Object?>> projection;
+  final List<TableColumn<Object?, Object?>> projection;
   final SqlNode? whereNode;
   final List<Ordering> orderings;
   final int? limitCount;
@@ -65,7 +65,7 @@ final class Query<Scope> {
 
   /// Narrow the projection to exactly [columns] (default is all columns of the
   /// involved tables).
-  Query<Scope> select(List<Column<Object?, Object?>> columns) =>
+  Query<Scope> select(List<TableColumn<Object?, Object?>> columns) =>
       _copy(projection: columns);
 
   /// INNER JOIN [other] (a [TableRef] or an aliased [TableAlias]). Provide the
@@ -112,7 +112,7 @@ final class Query<Scope> {
   MappedQuery<R> mapWith<R>(RowMapper<R> mapper) => map(mapper.read);
 
   Query<Scope> _copy({
-    List<Column<Object?, Object?>>? projection,
+    List<TableColumn<Object?, Object?>>? projection,
     SqlNode? whereNode,
     List<Ordering>? orderings,
     int? limitCount,

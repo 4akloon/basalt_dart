@@ -4,22 +4,34 @@ import 'schema.dart';
 
 part 'user.g.dart';
 
+/// One data class, three derives: read it back with `@Queryable` (`userMapper` /
+/// `userQuery`), and write it with `@Insertable` (`toInsert()`) and
+/// `@AsChangeset` (`toUpdate()`).
+///
 /// Note: `active` is `int` because SQLite has no native boolean.
 @Queryable(Users.table)
+@Insertable(Users.table)
+@AsChangeset(Users.table)
 class User {
   final int id;
   final String name;
   final int age;
   final int active;
 
-  /// Self-referential relation: a user may report to another user. The FK
-  /// (`Users.managerId`) is nullable, so the relation field must be nullable
-  /// too. The generated `userQuery` INNER JOINs `users` to itself
-  /// under a path-based alias, so only users that *have* a manager come back.
+  /// Raw foreign-key value — what `toInsert()`/`toUpdate()` write. Its camelCase
+  /// name matches `Users.managerId`, so no `@Column` mapping is needed.
+  ///
+  /// When ids are database-generated you would instead mark the PK
+  /// `@Column(Users.id, readOnly: true)`: read on SELECT, skipped on write.
+  final int? managerId;
+
+  /// Read-side relation, filled by joining `users` to itself (see the generated
+  /// `userQuery`). Not a column — the write derives skip it.
   @Relation(Users.managerId)
   final User? manager;
 
-  const User(this.id, this.name, this.age, this.active, {this.manager});
+  const User(this.id, this.name, this.age, this.active,
+      {this.managerId, this.manager});
 
   @override
   String toString() {

@@ -1,6 +1,6 @@
 /// Untyped SQL expression tree.
 ///
-/// The typed query-builder API ([Expression], [Column]) produces these nodes,
+/// The typed query-builder API ([Expression], [TableColumn]) produces these nodes,
 /// and the serializer walks them to emit `(sql, params)`. Keeping the AST
 /// untyped here lets the serializer stay simple and dialect-agnostic; all type
 /// information lives in the builder layer above.

@@ -10,9 +10,9 @@ import '../types/sql_type.dart';
 ///
 /// Columns are declared `static const` on a table marker class so the same
 /// object serves the query builder (`Users.age.gt(18)`) and derive annotations
-/// (`@MapColumn(Users.name)`) — annotation arguments must be constants.
-sealed class Column<T, Tbl> {
-  const Column();
+/// (`@Column(Users.name)`) — annotation arguments must be constants.
+sealed class TableColumn<T, Tbl> {
+  const TableColumn();
 
   String get table;
   String get name;
@@ -47,12 +47,12 @@ sealed class Column<T, Tbl> {
   /// Compares this column to another column — for JOIN `ON` clauses and
   /// cross-table predicates. The shared `T` enforces matching key types
   /// (`Users.id.eqColumn(Posts.title)` is a compile error).
-  Expression<bool, Tbl> eqColumn<Other>(Column<T, Other> other) =>
+  Expression<bool, Tbl> eqColumn<Other>(TableColumn<T, Other> other) =>
       Expression(BinaryNode(node, '=', other.node));
 
   /// Produces a typed assignment for INSERT/UPDATE, e.g. `Users.age.set(31)`.
   /// The value type is pinned by this column's static type (no inference), so
-  /// `Column<int>.set('x')` is a compile error.
+  /// `TableColumn<int>.set('x')` is a compile error.
   ColumnValue<Tbl> set(T value) => ColumnValue(name, type.encode(value));
 
   Ordering asc() => Ordering(node, ascending: true);
@@ -63,7 +63,7 @@ sealed class Column<T, Tbl> {
 }
 
 /// An ordinary value column.
-final class ValueColumn<T, Tbl> extends Column<T, Tbl> {
+final class ValueColumn<T, Tbl> extends TableColumn<T, Tbl> {
   @override
   final String table;
   @override
@@ -74,7 +74,7 @@ final class ValueColumn<T, Tbl> extends Column<T, Tbl> {
 }
 
 /// A primary-key column.
-final class PrimaryKey<T, Tbl> extends Column<T, Tbl> {
+final class PrimaryKey<T, Tbl> extends TableColumn<T, Tbl> {
   @override
   final String table;
   @override
@@ -87,7 +87,7 @@ final class PrimaryKey<T, Tbl> extends Column<T, Tbl> {
 /// A foreign-key column on `Tbl` that references the [PrimaryKey] of `Target`.
 /// Referencing the PK column object (a leaf) keeps it const-cycle free even for
 /// mutual foreign keys, and the shared `T` enforces matching key types.
-final class Ref<T, Tbl, Target> extends Column<T, Tbl> {
+final class Ref<T, Tbl, Target> extends TableColumn<T, Tbl> {
   @override
   final String table;
   @override
@@ -99,7 +99,7 @@ final class Ref<T, Tbl, Target> extends Column<T, Tbl> {
 }
 
 /// `LIKE` only makes sense for text columns.
-extension TextColumn<Tbl> on Column<String, Tbl> {
+extension TextColumn<Tbl> on TableColumn<String, Tbl> {
   Expression<bool, Tbl> like(String pattern) =>
       Expression(BinaryNode(node, 'LIKE', ParamNode(pattern)));
 }
@@ -118,11 +118,11 @@ final class ColumnValue<Tbl> {
 abstract interface class QuerySource<Tbl> {
   String get table; // real table name (FROM/JOIN target)
   String? get alias; // alias, or null
-  List<Column<Object?, Object?>> get columns;
+  List<TableColumn<Object?, Object?>> get columns;
 
   /// Rebinds a base-table column to this source's effective name (identity on
   /// [TableRef], alias-bound on [TableAlias]).
-  Column<T, Tbl> col<T>(Column<T, Tbl> column);
+  TableColumn<T, Tbl> col<T>(TableColumn<T, Tbl> column);
 }
 
 /// Table descriptor: its name and full column list (the default projection for
@@ -131,7 +131,7 @@ abstract interface class QuerySource<Tbl> {
 final class TableRef<Tbl> implements QuerySource<Tbl> {
   final String name;
   @override
-  final List<Column<Object?, Object?>> columns;
+  final List<TableColumn<Object?, Object?>> columns;
   const TableRef(this.name, this.columns);
 
   @override
@@ -140,7 +140,7 @@ final class TableRef<Tbl> implements QuerySource<Tbl> {
   String? get alias => null;
 
   @override
-  Column<T, Tbl> col<T>(Column<T, Tbl> column) => column;
+  TableColumn<T, Tbl> col<T>(TableColumn<T, Tbl> column) => column;
 
   /// Alias this table for a self-join — `Users.table.aliased('sender')`.
   TableAlias<Tbl> aliased(String alias) => TableAlias(alias, this);
@@ -159,13 +159,13 @@ final class TableAlias<Tbl> implements QuerySource<Tbl> {
   String get table => base.name;
 
   @override
-  List<Column<Object?, Object?>> get columns => [
+  List<TableColumn<Object?, Object?>> get columns => [
         for (final c in base.columns)
           ValueColumn<Object?, Tbl>(alias, c.name, c.type)
       ];
 
   /// An alias-bound version of one of the base table's columns.
   @override
-  Column<T, Tbl> col<T>(Column<T, Tbl> column) =>
+  TableColumn<T, Tbl> col<T>(TableColumn<T, Tbl> column) =>
       ValueColumn<T, Tbl>(alias, column.name, column.type);
 }

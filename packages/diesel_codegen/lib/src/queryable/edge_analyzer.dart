@@ -13,9 +13,10 @@ import 'relation_edge.dart';
 // types regardless of whether they are referenced via the `diesel.dart` barrel
 // or their defining library (`fromUrl` only matches the defining library).
 const queryableChecker = TypeChecker.typeNamed(Queryable, inPackage: 'diesel');
-const mapColumnChecker = TypeChecker.typeNamed(MapColumn, inPackage: 'diesel');
+const insertableChecker = TypeChecker.typeNamed(Insertable, inPackage: 'diesel');
+const asChangesetChecker = TypeChecker.typeNamed(AsChangeset, inPackage: 'diesel');
+const columnChecker = TypeChecker.typeNamed(Column, inPackage: 'diesel');
 const relationChecker = TypeChecker.typeNamed(Relation, inPackage: 'diesel');
-const ignoreChecker = TypeChecker.typeNamed(Ignore, inPackage: 'diesel');
 
 /// ponytail: top-level so depth guard is unit-testable without analyzer mocks.
 int validateRelationDepth(int depth, Element element) {
@@ -27,7 +28,7 @@ int validateRelationDepth(int depth, Element element) {
   return depth;
 }
 
-/// Parses `@Relation` / `@MapColumn` metadata from analyzer elements.
+/// Parses `@Relation` / `@Column` metadata from analyzer elements.
 final class EdgeAnalyzer {
   const EdgeAnalyzer();
 
@@ -105,14 +106,23 @@ final class EdgeAnalyzer {
     required FieldElement? field,
     required String tableMarker,
   }) {
-    final colObj = field == null
-        ? null
-        : mapColumnChecker.firstAnnotationOfExact(field)?.getField('column');
+    final ann =
+        field == null ? null : columnChecker.firstAnnotationOfExact(field);
+    final readOnly = ann?.getField('readOnly')?.toBoolValue() ?? false;
+    final writeOnly = ann?.getField('writeOnly')?.toBoolValue() ?? false;
+    if (readOnly && writeOnly) {
+      throw InvalidGenerationSourceError(
+          '@Column on "${param.name}" cannot be both readOnly and writeOnly — '
+          'a field that is neither read nor written is not a column; use a getter.',
+          element: field);
+    }
+
+    final colObj = ann?.getField('column');
     if (colObj != null) {
       final colType = colObj.type;
       if (colType is! InterfaceType || colType.typeArguments.length < 2) {
         throw InvalidGenerationSourceError(
-            '@MapColumn(column) must reference a schema column '
+            '@Column(column) must reference a schema column '
             '(e.g. Posts.authorId).',
             element: field);
       }
@@ -120,7 +130,7 @@ final class EdgeAnalyzer {
       final sqlName = colObj.getField('name')?.toStringValue();
       if (marker == null || sqlName == null) {
         throw InvalidGenerationSourceError(
-            '@MapColumn(column) must reference a schema column '
+            '@Column(column) must reference a schema column '
             '(e.g. Posts.authorId).',
             element: field);
       }
@@ -128,6 +138,8 @@ final class EdgeAnalyzer {
         paramName: param.name!,
         isNamed: param.isNamed,
         columnExpr: '$marker.${camelCase(sqlName)}',
+        readOnly: readOnly,
+        writeOnly: writeOnly,
       );
     }
 
@@ -135,16 +147,43 @@ final class EdgeAnalyzer {
       paramName: param.name!,
       isNamed: param.isNamed,
       columnExpr: '$tableMarker.${param.name}',
+      readOnly: readOnly,
+      writeOnly: writeOnly,
     );
   }
 
-  /// The table marker (e.g. `Users`) from a class's `@Queryable(table)`.
-  String? tableMarkerOf(ClassElement element) {
-    final ann = queryableChecker.firstAnnotationOfExact(element);
+  /// The table marker (e.g. `Users`) from a class-level table annotation
+  /// (`@Queryable`/`@Insertable`/`@AsChangeset`), selected by [checker].
+  String? tableMarkerOf(ClassElement element,
+      [TypeChecker checker = queryableChecker]) {
+    final ann = checker.firstAnnotationOfExact(element);
     if (ann == null) return null;
     final tableType = ConstantReader(ann).read('table').objectValue.type;
     if (tableType is! InterfaceType) return null;
     return tableType.typeArguments.first.element?.name;
+  }
+
+  /// Column args for a write derive (`@Insertable`/`@AsChangeset`): every
+  /// constructor parameter mapped to a column, skipping `@Relation` fields
+  /// (relations are read-side only).
+  List<ColumnArg> writeColumnArgs(ClassElement element, String tableMarker) {
+    final constructor = element.unnamedConstructor;
+    if (constructor == null) {
+      throw InvalidGenerationSourceError(
+          '${element.name} needs an unnamed constructor for write generation.',
+          element: element);
+    }
+    final args = <ColumnArg>[];
+    for (final param in constructor.formalParameters) {
+      final name = param.name;
+      final field = name == null ? null : element.getField(name);
+      if (field != null && relationChecker.hasAnnotationOfExact(field)) {
+        continue;
+      }
+      args.add(
+          parseColumnArg(param: param, field: field, tableMarker: tableMarker));
+    }
+    return args;
   }
 
   /// Resolves a `@Queryable` class element into the data the generator needs.
@@ -174,15 +213,12 @@ final class EdgeAnalyzer {
         ownEdges.add(parseRelationEdge(field, param));
         continue;
       }
-      if (field != null && ignoreChecker.hasAnnotationOfExact(field)) {
-        _requireOptional(param, field, 'Ignored');
-        continue;
+      final arg =
+          parseColumnArg(param: param, field: field, tableMarker: tableMarker);
+      if (arg.writeOnly && field != null) {
+        _requireOptional(param, field, 'writeOnly');
       }
-      columnArgs.add(parseColumnArg(
-        param: param,
-        field: field,
-        tableMarker: tableMarker,
-      ));
+      columnArgs.add(arg);
     }
 
     return ClassInfo(

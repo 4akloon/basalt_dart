@@ -1,6 +1,6 @@
 /// Diesel — a type-safe query builder and ORM for Dart, inspired by diesel-rs.
 ///
-/// Stage 1 surface: typed schema (`Column`/`TableRef`), expressions, the
+/// Stage 1 surface: typed schema (`TableColumn`/`TableRef`), expressions, the
 /// `select*`/`insertInto`/`update`/`deleteFrom` builders, SQL serialization, and
 /// the dialect-agnostic `Connection` interface. Concrete backends live in
 /// separate packages (e.g. `diesel_sqlite`).

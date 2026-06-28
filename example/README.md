@@ -10,23 +10,31 @@ surface through the ORM.
 - `migrations/` — `<timestamp>_<name>/{up,down}.sql`. Creates `users` and `posts`,
   and adds a self-referential `users.manager_id` foreign key.
 - `lib/schema.dart` — **generated** by `diesel_dart print-schema` (tables/columns only).
-- `lib/models.dart` — hand-written `@Queryable` data classes with `@Relation`s.
-- `lib/models.g.dart` — **generated** by `diesel_codegen` (`build_runner`).
-- `bin/example.dart` — seeds data and exercises the whole query surface.
+- `lib/user.dart`, `lib/post.dart` — hand-written data classes. `User` carries
+  `@Queryable` + `@Insertable` + `@AsChangeset`; both use `@Relation` for joins.
+- `lib/user.g.dart`, `lib/post.g.dart` — **generated** by `diesel_codegen` (`build_runner`).
+- `bin/example.dart` — seeds via `toInsert()`, mutates via `toUpdate()`, and exercises the query surface.
 
 ## What the codegen emits
 
-For each `@Queryable` class, `diesel_codegen` generates:
+- `@Queryable(table)` → a composable, alias-parameterized row reader `$XFromRow`,
+  a reusable `xMapper` (`RowMapper<X>`), and — when the class has `@Relation`s —
+  a **self-mapping join query** getter (e.g. `userQuery`/`postQuery`) that wires
+  up the joins, table aliases and nested decoding for you, and is still a
+  chainable `MappedQuery`.
+- `@Insertable(table)` → a `toInsert()` extension returning an `InsertStatement`.
+- `@AsChangeset(table)` → a `toUpdate()` extension returning an `UpdateStatement`
+  (the `SET` clause; you append the `.where(...)`).
 
-- a composable, alias-parameterized row reader `_$XFromRow`,
-- a reusable `xMapper` (`RowMapper<X>`),
-- and, when the class has `@Relation`s, a **self-mapping join query** getter
-  (e.g. `postQuery`, named after the class like `postMapper`) that wires up the joins, table aliases and the
-  nested decoding for you — and is still a chainable `MappedQuery`.
+Fields map to columns by name (camelCase ↔ snake_case). Override or tune a field
+with `@Column(SomeTable.col, readOnly: …, writeOnly: …)`: `readOnly` is read on
+SELECT but skipped on write (autoincrement PKs, server defaults); `writeOnly` is
+written but skipped by the row reader.
 
 `@Relation(fk, depth: n)` unrolls the join `n` levels deep with path-based
 aliases (`author`, `author_manager`, …), so even self-referential and cyclic
-relations are safe. Relation fields must be nullable and optional.
+relations are safe. Relation fields must be nullable and optional, and are
+skipped by the write derives.
 
 ## Run (from this directory)
 
@@ -53,6 +61,7 @@ Expected output:
 Posts with author + author.manager (most viewed first):
   Post("Hello", 150 views, by Bob (mgr: Carol))
   Post("World", 90 views, by Dave (mgr: Bob))
+  Post("Untitled", 5 views, by Carol)
 
 Active users that report to someone:
   User(#1 Bob, age 30, reports to Carol)

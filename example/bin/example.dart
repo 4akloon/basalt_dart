@@ -29,26 +29,13 @@ Future<void> _seed(Connection db) async {
 
   await db.transaction((tx) async {
     // Carol is the top manager (no manager_id), Bob reports to Carol, Dave to Bob.
-    await tx.execute(insertInto(Users.table)
-        .value(Users.id.set(2))
-        .value(Users.name.set('Carol'))
-        .value(Users.age.set(42))
-        .value(Users.active.set(1)));
-    await tx.execute(insertInto(Users.table)
-        .value(Users.id.set(1))
-        .value(Users.name.set('Bob'))
-        .value(Users.age.set(30))
-        .value(Users.active.set(1))
-        .value(Users.managerId.set(2)));
+    // `toInsert()` comes from `@Insertable` — it sets every writable column.
+    await tx.execute(const User(2, 'Carol', 42, 1).toInsert());
+    await tx.execute(const User(1, 'Bob', 30, 1, managerId: 2).toInsert());
 
     // A nested transaction becomes a SAVEPOINT under the hood.
     await tx.transaction((inner) async {
-      await inner.execute(insertInto(Users.table)
-          .value(Users.id.set(3))
-          .value(Users.name.set('Dave'))
-          .value(Users.age.set(25))
-          .value(Users.active.set(0))
-          .value(Users.managerId.set(1)));
+      await inner.execute(const User(3, 'Dave', 25, 0, managerId: 1).toInsert());
     });
 
     for (final (id, author, title, views) in const [
@@ -82,10 +69,11 @@ Future<void> _generatedQueries(Connection db) async {
 
   // A self-referential relation: users joined to their own manager row. The
   // getter is still a `MappedQuery`, so we can keep refining it.
+  // Combine predicates with `&`: chaining two `.where()` calls would replace the
+  // first (each `where` sets THE clause), silently dropping `active = 1`.
   final managed = await db.fetch(
     userQuery
-        .where(Users.active.eq(1))
-        .where(Users.managerId.isNotNull())
+        .where(Users.active.eq(1) & Users.managerId.isNotNull())
         .orderBy(Users.name.asc()),
   );
   print('\nActive users that report to someone:');
@@ -178,8 +166,15 @@ Future<void> _manualJoins(Connection db) async {
 Future<void> _writes(Connection db) async {
   _header('Writes (UPDATE / DELETE)');
 
+  // `toUpdate()` comes from `@AsChangeset` — it builds the SET clause from every
+  // writable column; we add the WHERE. Re-activate Dave by persisting his row.
+  final dave = (await db
+          .fetch(from(Users.table).where(Users.id.eq(3)).map(userMapper.read)))
+      .single;
   final activated = await db.execute(
-    update(Users.table).value(Users.active.set(1)).where(Users.id.eq(3)),
+    User(dave.id, dave.name, dave.age, 1, managerId: dave.managerId)
+        .toUpdate()
+        .where(Users.id.eq(dave.id)),
   );
   print('Reactivated $activated user(s).');
 

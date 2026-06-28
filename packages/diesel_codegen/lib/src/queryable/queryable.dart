@@ -1,6 +1,8 @@
+export 'changeset_emitter.dart';
 export 'class_info.dart';
 export 'column_arg.dart';
 export 'edge_analyzer.dart';
+export 'insert_emitter.dart';
 export 'model_code_generator.dart';
 export 'naming.dart';
 export 'query_getter_emitter.dart';

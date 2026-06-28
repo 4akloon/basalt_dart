@@ -29,9 +29,10 @@ final class ReaderEmitter {
 
     final args = <String>[
       for (final col in columnArgs)
-        col.isNamed
-            ? '${col.paramName}: r.get(src.col(${col.columnExpr}))'
-            : 'r.get(src.col(${col.columnExpr}))',
+        if (!col.writeOnly)
+          col.isNamed
+              ? '${col.paramName}: r.get(src.col(${col.columnExpr}))'
+              : 'r.get(src.col(${col.columnExpr}))',
       for (final rel in relationArgs) '${rel.fieldName}: ${rel.childCall}',
     ];
     final body = args.map((a) => '      $a,').join('\n');

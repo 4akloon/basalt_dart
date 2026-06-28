@@ -15,6 +15,7 @@ User $UserFromRow(RowReader r,
       r.get(src.col(Users.name)),
       r.get(src.col(Users.age)),
       r.get(src.col(Users.active)),
+      managerId: r.get(src.col(Users.managerId)),
       manager: (prefix.isEmpty ? (budget > 1 ? 1 : budget) : budget) <= 0
           ? null
           : r.get(src.col(Users.managerId)) == null
@@ -33,4 +34,30 @@ MappedQuery<User> get userQuery {
   return from(Users.table)
       .leftJoin(manager, on: Users.managerId.eqColumn(manager.col(Users.id)))
       .map((r) => $UserFromRow(r, Users.table, '', 1));
+}
+
+// **************************************************************************
+// InsertableGenerator
+// **************************************************************************
+
+extension UserInsert on User {
+  InsertStatement<Users> toInsert() => insertInto(Users.table)
+      .value(Users.id.set(id))
+      .value(Users.name.set(name))
+      .value(Users.age.set(age))
+      .value(Users.active.set(active))
+      .value(Users.managerId.set(managerId));
+}
+
+// **************************************************************************
+// AsChangesetGenerator
+// **************************************************************************
+
+extension UserChangeset on User {
+  UpdateStatement<Users> toUpdate() => update(Users.table)
+      .value(Users.id.set(id))
+      .value(Users.name.set(name))
+      .value(Users.age.set(age))
+      .value(Users.active.set(active))
+      .value(Users.managerId.set(managerId));
 }
