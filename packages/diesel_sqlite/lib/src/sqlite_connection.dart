@@ -40,7 +40,7 @@ final class SqliteConnection implements Connection {
       prepared.execute(params);
       return _db.updatedRows;
     } finally {
-      prepared.dispose();
+      prepared.close();
     }
   }
 
@@ -73,7 +73,7 @@ final class SqliteConnection implements Connection {
     try {
       prepared.execute(params);
     } finally {
-      prepared.dispose();
+      prepared.close();
     }
   }
 
@@ -152,5 +152,5 @@ final class SqliteConnection implements Connection {
   }
 
   @override
-  Future<void> close() async => _db.dispose();
+  Future<void> close() async => _db.close();
 }
