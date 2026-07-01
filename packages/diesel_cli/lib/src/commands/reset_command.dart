@@ -22,7 +22,7 @@ final class ResetCommand extends Command<int> {
       final file = File(path);
       if (file.existsSync()) file.deleteSync();
     }
-    final connection = const ConnectionFactory().open(config);
+    final connection = await const ConnectionFactory().open(config);
     try {
       final ran = await MigrationRunner(connection, config.migrationsDir).runPending();
       stdout.writeln('Database reset. Applied ${ran.length} migration(s).');

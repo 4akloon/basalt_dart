@@ -10,7 +10,7 @@ abstract base class DbCommand extends Command<int> {
       Future<int> Function(DieselConfig config, MigrationRunner runner)
           action) async {
     final config = DieselConfig.load();
-    final connection = const ConnectionFactory().open(config);
+    final connection = await const ConnectionFactory().open(config);
     try {
       return await action(config, MigrationRunner(connection, config.migrationsDir));
     } finally {

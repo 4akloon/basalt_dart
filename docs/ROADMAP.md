@@ -82,9 +82,8 @@ Done:
 - `Identifiable`: codegen detects the `PrimaryKey` column and emits a bare `findX(pkValue)` (e.g. `findUser(1)`)
   that composes the class's query getter with the type-safe `findBy`.
 
-## ◑ M5 — Postgres backend (`diesel_postgres`) (in progress)
+## ✅ M5 — Postgres backend (`diesel_postgres`) — done
 
-Done:
 - `PostgresDialect` — numbered `$N` placeholders (1-based) + double-quoted identifiers.
 - `PostgresConnection` (on `package:postgres` v3): the full `Connection` interface — `fetch`, `execute`,
   `executeReturning`, `executeSql`, `queryRaw`, `transaction` (with savepoints), and `introspect`
@@ -94,9 +93,11 @@ Done:
 - Cross-backend type codecs: `SqlType` encoders produce canonical Dart values and each dialect's `encodeParam`
   adapts them (SQLite `bool`→int / `DateTime`→epoch-ms; Postgres native), with lenient decoders. `int`/`text`/
   `real`/`bool`/`DateTime` all round-trip on both backends (verified against SQLite and PG 16).
+- CLI: `ConnectionFactory` opens `postgres://` (and `postgresql://`) URLs, so `diesel_dart` runs migrations and
+  `print-schema` against Postgres. Verified end-to-end vs PG 16 — the same migrations produce the same generated
+  schema as SQLite (true cross-tool DB compatibility).
 
-Remaining:
-- Wire `postgres://` into the CLI's `ConnectionFactory` (migrations + `print-schema` against Postgres).
+Later (optional):
 - Advanced PG types (`uuid`, `json`/`jsonb`, `numeric`, arrays).
 
 ## ⬜ M6 — Later

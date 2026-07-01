@@ -18,8 +18,8 @@ database_url: app.db        # SQLite path; sqlite:/sqlite://file: schemes are st
 migrations_dir: migrations
 ```
 
-The backend is chosen by URL scheme in `ConnectionFactory` (SQLite today; `postgres://` reserved for a future
-backend).
+The backend is chosen by URL scheme in `ConnectionFactory`: `postgres://` / `postgresql://` open the Postgres
+backend (e.g. `postgres://user:pass@host:5432/db?sslmode=disable`); anything else is a SQLite path.
 
 ## Commands
 

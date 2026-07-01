@@ -30,7 +30,8 @@ database_url: app.db        # SQLite path; DATABASE_URL env overrides this
 migrations_dir: migrations  # default: migrations
 ```
 
-The backend is selected by URL scheme (`ConnectionFactory`): SQLite today, `postgres://` reserved.
+The backend is selected by URL scheme (`ConnectionFactory`): `postgres://` / `postgresql://` use the Postgres
+backend (`postgres://user:pass@host:5432/db?sslmode=disable`); anything else is a SQLite path.
 
 ## Migration tracking
 
