@@ -85,15 +85,16 @@ Done:
 ## ◑ M5 — Postgres backend (`diesel_postgres`) (in progress)
 
 Done:
-- `PostgresDialect` — numbered `$N` placeholders (1-based) + double-quoted identifiers, validated through the
-  serializer (proves the core `QueryBuilder` is backend-agnostic). New `diesel_postgres` package.
+- `PostgresDialect` — numbered `$N` placeholders (1-based) + double-quoted identifiers.
+- `PostgresConnection` (on `package:postgres` v3): the full `Connection` interface — `fetch`, `execute`,
+  `executeReturning`, `executeSql`, `queryRaw`, `transaction` (with savepoints), and `introspect`
+  (`information_schema`: tables/columns/nullability/PKs/FKs). **Verified end-to-end against Postgres 16 (Docker)** —
+  the same typed query DSL runs on SQLite and Postgres unchanged.
 
 Remaining:
-- Driver-backed `PostgresConnection` on `package:postgres` (async) implementing the same `Connection` interface —
-  needs a live Postgres to verify. `ConnectionFactory` already dispatches the `postgres://` URL scheme.
-- Postgres introspection (`information_schema`/`pg_catalog`) for `print-schema`.
-- PG types (`timestamptz`, `uuid`, `json`/`jsonb`, `numeric`, arrays).
-- Real cross-tool Postgres compatibility (diesel's primary database).
+- Wire `postgres://` into the CLI's `ConnectionFactory` (migrations + `print-schema` against Postgres).
+- PG-native type codecs (`bool`, `timestamptz`, `uuid`, `json`/`jsonb`, `numeric`, arrays); today `int`/`text`/
+  `real` columns work directly (the SQLite-oriented `bool`/`DateTime` codecs need per-dialect handling).
 
 ## ⬜ M6 — Later
 

@@ -30,7 +30,7 @@ derive macros).
 |---|---|
 | [`diesel`](packages/diesel) | Dialect-agnostic core: types, schema, expressions, query/write builders, serializer, `Connection`/`SqlDialect`, annotations. |
 | [`diesel_sqlite`](packages/diesel_sqlite) | SQLite backend (`SqliteConnection` + `SqliteDialect`). |
-| [`diesel_postgres`](packages/diesel_postgres) | Postgres backend — `PostgresDialect` (`$N` placeholders) now; driver-backed connection WIP. |
+| [`diesel_postgres`](packages/diesel_postgres) | Postgres backend — `PostgresConnection` + `PostgresDialect` (on `package:postgres`). |
 | [`diesel_cli`](packages/diesel_cli) | The `diesel_dart` executable: migrations + `print-schema`. |
 | [`diesel_codegen`](packages/diesel_codegen) | `build_runner` derives for the annotations. |
 | [`example/`](example) | End-to-end demo. |

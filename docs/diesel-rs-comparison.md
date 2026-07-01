@@ -96,7 +96,7 @@ Dart generics + phantom types + `build_runner`/`source_gen` codegen. The goal is
 | Backend | diesel-rs | diesel_dart | Status |
 |---|---|---|---|
 | SQLite | ✅ | ✅ | ✅ |
-| Postgres | ✅ (primary) | `PostgresDialect` done (`$N` placeholders); driver-backed `Connection` + introspection WIP | ◑ (ROADMAP M5) |
+| Postgres | ✅ (primary) | `PostgresConnection` + introspection on `package:postgres`, verified vs PG 16 | ✅ (native type codecs + CLI wiring pending) |
 | MySQL | ✅ | — | ✗ (ROADMAP M6) |
 
 ## Database compatibility (sharing one DB with the Rust CLI)

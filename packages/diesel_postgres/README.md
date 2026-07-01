@@ -1,19 +1,39 @@
 # diesel_postgres
 
-The **Postgres backend** for [diesel_dart](../../README.md). Work in progress.
+The **Postgres backend** for [diesel_dart](../../README.md), on
+[`package:postgres`](https://pub.dev/packages/postgres) (v3).
 
 ## Status
 
-- ✅ `PostgresDialect` — numbered `$N` placeholders (1-based) and double-quoted identifiers. Paired with the core
-  `QueryBuilder`, it serializes Postgres-flavored SQL (proof that the builder is backend-agnostic):
+- ✅ `PostgresDialect` — numbered `$N` placeholders (1-based) and double-quoted identifiers.
+- ✅ `PostgresConnection` — the full `Connection` interface (`fetch`, `execute`, `executeReturning`,
+  `executeSql`, `queryRaw`, `transaction` with savepoints, `introspect`, `close`). The same typed query DSL runs
+  on SQLite and Postgres unchanged. Verified end-to-end against Postgres 16.
+- ✅ Introspection via `information_schema` (tables, columns, nullability, primary keys, foreign keys) for
+  `print-schema`.
+- ⬜ Wiring `postgres://` into the CLI `ConnectionFactory`, and PG-native type codecs (`bool`, `timestamptz`,
+  `uuid`, `json`/`jsonb`, `numeric`, arrays). Today `int` / `text` / `real` columns work directly; the built-in
+  `bool` / `DateTime` codecs are SQLite-oriented and need per-dialect handling.
 
-  ```dart
-  final (sql, params) = QueryBuilder(const PostgresDialect()).buildSelect(query);
-  // ... WHERE ("users"."age" > $1) ...
-  ```
-- ⬜ Driver-backed `PostgresConnection` (on `package:postgres`) implementing the same `Connection` interface as
-  `SqliteConnection` — requires a live Postgres to complete/verify.
-- ⬜ Postgres introspection (`information_schema` / `pg_catalog`) for `diesel_dart print-schema`.
-- ⬜ PG types (`timestamptz`, `uuid`, `json`/`jsonb`, `numeric`, arrays).
+## Usage
 
-See the [roadmap](../../docs/ROADMAP.md).
+```dart
+final db = await PostgresConnection.open(
+  host: 'localhost', port: 5432, database: 'app',
+  username: 'postgres', password: 'postgres', ssl: false);
+
+final rows = await from(Users.table).where(Users.age > 18).map(userMapper.read).load(db);
+await db.close();
+```
+
+## Running the tests
+
+The connection tests need a Postgres server; the suite **skips gracefully** if none is reachable:
+
+```sh
+docker run -d --name diesel_pg \
+  -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=diesel_test -p 5433:5432 postgres:16
+cd packages/diesel_postgres && dart test
+```
+
+Override the endpoint with `DIESEL_PG_HOST` / `DIESEL_PG_PORT` (defaults `localhost:5433`).

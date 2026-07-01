@@ -6,4 +6,5 @@
 /// they'll implement the same `Connection` interface the SQLite backend does.
 library;
 
+export 'src/postgres_connection.dart';
 export 'src/postgres_dialect.dart';

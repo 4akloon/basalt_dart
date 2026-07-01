@@ -9,6 +9,7 @@ resolution: workspace
 
 dependencies:
   diesel: ^0.0.1
+  postgres: ^3.0.0
 
 dev_dependencies:
   test: ^1.26.3
