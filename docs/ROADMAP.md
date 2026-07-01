@@ -52,14 +52,21 @@ diesel-named methods alongside the Dart-idiomatic ones, so code reads like diese
 Deferred: insert `values([...])` (the manual builder's `values` field name clashes; `value()` and the generated
 `toInsert()` already cover it), and `find(pk)` (moved to M4 — needs a type-safe primary key).
 
-## ⬜ M3 — SQLite query parity
+## ◑ M3 — SQLite query parity (in progress)
 
-- Aggregates (`count`/`sum`/`avg`/`min`/`max`), `group_by` / `having`.
-- `distinct`.
-- `RETURNING` (insert → `get_result`/`get_results`).
-- Batch insert (`values` of a list).
+Done:
+- Aggregates (`countAll()`, `col.count()/sum()/avg()/min()/max()`), `groupBy` / `having`, and `distinct`. Built on
+  a generalized projection (`Selection` = a column or an `Aggregate`), with new AST nodes (`FunctionNode`,
+  `Projection`) so the serializer stays schema-free; `RowReader.get` now accepts any `Selection`. Aggregates
+  currently target int columns.
+- `RETURNING` on writes: `stmt.returning([cols]).map(...)` + `Connection.executeReturning` (returns decoded rows;
+  unlocks reading autoincrement ids after insert). UPDATE/DELETE RETURNING work too.
+- Batch insert: `insertInto(t).values([[...], [...]])` (multiple rows in one statement); composes with RETURNING.
+
+Remaining:
 - Upsert (`ON CONFLICT … DO UPDATE/NOTHING`).
-- Raw typed SQL fragments (`sql<T>(...)`) as an escape hatch inside the builder.
+- Raw typed SQL fragments (`sql<T>(...)`) as an escape hatch (selectable + readable).
+- Aggregates over non-int numeric columns.
 
 ## ⬜ M4 — Derive parity
 

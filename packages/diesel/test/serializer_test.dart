@@ -118,6 +118,30 @@ void main() {
       expect(sql, 'INSERT INTO "profiles" ("id", "bio") VALUES (?, ?)');
       expect(params, [1, null]);
     });
+
+    test('batch INSERT emits one VALUES tuple per row', () {
+      final (sql, params) = compileWrite(
+        insertInto(Users.table).values([
+          [Users.id.set(1), Users.name.set('Bob')],
+          [Users.id.set(2), Users.name.set('Alice')],
+        ]),
+      );
+      expect(sql, 'INSERT INTO "users" ("id", "name") VALUES (?, ?), (?, ?)');
+      expect(params, [1, 'Bob', 2, 'Alice']);
+    });
+
+    test('INSERT ... RETURNING uses unqualified column names', () {
+      final rq = insertInto(Users.table)
+          .value(Users.name.set('Bob'))
+          .returning([Users.id, Users.name]).map((r) => r.get(Users.id));
+      final (sql, params) = QueryBuilder(const _TestDialect())
+          .buildWrite(rq.statement, returning: rq.returning);
+      expect(
+        sql,
+        'INSERT INTO "users" ("name") VALUES (?) RETURNING "id", "name"',
+      );
+      expect(params, ['Bob']);
+    });
   });
 
   group('JOIN serialization', () {
@@ -276,6 +300,52 @@ void main() {
       );
       expect(aSql, cSql);
       expect(aParams, cParams);
+    });
+  });
+
+  group('aggregates, distinct, group by', () {
+    test('SELECT DISTINCT', () {
+      final (sql, _) = compileSelect(
+        from(Users.table).select([Users.active]).distinct().map(_ignore),
+      );
+      expect(sql, 'SELECT DISTINCT "users"."active" FROM "users"');
+    });
+
+    test('COUNT(*) is aliased', () {
+      final (sql, _) =
+          compileSelect(from(Users.table).select([countAll()]).map(_ignore));
+      expect(sql, 'SELECT COUNT(*) AS "count" FROM "users"');
+    });
+
+    test('column aggregates count/sum/avg', () {
+      final (sql, _) = compileSelect(
+        from(Users.table)
+            .select([Users.age.count(), Users.age.sum(), Users.age.avg()])
+            .map(_ignore),
+      );
+      expect(
+        sql,
+        'SELECT COUNT("users"."age") AS "count_age", '
+        'SUM("users"."age") AS "sum_age", '
+        'AVG("users"."age") AS "avg_age" FROM "users"',
+      );
+    });
+
+    test('GROUP BY + HAVING over an aggregate', () {
+      final (sql, params) = compileSelect(
+        from(Posts.table)
+            .select([Posts.authorId, Posts.views.sum()])
+            .groupBy([Posts.authorId])
+            .having(Posts.views.sum().gt(100))
+            .map(_ignore),
+      );
+      expect(
+        sql,
+        'SELECT "posts"."author_id", SUM("posts"."views") AS "sum_views" '
+        'FROM "posts" GROUP BY "posts"."author_id" '
+        'HAVING (SUM("posts"."views") > ?)',
+      );
+      expect(params, [100]);
     });
   });
 }

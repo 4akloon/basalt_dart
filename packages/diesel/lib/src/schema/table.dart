@@ -2,6 +2,17 @@ import '../ast/sql_node.dart';
 import '../expression/expression.dart';
 import '../types/sql_type.dart';
 
+/// Something selectable in a query's projection — a [TableColumn] or an
+/// [Aggregate]. Carries the SQL [selectExpression] to emit, an optional `AS`
+/// [selectAlias], the [readKey] a `RowReader` uses to find the value, and the
+/// [SqlType] used to decode it.
+abstract interface class Selection<T> {
+  SqlType<T> get type;
+  SqlNode get selectExpression;
+  String? get selectAlias;
+  String get readKey;
+}
+
 /// A typed column belonging to table `Tbl`.
 ///
 /// Sealed: every column is exactly one of [ValueColumn], [PrimaryKey] or [Ref]
@@ -10,15 +21,24 @@ import '../types/sql_type.dart';
 ///
 /// Columns are declared `static const` on a table marker class so the same
 /// object serves the query builder (`Users.age.gt(18)`) and derive annotations
-/// (`@Column(Users.name)`) — annotation arguments must be constants.
-sealed class TableColumn<T, Tbl> {
+/// (`@Column(Users.name)`) — annotation arguments must be constants. A column is
+/// also a [Selection], so it can be read straight out of a row.
+sealed class TableColumn<T, Tbl> implements Selection<T> {
   const TableColumn();
 
   String get table;
   String get name;
+  @override
   SqlType<T> get type;
 
   ColumnNode get node => ColumnNode(table, name);
+
+  @override
+  SqlNode get selectExpression => node;
+  @override
+  String? get selectAlias => null;
+  @override
+  String get readKey => '$table.$name';
 
   Expression<bool, Tbl> eq(T value) => _cmp('=', value);
   Expression<bool, Tbl> ne(T value) => _cmp('<>', value);
@@ -39,6 +59,10 @@ sealed class TableColumn<T, Tbl> {
 
   /// diesel-style alias for [isIn] (`eq_any`).
   Expression<bool, Tbl> eqAny(List<T> values) => isIn(values);
+
+  /// `COUNT(this_column)` — a non-null count, selectable and readable.
+  Aggregate<int> count() =>
+      Aggregate('COUNT', node, 'count_$name', SqlType.integer);
 
   Expression<bool, Tbl> between(T low, T high) =>
       Expression(BetweenNode(node, type.encode(low), type.encode(high)));
@@ -105,6 +129,54 @@ final class Ref<T, Tbl, Target> extends TableColumn<T, Tbl> {
 extension TextColumn<Tbl> on TableColumn<String, Tbl> {
   Expression<bool, Tbl> like(String pattern) =>
       Expression(BinaryNode(node, 'LIKE', ParamNode(pattern)));
+}
+
+/// An aggregate over a column (or `COUNT(*)`), usable in `select(...)` and
+/// readable from a row via its [readKey]. Build with [TableColumn.count],
+/// [countAll], or the numeric aggregates ([IntColumnAggregates]).
+final class Aggregate<T> implements Selection<T> {
+  final String function;
+  final SqlNode? _argument;
+  final String _alias;
+  @override
+  final SqlType<T> type;
+  const Aggregate(this.function, this._argument, this._alias, this.type);
+
+  @override
+  SqlNode get selectExpression => FunctionNode(function, _argument);
+  @override
+  String? get selectAlias => _alias;
+  @override
+  String get readKey => _alias;
+
+  // Comparisons for `HAVING` (e.g. `Posts.views.sum().gt(100)`). Aggregates
+  // aren't table-scoped, so these use the relaxed `Object?` scope.
+  Expression<bool, Object?> eq(T value) => _cmp('=', value);
+  Expression<bool, Object?> ne(T value) => _cmp('<>', value);
+  Expression<bool, Object?> gt(T value) => _cmp('>', value);
+  Expression<bool, Object?> ge(T value) => _cmp('>=', value);
+  Expression<bool, Object?> lt(T value) => _cmp('<', value);
+  Expression<bool, Object?> le(T value) => _cmp('<=', value);
+
+  Expression<bool, Object?> _cmp(String op, T value) =>
+      Expression(BinaryNode(selectExpression, op, ParamNode(type.encode(value))));
+}
+
+/// `COUNT(*)` — total row count.
+Aggregate<int> countAll() =>
+    const Aggregate('COUNT', null, 'count', SqlType.integer);
+
+/// Numeric aggregates for integer columns. SQLite returns NULL over an empty
+/// set, so these decode to nullable Dart types.
+extension IntColumnAggregates<Tbl> on TableColumn<int, Tbl> {
+  Aggregate<int?> sum() =>
+      Aggregate('SUM', node, 'sum_$name', SqlType.integerOrNull);
+  Aggregate<double?> avg() =>
+      Aggregate('AVG', node, 'avg_$name', SqlType.realOrNull);
+  Aggregate<int?> min() =>
+      Aggregate('MIN', node, 'min_$name', SqlType.integerOrNull);
+  Aggregate<int?> max() =>
+      Aggregate('MAX', node, 'max_$name', SqlType.integerOrNull);
 }
 
 /// A column-scoped assignment (`column = value`) for INSERT/UPDATE. The value is

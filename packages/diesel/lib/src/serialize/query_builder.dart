@@ -20,7 +20,18 @@ final class QueryBuilder {
   CompiledQuery buildSelect(SelectQuery<dynamic> stmt) {
     _validateScope(stmt);
     _sql.write('SELECT ');
-    _sql.write(stmt.projection.map(_column).join(', '));
+    if (stmt.isDistinct) _sql.write('DISTINCT ');
+    var firstProjection = true;
+    for (final p in stmt.projection) {
+      if (!firstProjection) _sql.write(', ');
+      firstProjection = false;
+      _writeNode(p.expression);
+      if (p.alias case final alias?) {
+        _sql
+          ..write(' AS ')
+          ..write(dialect.quoteIdentifier(alias));
+      }
+    }
     _sql
       ..write(' FROM ')
       ..write(dialect.quoteIdentifier(stmt.fromTable));
@@ -47,6 +58,14 @@ final class QueryBuilder {
     if (stmt.whereNode case final where?) {
       _sql.write(' WHERE ');
       _writeNode(where);
+    }
+    if (stmt.groupByColumns.isNotEmpty) {
+      _sql.write(' GROUP BY ');
+      _sql.write(stmt.groupByColumns.map(_column).join(', '));
+    }
+    if (stmt.havingNode case final having?) {
+      _sql.write(' HAVING ');
+      _writeNode(having);
     }
     if (stmt.orderings.isNotEmpty) {
       _sql.write(' ORDER BY ');
@@ -76,11 +95,17 @@ final class QueryBuilder {
       stmt.fromAlias ?? stmt.fromTable,
       for (final j in stmt.joins) j.alias ?? j.table,
     };
-    for (final column in stmt.projection) {
-      _checkColumn(column, allowed);
+    for (final p in stmt.projection) {
+      _checkNode(p.expression, allowed);
     }
     for (final ordering in stmt.orderings) {
       _checkColumn(ordering.column, allowed);
+    }
+    for (final column in stmt.groupByColumns) {
+      _checkColumn(column, allowed);
+    }
+    if (stmt.havingNode case final having?) {
+      _checkNode(having, allowed);
     }
     for (final join in stmt.joins) {
       _checkNode(join.on, allowed);
@@ -113,24 +138,55 @@ final class QueryBuilder {
         _checkNode(target, allowed);
       case BetweenNode(:final target):
         _checkNode(target, allowed);
+      case FunctionNode(:final argument):
+        if (argument != null) _checkNode(argument, allowed);
     }
   }
 
-  CompiledQuery buildWrite(WriteStatement stmt) => switch (stmt) {
-        InsertStatement() => _buildInsert(stmt),
-        UpdateStatement() => _buildUpdate(stmt),
-        DeleteStatement() => _buildDelete(stmt),
-      };
-
-  CompiledQuery _buildInsert(InsertStatement stmt) {
-    final cols = stmt.columns.map(dialect.quoteIdentifier).join(', ');
-    final placeholders = stmt.values.map(_bind).join(', ');
-    _sql.write(
-        'INSERT INTO ${dialect.quoteIdentifier(stmt.table)} ($cols) VALUES ($placeholders)');
+  /// Serializes a write, optionally appending a `RETURNING` clause (its columns
+  /// are referenced unqualified, as SQLite requires).
+  CompiledQuery buildWrite(WriteStatement stmt,
+      {List<Projection> returning = const []}) {
+    switch (stmt) {
+      case InsertStatement():
+        _writeInsert(stmt);
+      case UpdateStatement():
+        _writeUpdate(stmt);
+      case DeleteStatement():
+        _writeDelete(stmt);
+    }
+    if (returning.isNotEmpty) {
+      _sql.write(' RETURNING ');
+      var first = true;
+      for (final p in returning) {
+        if (!first) _sql.write(', ');
+        first = false;
+        final expr = p.expression;
+        if (expr is ColumnNode) {
+          _sql.write(dialect.quoteIdentifier(expr.name));
+        } else {
+          _writeNode(expr);
+        }
+        if (p.alias case final alias?) {
+          _sql
+            ..write(' AS ')
+            ..write(dialect.quoteIdentifier(alias));
+        }
+      }
+    }
     return _result();
   }
 
-  CompiledQuery _buildUpdate(UpdateStatement stmt) {
+  void _writeInsert(InsertStatement stmt) {
+    final cols = stmt.columns.map(dialect.quoteIdentifier).join(', ');
+    final tuples = [
+      for (final row in stmt.rows) '(${row.map(_bind).join(', ')})',
+    ].join(', ');
+    _sql.write(
+        'INSERT INTO ${dialect.quoteIdentifier(stmt.table)} ($cols) VALUES $tuples');
+  }
+
+  void _writeUpdate(UpdateStatement stmt) {
     final assignments = [
       for (var i = 0; i < stmt.assignColumns.length; i++)
         '${dialect.quoteIdentifier(stmt.assignColumns[i])} = ${_bind(stmt.assignValues[i])}',
@@ -140,16 +196,14 @@ final class QueryBuilder {
       _sql.write(' WHERE ');
       _writeNode(where);
     }
-    return _result();
   }
 
-  CompiledQuery _buildDelete(DeleteStatement stmt) {
+  void _writeDelete(DeleteStatement stmt) {
     _sql.write('DELETE FROM ${dialect.quoteIdentifier(stmt.table)}');
     if (stmt.whereNode case final where?) {
       _sql.write(' WHERE ');
       _writeNode(where);
     }
-    return _result();
   }
 
   void _writeNode(SqlNode node) {
@@ -180,6 +234,16 @@ final class QueryBuilder {
           ..write(_bind(low))
           ..write(' AND ')
           ..write(_bind(high));
+      case FunctionNode(:final name, :final argument):
+        _sql
+          ..write(name)
+          ..write('(');
+        if (argument == null) {
+          _sql.write('*');
+        } else {
+          _writeNode(argument);
+        }
+        _sql.write(')');
     }
   }
 

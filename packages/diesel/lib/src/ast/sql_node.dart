@@ -55,11 +55,27 @@ final class BetweenNode extends SqlNode {
   const BetweenNode(this.target, this.low, this.high);
 }
 
+/// A function call, e.g. `COUNT(*)` or `SUM("users"."age")`. [argument] is null
+/// for `COUNT(*)`.
+final class FunctionNode extends SqlNode {
+  final String name;
+  final SqlNode? argument;
+  const FunctionNode(this.name, this.argument);
+}
+
 /// One `ORDER BY` term.
 final class Ordering {
   final ColumnNode column;
   final bool ascending;
   const Ordering(this.column, {this.ascending = true});
+}
+
+/// One item in a SELECT projection: an [expression] plus an optional `AS` [alias].
+/// Built from a `Selection` so the serializer stays purely AST-level.
+final class Projection {
+  final SqlNode expression;
+  final String? alias;
+  const Projection(this.expression, {this.alias});
 }
 
 enum JoinKind { inner, left }

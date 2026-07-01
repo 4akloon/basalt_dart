@@ -242,4 +242,86 @@ void main() {
       throwsStateError,
     );
   });
+
+  test('aggregates, distinct, group by', () async {
+    await seed(); // Bob 30 active, Alice 17 inactive, Carol 42 active
+
+    final count = countAll();
+    final total =
+        await from(Users.table).select([count]).map((r) => r.get(count)).first(db);
+    expect(total, 3);
+
+    final sumAge = Users.age.sum();
+    final avgAge = Users.age.avg();
+    final (sum, avg) = await from(Users.table)
+        .select([sumAge, avgAge])
+        .map((r) => (r.get(sumAge), r.get(avgAge)))
+        .first(db);
+    expect(sum, 89); // 30 + 17 + 42
+    expect(avg, closeTo(29.666, 0.01));
+
+    final distinctActive = await from(Users.table)
+        .select([Users.active])
+        .distinct()
+        .orderBy(Users.active.asc())
+        .map((r) => r.get(Users.active))
+        .load(db);
+    expect(distinctActive, [false, true]); // 0/1 decode to bool
+
+    final perGroup = Users.id.count();
+    final groups = await from(Users.table)
+        .select([Users.active, perGroup])
+        .groupBy([Users.active])
+        .orderBy(Users.active.asc())
+        .map((r) => (r.get(Users.active), r.get(perGroup)))
+        .load(db);
+    expect(groups, [(false, 1), (true, 2)]);
+  });
+
+  test('batch insert writes multiple rows (+ RETURNING)', () async {
+    final n = await db.execute(
+      insertInto(Users.table).values([
+        [Users.id.set(1), Users.name.set('A'), Users.age.set(20), Users.active.set(true)],
+        [Users.id.set(2), Users.name.set('B'), Users.age.set(21), Users.active.set(false)],
+      ]),
+    );
+    expect(n, 2);
+
+    // Batch + RETURNING with ids omitted → autoincrement continues from 2.
+    final ids = await db.executeReturning(
+      insertInto(Users.table).values([
+        [Users.name.set('C'), Users.age.set(22), Users.active.set(true)],
+        [Users.name.set('D'), Users.age.set(23), Users.active.set(true)],
+      ]).returning([Users.id]).map((r) => r.get(Users.id)),
+    );
+    expect(ids, [3, 4]);
+
+    final names = await from(Users.table)
+        .order(Users.id.asc())
+        .map((r) => r.get(Users.name))
+        .load(db);
+    expect(names, ['A', 'B', 'C', 'D']);
+  });
+
+  test('INSERT/UPDATE ... RETURNING', () async {
+    // users.id is INTEGER PRIMARY KEY, so omitting it autoincrements the rowid;
+    // RETURNING surfaces the generated id (the earlier last-insert-id gap).
+    final inserted = await db.executeReturning(
+      insertInto(Users.table)
+          .value(Users.name.set('Zoe'))
+          .value(Users.age.set(20))
+          .value(Users.active.set(true))
+          .returning([Users.id]).map((r) => r.get(Users.id)),
+    );
+    expect(inserted, [1]);
+
+    final updated = await db.executeReturning(
+      update(Users.table)
+          .value(Users.age.set(21))
+          .where(Users.id.eq(1))
+          .returning([Users.id, Users.age]).map(
+              (r) => (r.get(Users.id), r.get(Users.age))),
+    );
+    expect(updated, [(1, 21)]);
+  });
 }

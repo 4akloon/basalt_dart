@@ -9,8 +9,11 @@ abstract interface class SelectQuery<R> {
   String get fromTable;
   String? get fromAlias;
   List<Join> get joins;
-  List<ColumnNode> get projection;
+  List<Projection> get projection;
+  bool get isDistinct;
   SqlNode? get whereNode;
+  List<ColumnNode> get groupByColumns;
+  SqlNode? get havingNode;
   List<Ordering> get orderings;
   int? get limitCount;
   int? get offsetCount;
@@ -32,13 +35,17 @@ final class RowMapper<R> {
 /// compile-time scoped to that table) and becomes `Object?` once joined (the
 /// relaxed scope; the serializer then validates table membership at build time).
 /// The projection defaults to every column of the involved tables; narrow it
-/// with [select]. Call [map] to finish with a typed row decoder.
+/// with [select] (columns and/or aggregates). Call [map] to finish with a typed
+/// row decoder.
 final class Query<Scope> {
   final String fromTable;
   final String? fromAlias;
   final List<Join> joins;
-  final List<TableColumn<Object?, Object?>> projection;
+  final List<Selection<Object?>> projection;
+  final bool isDistinct;
   final SqlNode? whereNode;
+  final List<TableColumn<Object?, Object?>> groupByColumns;
+  final SqlNode? havingNode;
   final List<Ordering> orderings;
   final int? limitCount;
   final int? offsetCount;
@@ -48,7 +55,10 @@ final class Query<Scope> {
     this.fromAlias,
     this.joins = const [],
     required this.projection,
+    this.isDistinct = false,
     this.whereNode,
+    this.groupByColumns = const [],
+    this.havingNode,
     this.orderings = const [],
     this.limitCount,
     this.offsetCount,
@@ -75,10 +85,23 @@ final class Query<Scope> {
   /// diesel-style alias for [orderBy] (appends an ordering).
   Query<Scope> order(Ordering ordering) => orderBy(ordering);
 
-  /// Narrow the projection to exactly [columns] (default is all columns of the
-  /// involved tables).
-  Query<Scope> select(List<TableColumn<Object?, Object?>> columns) =>
-      _copy(projection: columns);
+  /// Emit `SELECT DISTINCT`.
+  Query<Scope> distinct([bool value = true]) => _copy(distinct: value);
+
+  /// `GROUP BY` the given columns — typically paired with aggregate selections
+  /// in [select] and a [having] predicate.
+  Query<Scope> groupBy(List<TableColumn<Object?, Object?>> columns) =>
+      _copy(groupByColumns: columns);
+
+  /// `HAVING` predicate over grouped rows (use with [groupBy]). Uses the relaxed
+  /// `Object?` scope because HAVING is typically written over aggregates.
+  Query<Scope> having(Expression<bool, Object?> predicate) =>
+      _copy(havingNode: predicate.node);
+
+  /// Narrow the projection to exactly [selections] — columns and/or aggregates
+  /// (default is all columns of the involved tables).
+  Query<Scope> select(List<Selection<Object?>> selections) =>
+      _copy(projection: selections);
 
   /// INNER JOIN [other] (a [TableRef] or an aliased [TableAlias]). Provide the
   /// condition either explicitly (`on:`) or by a foreign key (`onFk:` — its
@@ -108,7 +131,10 @@ final class Query<Scope> {
       fromAlias: fromAlias,
       joins: [...joins, Join(kind, other.table, onNode, alias: other.alias)],
       projection: [...projection, ...other.columns],
+      isDistinct: isDistinct,
       whereNode: whereNode,
+      groupByColumns: groupByColumns,
+      havingNode: havingNode,
       orderings: orderings,
       limitCount: limitCount,
       offsetCount: offsetCount,
@@ -124,8 +150,11 @@ final class Query<Scope> {
   MappedQuery<R> mapWith<R>(RowMapper<R> mapper) => map(mapper.read);
 
   Query<Scope> _copy({
-    List<TableColumn<Object?, Object?>>? projection,
+    List<Selection<Object?>>? projection,
+    bool? distinct,
     SqlNode? whereNode,
+    List<TableColumn<Object?, Object?>>? groupByColumns,
+    SqlNode? havingNode,
     List<Ordering>? orderings,
     int? limitCount,
     int? offsetCount,
@@ -135,7 +164,10 @@ final class Query<Scope> {
         fromAlias: fromAlias,
         joins: joins,
         projection: projection ?? this.projection,
+        isDistinct: distinct ?? isDistinct,
         whereNode: whereNode ?? this.whereNode,
+        groupByColumns: groupByColumns ?? this.groupByColumns,
+        havingNode: havingNode ?? this.havingNode,
         orderings: orderings ?? this.orderings,
         limitCount: limitCount ?? this.limitCount,
         offsetCount: offsetCount ?? this.offsetCount,
@@ -147,7 +179,7 @@ final class Query<Scope> {
 Query<Tbl> from<Tbl>(QuerySource<Tbl> source) => Query<Tbl>(
       fromTable: source.table,
       fromAlias: source.alias,
-      projection: source.columns,
+      projection: [...source.columns],
     );
 
 /// A [Query] finished with a decoder — the executable [SelectQuery].
@@ -160,7 +192,7 @@ final class MappedQuery<R> implements SelectQuery<R> {
       : _query = query,
         _columnIndex = {
           for (var i = 0; i < query.projection.length; i++)
-            '${query.projection[i].table}.${query.projection[i].name}': i,
+            query.projection[i].readKey: i,
         };
 
   @override
@@ -170,10 +202,19 @@ final class MappedQuery<R> implements SelectQuery<R> {
   @override
   List<Join> get joins => _query.joins;
   @override
-  List<ColumnNode> get projection =>
-      [for (final c in _query.projection) c.node];
+  List<Projection> get projection => [
+        for (final s in _query.projection)
+          Projection(s.selectExpression, alias: s.selectAlias),
+      ];
+  @override
+  bool get isDistinct => _query.isDistinct;
   @override
   SqlNode? get whereNode => _query.whereNode;
+  @override
+  List<ColumnNode> get groupByColumns =>
+      [for (final c in _query.groupByColumns) c.node];
+  @override
+  SqlNode? get havingNode => _query.havingNode;
   @override
   List<Ordering> get orderings => _query.orderings;
   @override
@@ -202,5 +243,15 @@ final class MappedQuery<R> implements SelectQuery<R> {
       MappedQuery._(_query.filter(predicate), _decode);
 
   /// diesel-style alias for [orderBy] (appends an ordering).
-  MappedQuery<R> order(Ordering ordering) => orderBy(ordering);
+  MappedQuery<R> order(Ordering ordering) =>
+      MappedQuery._(_query.order(ordering), _decode);
+
+  MappedQuery<R> distinct([bool value = true]) =>
+      MappedQuery._(_query.distinct(value), _decode);
+
+  MappedQuery<R> groupBy(List<TableColumn<Object?, Object?>> columns) =>
+      MappedQuery._(_query.groupBy(columns), _decode);
+
+  MappedQuery<R> having(Expression<bool, dynamic> predicate) =>
+      MappedQuery._(_query.having(predicate), _decode);
 }

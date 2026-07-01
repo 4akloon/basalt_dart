@@ -49,7 +49,9 @@ Dart SDK constraint: `>=3.5.0 <4.0.0`.
 - **Two-tier join safety:** single-table `from(t)` is `Query<Tbl>` (compile-time-scoped `where`); after a
   join it relaxes to `Query<Object?>` and `QueryBuilder._validateScope` validates at build time that every
   referenced table is in the FROM/JOIN clause (`StateError` otherwise).
-- **`RowReader` reads by `table.name`** (alias-aware), not by position — order-independent and join-safe.
+- **`RowReader` reads by selection key** — columns by `table.name` (alias-aware), aggregates by alias — not
+  by position (order-independent, join-safe). The projection is a `List<Selection>` (columns *or* `Aggregate`s);
+  the serializer consumes AST-level `Projection`s so it stays schema-free.
 - **Codegen pipeline:** `EdgeAnalyzer` (analyzer → model) → pure string emitters
   (`ReaderEmitter` / `InsertEmitter` / `ChangesetEmitter` / relation emitters) → `SharedPartBuilder` with
   **three** generators (`QueryableGenerator`, `InsertableGenerator`, `AsChangesetGenerator`) registered in

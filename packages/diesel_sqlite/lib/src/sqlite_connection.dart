@@ -45,6 +45,14 @@ final class SqliteConnection implements Connection {
   }
 
   @override
+  Future<List<R>> executeReturning<R>(ReturningQuery<R> statement) async {
+    final (sql, params) = QueryBuilder(_dialect)
+        .buildWrite(statement.statement, returning: statement.returning);
+    final result = _db.select(sql, params);
+    return [for (final row in result) statement.rowDecoder(row.values)];
+  }
+
+  @override
   Future<List<Map<String, Object?>>> queryRaw(String sql,
       [List<Object?> params = const []]) async {
     final result = params.isEmpty ? _db.select(sql) : _db.select(sql, params);

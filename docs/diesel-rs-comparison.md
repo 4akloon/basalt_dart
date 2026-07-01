@@ -36,8 +36,8 @@ Dart generics + phantom types + `build_runner`/`source_gen` codegen. The goal is
 | Self-join / aliases | table aliasing | `Users.table.aliased('mgr')` + `alias.col(...)` | ✅ |
 | `find(pk)` | `users.find(1)` | — | ✗ (ROADMAP M4 — needs typed PK) |
 | `first` / `optional` | `.first(conn)` / `.optional()` | `query.first(db)` / `query.optional(db)` | ✅ |
-| distinct | `.distinct()` | — | ✗ (ROADMAP M3) |
-| Aggregates / group by / having | `count`, `sum`, `.group_by`, `.having` | — | ✗ (ROADMAP M3) |
+| distinct | `.distinct()` | `.distinct()` | ✅ |
+| Aggregates / group by / having | `count`, `sum`, `.group_by`, `.having` | `countAll()`/`col.count()`/`sum()`/`avg()`/`min()`/`max()`, `.groupBy()`, `.having()` | ✅ (int cols; other numeric types WIP) |
 | Subqueries / EXISTS | supported | — | ✗ |
 | Raw typed SQL | `sql::<T>("…")` | `executeSql`/`queryRaw` (untyped) | ◑ (typed fragments: ROADMAP M3) |
 
@@ -50,8 +50,8 @@ Dart generics + phantom types + `build_runner`/`source_gen` codegen. The goal is
 |---|---|---|---|
 | Load rows | `.load::<T>(conn)` / `.get_results` | `db.fetch(...)`, or `query.load(db)` / `first(db)` / `optional(db)` | ✅ |
 | Run write | `.execute(conn)` | `db.execute(stmt)` → affected rows | ✅ |
-| RETURNING | `.get_result(conn)` after insert | — | ✗ (ROADMAP M3) |
-| Batch insert | `insert_into(t).values(vec)` | one row per `InsertStatement` | ✗ (ROADMAP M3) |
+| RETURNING | `.get_result(conn)` after insert | `stmt.returning([...]).map(...)` + `db.executeReturning` | ✅ |
+| Batch insert | `insert_into(t).values(vec)` | `insertInto(t).values([[...], [...]])` | ✅ |
 | Upsert / ON CONFLICT | `.on_conflict(...)` | — | ✗ (ROADMAP M3) |
 | Transactions | `conn.transaction(\|\| …)` | `db.transaction((tx) async { … })` | ✅ |
 | Nested tx (savepoints) | yes | yes | ✅ |

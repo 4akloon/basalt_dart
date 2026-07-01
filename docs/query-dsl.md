@@ -116,6 +116,38 @@ Values go through `column.set(value)`, whose type is pinned by the column — `U
 error. `@Insertable` / `@AsChangeset` generate `toInsert()` / `toUpdate()` so you can write whole objects
 (see [derives.md](derives.md)).
 
+### Batch insert
+
+Insert several rows in one statement with `.values([...])` — a list of rows; columns are taken from the first
+row (don't mix with the single-row `.value(...)`):
+
+```dart
+await db.execute(insertInto(Users.table).values([
+  [Users.name.set('A'), Users.age.set(20), Users.active.set(true)],
+  [Users.name.set('B'), Users.age.set(21), Users.active.set(false)],
+]));
+```
+
+It composes with RETURNING (below) to get one row back per inserted row.
+
+### RETURNING
+
+Get columns back from a write with `.returning([...]).map(...)` run via `db.executeReturning(...)` — handy for
+database-generated ids:
+
+```dart
+final ids = await db.executeReturning(
+  insertInto(Users.table)
+      .value(Users.name.set('Bob'))     // id omitted → autoincrement
+      .returning([Users.id])
+      .map((r) => r.get(Users.id)),
+);
+final newId = ids.single;
+```
+
+Works for UPDATE/DELETE too. RETURNING columns are referenced unqualified (as SQLite requires); values are read
+back positionally through the same `RowReader`.
+
 ## Execution
 
 ```dart
@@ -131,6 +163,49 @@ await db.close();
 
 The API is async-first; SQLite returns completed futures, and an async backend (Postgres) implements the same
 `Connection` interface unchanged.
+
+## Aggregates & grouping
+
+Aggregate helpers are *selections* — pass them to `.select([...])` and read them back with the same handle:
+
+```dart
+// COUNT(*) over the whole table.
+final total = countAll();
+final n = await from(Users.table).select([total]).map((r) => r.get(total)).first(db);
+
+// Column aggregates (currently on int columns): count / sum / avg / min / max.
+final sumAge = Users.age.sum();   // int?
+final avgAge = Users.age.avg();   // double?
+final (s, a) = await from(Users.table)
+    .select([sumAge, avgAge])
+    .map((r) => (r.get(sumAge), r.get(avgAge)))
+    .first(db);
+```
+
+`GROUP BY` + `HAVING` (HAVING is written over an aggregate comparison):
+
+```dart
+final perAuthor = Posts.views.sum();
+final rows = await from(Posts.table)
+    .select([Posts.authorId, perAuthor])
+    .groupBy([Posts.authorId])
+    .having(perAuthor.gt(100))
+    .map((r) => (r.get(Posts.authorId), r.get(perAuthor)))
+    .load(db);
+```
+
+`SELECT DISTINCT` via `.distinct()`:
+
+```dart
+final kinds = await from(Users.table)
+    .select([Users.active])
+    .distinct()
+    .map((r) => r.get(Users.active))
+    .load(db);
+```
+
+> Aggregate result types: `count`/`countAll` → `int`; `sum`/`min`/`max` → `int?`; `avg` → `double?`
+> (SQLite returns NULL over an empty set). Non-int numeric columns are on the roadmap.
 
 ## diesel-style aliases
 

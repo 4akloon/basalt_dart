@@ -18,6 +18,10 @@ abstract interface class Connection {
   /// Runs an INSERT/UPDATE/DELETE and returns the affected-row count.
   Future<int> execute(WriteStatement statement);
 
+  /// Runs an INSERT/UPDATE/DELETE ... RETURNING and maps each returned row to
+  /// `R` (build with `stmt.returning([...]).map(...)`).
+  Future<List<R>> executeReturning<R>(ReturningQuery<R> statement);
+
   /// Escape hatch for raw SQL (DDL, migrations).
   Future<void> executeSql(String sql, [List<Object?> params]);
 
