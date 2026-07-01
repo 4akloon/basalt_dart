@@ -82,12 +82,18 @@ Done:
 - `Identifiable`: codegen detects the `PrimaryKey` column and emits a bare `findX(pkValue)` (e.g. `findUser(1)`)
   that composes the class's query getter with the type-safe `findBy`.
 
-## ⬜ M5 — Postgres backend (`diesel_postgres`)
+## ◑ M5 — Postgres backend (`diesel_postgres`) (in progress)
 
-- Async driver, `$N` placeholders, `information_schema`/`pg_catalog` introspection.
+Done:
+- `PostgresDialect` — numbered `$N` placeholders (1-based) + double-quoted identifiers, validated through the
+  serializer (proves the core `QueryBuilder` is backend-agnostic). New `diesel_postgres` package.
+
+Remaining:
+- Driver-backed `PostgresConnection` on `package:postgres` (async) implementing the same `Connection` interface —
+  needs a live Postgres to verify. `ConnectionFactory` already dispatches the `postgres://` URL scheme.
+- Postgres introspection (`information_schema`/`pg_catalog`) for `print-schema`.
 - PG types (`timestamptz`, `uuid`, `json`/`jsonb`, `numeric`, arrays).
-- Real cross-tool Postgres compatibility (diesel's primary database). `ConnectionFactory` already dispatches
-  on the `postgres://` URL scheme.
+- Real cross-tool Postgres compatibility (diesel's primary database).
 
 ## ⬜ M6 — Later
 

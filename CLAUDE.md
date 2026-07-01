@@ -21,6 +21,7 @@ trivially unit-testable and makes new backends drop-in.
 |---|---|---|
 | `packages/diesel` | `diesel` | Dialect-agnostic core: types, schema, expressions, query/write builders, serializer, `Connection`/`SqlDialect` interfaces, annotations. No driver dep. |
 | `packages/diesel_sqlite` | `diesel_sqlite` | SQLite backend: `SqliteConnection` + `SqliteDialect` (on `package:sqlite3`). |
+| `packages/diesel_postgres` | `diesel_postgres` | Postgres backend: `PostgresDialect` (`$N` placeholders); driver-backed `Connection` WIP. |
 | `packages/diesel_cli` | `diesel_cli` | `diesel_dart` executable: migrations + `print-schema`. |
 | `packages/diesel_codegen` | `diesel_codegen` | `build_runner`/`source_gen` derives for the annotations. |
 | `example/` | `diesel_example` | End-to-end demo (migrations → schema → models → queries). |
