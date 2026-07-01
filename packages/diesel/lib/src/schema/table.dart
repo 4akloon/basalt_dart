@@ -1,17 +1,30 @@
+/// Typed schema surface: columns, selectables, and query sources.
+///
+/// The sealed [TableColumn] hierarchy ([ValueColumn] / [PrimaryKey] / [Ref])
+/// is split across `part` files under `columns/`; the other selectables and
+/// query sources each live in their own `part` file in this directory. Parts
+/// keep the whole thing one library so the sealed switch stays exhaustive and
+/// library-private members ([OnConflict]-style constructors, `_cmp`, …) stay
+/// shared.
+library;
+
 import '../ast/sql_node.dart';
 import '../expression/expression.dart';
 import '../types/sql_type.dart';
 
-/// Something selectable in a query's projection — a [TableColumn] or an
-/// [Aggregate]. Carries the SQL [selectExpression] to emit, an optional `AS`
-/// [selectAlias], the [readKey] a `RowReader` uses to find the value, and the
-/// [SqlType] used to decode it.
-abstract interface class Selection<T> {
-  SqlType<T> get type;
-  SqlNode get selectExpression;
-  String? get selectAlias;
-  String get readKey;
-}
+part 'aggregate.dart';
+part 'column_value.dart';
+part 'columns/double_column_aggregates.dart';
+part 'columns/int_column_aggregates.dart';
+part 'columns/primary_key.dart';
+part 'columns/ref.dart';
+part 'columns/text_column.dart';
+part 'columns/value_column.dart';
+part 'query_source.dart';
+part 'raw_selection.dart';
+part 'selection.dart';
+part 'table_alias.dart';
+part 'table_ref.dart';
 
 /// A typed column belonging to table `Tbl`.
 ///
@@ -91,206 +104,4 @@ sealed class TableColumn<T, Tbl> implements Selection<T> {
 
   Expression<bool, Tbl> _cmp(String op, T value) =>
       Expression(BinaryNode(node, op, ParamNode(type.encode(value))));
-}
-
-/// An ordinary value column.
-final class ValueColumn<T, Tbl> extends TableColumn<T, Tbl> {
-  @override
-  final String table;
-  @override
-  final String name;
-  @override
-  final SqlType<T> type;
-  const ValueColumn(this.table, this.name, this.type);
-}
-
-/// A primary-key column.
-final class PrimaryKey<T, Tbl> extends TableColumn<T, Tbl> {
-  @override
-  final String table;
-  @override
-  final String name;
-  @override
-  final SqlType<T> type;
-  const PrimaryKey(this.table, this.name, this.type);
-}
-
-/// A foreign-key column on `Tbl` that references the [PrimaryKey] of `Target`.
-/// Referencing the PK column object (a leaf) keeps it const-cycle free even for
-/// mutual foreign keys, and the shared `T` enforces matching key types.
-final class Ref<T, Tbl, Target> extends TableColumn<T, Tbl> {
-  @override
-  final String table;
-  @override
-  final String name;
-  @override
-  final SqlType<T> type;
-  final PrimaryKey<T, Target> references;
-  const Ref(this.table, this.name, this.type, {required this.references});
-}
-
-/// `LIKE` only makes sense for text columns.
-extension TextColumn<Tbl> on TableColumn<String, Tbl> {
-  Expression<bool, Tbl> like(String pattern) =>
-      Expression(BinaryNode(node, 'LIKE', ParamNode(pattern)));
-}
-
-/// An aggregate over a column (or `COUNT(*)`), usable in `select(...)` and
-/// readable from a row via its [readKey]. Build with [TableColumn.count],
-/// [countAll], or the numeric aggregates ([IntColumnAggregates]).
-final class Aggregate<T> implements Selection<T> {
-  final String function;
-  final SqlNode? _argument;
-  final String _alias;
-  @override
-  final SqlType<T> type;
-  const Aggregate(this.function, this._argument, this._alias, this.type);
-
-  @override
-  SqlNode get selectExpression => FunctionNode(function, _argument);
-  @override
-  String? get selectAlias => _alias;
-  @override
-  String get readKey => _alias;
-
-  // Comparisons for `HAVING` (e.g. `Posts.views.sum().gt(100)`). Aggregates
-  // aren't table-scoped, so these use the relaxed `Object?` scope.
-  Expression<bool, Object?> eq(T value) => _cmp('=', value);
-  Expression<bool, Object?> ne(T value) => _cmp('<>', value);
-  Expression<bool, Object?> gt(T value) => _cmp('>', value);
-  Expression<bool, Object?> ge(T value) => _cmp('>=', value);
-  Expression<bool, Object?> lt(T value) => _cmp('<', value);
-  Expression<bool, Object?> le(T value) => _cmp('<=', value);
-
-  Expression<bool, Object?> _cmp(String op, T value) =>
-      Expression(BinaryNode(selectExpression, op, ParamNode(type.encode(value))));
-}
-
-/// `COUNT(*)` — total row count.
-Aggregate<int> countAll() =>
-    const Aggregate('COUNT', null, 'count', SqlType.integer);
-
-/// Numeric aggregates for integer columns. SQLite returns NULL over an empty
-/// set, so these decode to nullable Dart types.
-extension IntColumnAggregates<Tbl> on TableColumn<int, Tbl> {
-  Aggregate<int?> sum() =>
-      Aggregate('SUM', node, 'sum_$name', SqlType.integerOrNull);
-  Aggregate<double?> avg() =>
-      Aggregate('AVG', node, 'avg_$name', SqlType.realOrNull);
-  Aggregate<int?> min() =>
-      Aggregate('MIN', node, 'min_$name', SqlType.integerOrNull);
-  Aggregate<int?> max() =>
-      Aggregate('MAX', node, 'max_$name', SqlType.integerOrNull);
-}
-
-/// Numeric aggregates for double columns.
-extension DoubleColumnAggregates<Tbl> on TableColumn<double, Tbl> {
-  Aggregate<double?> sum() =>
-      Aggregate('SUM', node, 'sum_$name', SqlType.realOrNull);
-  Aggregate<double?> avg() =>
-      Aggregate('AVG', node, 'avg_$name', SqlType.realOrNull);
-  Aggregate<double?> min() =>
-      Aggregate('MIN', node, 'min_$name', SqlType.realOrNull);
-  Aggregate<double?> max() =>
-      Aggregate('MAX', node, 'max_$name', SqlType.realOrNull);
-}
-
-/// A raw, typed SQL selection (escape hatch): emitted verbatim in the projection
-/// and read back by its [readKey] (the [raw] `as` alias). Uses `?` placeholders.
-final class RawSelection<T> implements Selection<T> {
-  final String _sql;
-  final List<Object?> _params;
-  final String _alias;
-  @override
-  final SqlType<T> type;
-  const RawSelection(this._sql, this._params, this._alias, this.type);
-
-  @override
-  SqlNode get selectExpression => RawNode(_sql, _params);
-  @override
-  String? get selectAlias => _alias;
-  @override
-  String get readKey => _alias;
-}
-
-/// A raw typed SQL selection for `select([...])`, read back via `r.get(...)`.
-/// Write valid SQL yourself (qualify columns); bind values with `?` + [params].
-Selection<T> raw<T>(String sql, SqlType<T> type,
-        {required String as, List<Object?> params = const []}) =>
-    RawSelection(sql, params, as, type);
-
-/// A raw boolean SQL fragment for `having` (and joined `where`/`filter`) — uses
-/// the relaxed `Object?` scope; `?` placeholders bind [params] in order.
-Expression<bool, Object?> rawCondition(String sql,
-        {List<Object?> params = const []}) =>
-    Expression(RawNode(sql, params));
-
-/// A column-scoped assignment (`column = value`) for INSERT/UPDATE. The value is
-/// already encoded; `Tbl` keeps it bound to its table.
-final class ColumnValue<Tbl> {
-  final String column;
-  final Object? encoded;
-
-  /// When true this is an upsert `excluded.<column>` reference (no bound value)
-  /// rather than a literal — see [TableColumn.setToExcluded].
-  final bool isExcluded;
-  const ColumnValue(this.column, this.encoded, {this.isExcluded = false});
-}
-
-/// Something a query can read FROM or JOIN: a real table ([TableRef]) or an
-/// aliased one ([TableAlias]). `columns` are bound to the source's effective
-/// name (`alias ?? table`), so reads/predicates address the right instance.
-abstract interface class QuerySource<Tbl> {
-  String get table; // real table name (FROM/JOIN target)
-  String? get alias; // alias, or null
-  List<TableColumn<Object?, Object?>> get columns;
-
-  /// Rebinds a base-table column to this source's effective name (identity on
-  /// [TableRef], alias-bound on [TableAlias]).
-  TableColumn<T, Tbl> col<T>(TableColumn<T, Tbl> column);
-}
-
-/// Table descriptor: its name and full column list (the default projection for
-/// `from`/joins). Cycle-safe even with foreign keys because [Ref] points at a
-/// [PrimaryKey] leaf, not back at a `TableRef`.
-final class TableRef<Tbl> implements QuerySource<Tbl> {
-  final String name;
-  @override
-  final List<TableColumn<Object?, Object?>> columns;
-  const TableRef(this.name, this.columns);
-
-  @override
-  String get table => name;
-  @override
-  String? get alias => null;
-
-  @override
-  TableColumn<T, Tbl> col<T>(TableColumn<T, Tbl> column) => column;
-
-  /// Alias this table for a self-join — `Users.table.aliased('sender')`.
-  TableAlias<Tbl> aliased(String alias) => TableAlias(alias, this);
-}
-
-/// An aliased table for self-joins (the same table joined more than once).
-/// Columns are rebound to the alias, so `sender.col(Users.id)` serializes as
-/// `"sender"."id"` and is distinct from `recipient.col(Users.id)`.
-final class TableAlias<Tbl> implements QuerySource<Tbl> {
-  @override
-  final String alias;
-  final TableRef<Tbl> base;
-  const TableAlias(this.alias, this.base);
-
-  @override
-  String get table => base.name;
-
-  @override
-  List<TableColumn<Object?, Object?>> get columns => [
-        for (final c in base.columns)
-          ValueColumn<Object?, Tbl>(alias, c.name, c.type)
-      ];
-
-  /// An alias-bound version of one of the base table's columns.
-  @override
-  TableColumn<T, Tbl> col<T>(TableColumn<T, Tbl> column) =>
-      ValueColumn<T, Tbl>(alias, column.name, column.type);
 }

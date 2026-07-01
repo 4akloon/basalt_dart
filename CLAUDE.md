@@ -62,6 +62,11 @@ Dart SDK constraint: `>=3.5.0 <4.0.0`.
   `&` (`q.where(a.eq(1) & b.isNotNull())`), or use `.filter()` — the diesel-style method that ANDs repeated
   calls. (`Query.where` does `_copy(whereNode: ...)`; `filter` ANDs onto the existing `whereNode`.)
 - **Avoid `!`** — prefer `if (x case final y?)` / pattern matching for null handling (project style).
+- **One class per file; sealed hierarchies use `part`s.** Each class/DTO lives in its own file. A `sealed`
+  hierarchy can't span libraries, so its entry file (`sql_node.dart` / `table.dart` / `write.dart`) is a
+  `library;` that holds the base + `part` directives and centralizes the imports, and every variant is a
+  one-class `part of` file under a subdir (`ast/nodes/` + `ast/clauses/`, `schema/columns/` + `schema/*`,
+  `query/writes/`). Add a new variant = new `part` file + a `part` line in the entry.
 
 ## Where things live (core, `packages/diesel/lib/src/`)
 
