@@ -140,6 +140,8 @@ final class QueryBuilder {
         _checkNode(target, allowed);
       case FunctionNode(:final argument):
         if (argument != null) _checkNode(argument, allowed);
+      case RawNode():
+        break;
     }
   }
 
@@ -268,6 +270,9 @@ final class QueryBuilder {
           _writeNode(argument);
         }
         _sql.write(')');
+      case RawNode(:final sql, :final params):
+        _sql.write(sql);
+        _params.addAll(params);
     }
   }
 

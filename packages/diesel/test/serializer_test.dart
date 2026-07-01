@@ -363,6 +363,35 @@ void main() {
       );
     });
 
+    test('double-column aggregates use REAL', () {
+      const rating = ValueColumn<double, Posts>('posts', 'rating', SqlType.real);
+      final (sql, _) = compileSelect(
+        from(Posts.table).select([rating.avg(), rating.max()]).map(_ignore),
+      );
+      expect(
+        sql,
+        'SELECT AVG("posts"."rating") AS "avg_rating", '
+        'MAX("posts"."rating") AS "max_rating" FROM "posts"',
+      );
+    });
+
+    test('raw() selection emits verbatim SQL, params ordered before WHERE', () {
+      final next =
+          raw<int>('"users"."age" + ?', SqlType.integer, as: 'next_age', params: [1]);
+      final (sql, params) = compileSelect(
+        from(Users.table)
+            .select([Users.id, next])
+            .where(Users.id.eq(5))
+            .map(_ignore),
+      );
+      expect(
+        sql,
+        'SELECT "users"."id", "users"."age" + ? AS "next_age" '
+        'FROM "users" WHERE ("users"."id" = ?)',
+      );
+      expect(params, [1, 5]); // raw (projection) param precedes the WHERE param
+    });
+
     test('GROUP BY + HAVING over an aggregate', () {
       final (sql, params) = compileSelect(
         from(Posts.table)

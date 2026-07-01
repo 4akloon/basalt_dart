@@ -166,6 +166,22 @@ await db.execute(insertInto(Users.table)
     .doUpdate([Users.name.setToExcluded(), Users.age.set(0)]));
 ```
 
+### Raw SQL fragments (escape hatch)
+
+For expressions the builder doesn't model, `raw<T>(sql, type, as:)` is a typed, readable selection, and
+`rawCondition(sql)` is a boolean fragment for `having` (or a joined `where`). Use `?` placeholders + `params`:
+
+```dart
+final nextAge = raw<int>('age + 1', SqlType.integer, as: 'next_age');
+final rows = await from(Users.table)
+    .select([Users.id, nextAge])
+    .map((r) => (r.get(Users.id), r.get(nextAge)))
+    .load(db);
+```
+
+You write the SQL (qualify columns yourself); it's non-portable by nature. For full escape hatches, see
+`Connection.executeSql` / `queryRaw`.
+
 ## Execution
 
 ```dart

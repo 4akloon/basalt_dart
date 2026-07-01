@@ -49,25 +49,22 @@ diesel-named methods alongside the Dart-idiomatic ones, so code reads like diese
   query builder free of any `Connection` dependency.
 - Name mapping documented in [`diesel-rs-comparison.md`](diesel-rs-comparison.md) and [`query-dsl.md`](query-dsl.md).
 
-Deferred: insert `values([...])` (the manual builder's `values` field name clashes; `value()` and the generated
-`toInsert()` already cover it), and `find(pk)` (moved to M4 — needs a type-safe primary key).
+Deferred: `find(pk)` (moved to M4 — needs a type-safe primary key). (Insert `values([...])` was later delivered
+as M3 batch insert.)
 
-## ◑ M3 — SQLite query parity (in progress)
+## ✅ M3 — SQLite query parity — done
 
-Done:
 - Aggregates (`countAll()`, `col.count()/sum()/avg()/min()/max()`), `groupBy` / `having`, and `distinct`. Built on
   a generalized projection (`Selection` = a column or an `Aggregate`), with new AST nodes (`FunctionNode`,
-  `Projection`) so the serializer stays schema-free; `RowReader.get` now accepts any `Selection`. Aggregates
-  currently target int columns.
+  `Projection`) so the serializer stays schema-free; `RowReader.get` now accepts any `Selection`. Aggregates cover
+  int and double columns.
 - `RETURNING` on writes: `stmt.returning([cols]).map(...)` + `Connection.executeReturning` (returns decoded rows;
   unlocks reading autoincrement ids after insert). UPDATE/DELETE RETURNING work too.
 - Batch insert: `insertInto(t).values([[...], [...]])` (multiple rows in one statement); composes with RETURNING.
 - Upsert: `insertInto(t).onConflict([cols]).doNothing()` / `.doUpdate([col.setToExcluded()/col.set(v)])`
   (`ON CONFLICT … DO NOTHING / DO UPDATE SET`, with `excluded.col` support).
-
-Remaining:
-- Raw typed SQL fragments (`sql<T>(...)`) as an escape hatch (selectable + readable).
-- Aggregates over non-int numeric columns.
+- Raw typed SQL escape hatch: `raw<T>(sql, type, as:)` (typed, readable selection) and `rawCondition(sql)`
+  (boolean fragment for `having`/joined `where`), with `?` placeholders. Also `executeSql`/`queryRaw` for full raw.
 
 ## ⬜ M4 — Derive parity
 

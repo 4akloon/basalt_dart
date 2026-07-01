@@ -341,6 +341,17 @@ void main() {
     expect(age, 40); // literal
   });
 
+  test('raw() typed SQL selection', () async {
+    await seed(); // Bob = 30
+    final nextAge = raw<int>('age + 1', SqlType.integer, as: 'next_age');
+    final rows = await from(Users.table)
+        .select([Users.name, nextAge])
+        .where(Users.id.eq(1))
+        .map((r) => (r.get(Users.name), r.get(nextAge)))
+        .load(db);
+    expect(rows, [('Bob', 31)]);
+  });
+
   test('INSERT/UPDATE ... RETURNING', () async {
     // users.id is INTEGER PRIMARY KEY, so omitting it autoincrements the rowid;
     // RETURNING surfaces the generated id (the earlier last-insert-id gap).

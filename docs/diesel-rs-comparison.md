@@ -37,9 +37,9 @@ Dart generics + phantom types + `build_runner`/`source_gen` codegen. The goal is
 | `find(pk)` | `users.find(1)` | — | ✗ (ROADMAP M4 — needs typed PK) |
 | `first` / `optional` | `.first(conn)` / `.optional()` | `query.first(db)` / `query.optional(db)` | ✅ |
 | distinct | `.distinct()` | `.distinct()` | ✅ |
-| Aggregates / group by / having | `count`, `sum`, `.group_by`, `.having` | `countAll()`/`col.count()`/`sum()`/`avg()`/`min()`/`max()`, `.groupBy()`, `.having()` | ✅ (int cols; other numeric types WIP) |
+| Aggregates / group by / having | `count`, `sum`, `.group_by`, `.having` | `countAll()`/`col.count()`/`sum()`/`avg()`/`min()`/`max()`, `.groupBy()`, `.having()` | ✅ (int + double cols) |
 | Subqueries / EXISTS | supported | — | ✗ |
-| Raw typed SQL | `sql::<T>("…")` | `executeSql`/`queryRaw` (untyped) | ◑ (typed fragments: ROADMAP M3) |
+| Raw typed SQL | `sql::<T>("…")` | `raw<T>(sql, type, as:)` selection + `rawCondition(...)`; also `executeSql`/`queryRaw` | ✅ |
 
 > **Behavioral note:** diesel_dart provides `.filter()` (ANDs repeated calls, like diesel-rs) alongside
 > `.where()` (replaces the predicate — combine with `&` for a single call).
