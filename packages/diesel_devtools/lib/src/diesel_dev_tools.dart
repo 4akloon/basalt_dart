@@ -1,5 +1,6 @@
 import 'package:diesel/diesel.dart';
 
+import 'registered_instance.dart';
 import 'service_extensions.dart';
 
 /// Process-wide registry of live [Connection]s exposed to the DevTools
@@ -47,24 +48,6 @@ final class DieselDevTools {
 
   /// Looks up the live connection for an instance id, or `null` if unknown.
   static Connection? connection(String id) => _entries[id]?.conn;
-}
-
-/// Public description of a registered connection.
-final class RegisteredInstance {
-  final String id;
-  final String name;
-
-  /// Backend kind — `sqlite`, `postgres`, or the runtime type name.
-  final String backend;
-
-  const RegisteredInstance({
-    required this.id,
-    required this.name,
-    required this.backend,
-  });
-
-  Map<String, Object?> toJson() =>
-      {'id': id, 'name': name, 'backend': backend};
 }
 
 final class _Entry {

@@ -1,15 +1,15 @@
 import 'package:diesel/diesel.dart';
 
+import 'diesel_dev_tools.dart';
+import 'dto/column_dto.dart';
+import 'dto/foreign_key_dto.dart';
+import 'dto/schema_dto.dart';
+import 'dto/sql_result_dto.dart';
+import 'dto/table_dto.dart';
+import 'dto/table_page_dto.dart';
+import 'inspector_exception.dart';
 import 'json_codec.dart';
-import 'registry.dart';
-
-/// Raised when the inspector is asked about an unknown instance/table/column.
-final class InspectorException implements Exception {
-  final String message;
-  const InspectorException(this.message);
-  @override
-  String toString() => 'InspectorException: $message';
-}
+import 'registered_instance.dart';
 
 /// Backend-agnostic core behind the `ext.diesel.*` service extensions.
 ///
@@ -162,128 +162,4 @@ final class InspectorService {
 
   static String _quote(String identifier) =>
       '"${identifier.replaceAll('"', '""')}"';
-}
-
-/// Schema of one instance.
-final class SchemaDto {
-  final List<TableDto> tables;
-  const SchemaDto(this.tables);
-  Map<String, Object?> toJson() =>
-      {'tables': [for (final t in tables) t.toJson()]};
-}
-
-final class TableDto {
-  final String name;
-  final List<ColumnDto> columns;
-  const TableDto(this.name, this.columns);
-  Map<String, Object?> toJson() =>
-      {'name': name, 'columns': [for (final c in columns) c.toJson()]};
-}
-
-final class ColumnDto {
-  final String name;
-
-  /// Canonical [ColumnType] name (e.g. `integer`, `text`, `dateTime`).
-  final String type;
-  final String rawType;
-  final bool isNullable;
-  final bool isPrimaryKey;
-  final ForeignKeyDto? foreignKey;
-
-  const ColumnDto({
-    required this.name,
-    required this.type,
-    required this.rawType,
-    required this.isNullable,
-    required this.isPrimaryKey,
-    this.foreignKey,
-  });
-
-  Map<String, Object?> toJson() => {
-        'name': name,
-        'type': type,
-        'rawType': rawType,
-        'isNullable': isNullable,
-        'isPrimaryKey': isPrimaryKey,
-        if (foreignKey case final fk?) 'foreignKey': fk.toJson(),
-      };
-}
-
-final class ForeignKeyDto {
-  final String table;
-  final String column;
-  const ForeignKeyDto(this.table, this.column);
-  Map<String, Object?> toJson() => {'table': table, 'column': column};
-}
-
-/// One page of table rows.
-final class TablePageDto {
-  final List<String> columns;
-  final List<List<Object?>> rows;
-  final int total;
-  final int limit;
-  final int offset;
-
-  const TablePageDto({
-    required this.columns,
-    required this.rows,
-    required this.total,
-    required this.limit,
-    required this.offset,
-  });
-
-  Map<String, Object?> toJson() => {
-        'columns': columns,
-        'rows': rows,
-        'total': total,
-        'limit': limit,
-        'offset': offset,
-      };
-}
-
-/// Result of [InspectorService.runSql]: a `read` (columns+rows), a `write`
-/// (executed, optional affected count), or an `error`.
-final class SqlResultDto {
-  final List<String>? columns;
-  final List<List<Object?>>? rows;
-  final int? affected;
-  final bool truncated;
-  final String? error;
-
-  const SqlResultDto.read({
-    required this.columns,
-    required this.rows,
-    this.truncated = false,
-  })  : affected = null,
-        error = null;
-
-  const SqlResultDto.write({this.affected})
-      : columns = null,
-        rows = null,
-        truncated = false,
-        error = null;
-
-  const SqlResultDto.error(this.error)
-      : columns = null,
-        rows = null,
-        affected = null,
-        truncated = false;
-
-  bool get isError => error != null;
-  bool get isRead => columns != null;
-
-  String get kind => error != null
-      ? 'error'
-      : columns != null
-          ? 'read'
-          : 'write';
-
-  Map<String, Object?> toJson() => {
-        'kind': kind,
-        if (columns case final c?) 'columns': c,
-        if (rows case final r?) 'rows': r,
-        if (affected case final a?) 'affected': a,
-        if (truncated) 'truncated': true,
-        if (error case final e?) 'error': e,
-      };
 }

@@ -3,6 +3,11 @@ import 'package:flutter/material.dart';
 
 import 'data_grid.dart';
 import 'inspector_client.dart';
+import 'models/instance_info.dart';
+import 'models/schema_info.dart';
+import 'models/sql_result.dart';
+import 'models/table_info.dart';
+import 'models/table_page.dart';
 
 class InspectorScreen extends StatefulWidget {
   const InspectorScreen({super.key});
