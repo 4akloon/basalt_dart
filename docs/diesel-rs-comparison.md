@@ -52,7 +52,7 @@ Dart generics + phantom types + `build_runner`/`source_gen` codegen. The goal is
 | Run write | `.execute(conn)` | `db.execute(stmt)` → affected rows | ✅ |
 | RETURNING | `.get_result(conn)` after insert | `stmt.returning([...]).map(...)` + `db.executeReturning` | ✅ |
 | Batch insert | `insert_into(t).values(vec)` | `insertInto(t).values([[...], [...]])` | ✅ |
-| Upsert / ON CONFLICT | `.on_conflict(...)` | — | ✗ (ROADMAP M3) |
+| Upsert / ON CONFLICT | `.on_conflict(...)` | `insertInto(t).onConflict([...]).doNothing()` / `.doUpdate([...])` (with `excluded`) | ✅ |
 | Transactions | `conn.transaction(\|\| …)` | `db.transaction((tx) async { … })` | ✅ |
 | Nested tx (savepoints) | yes | yes | ✅ |
 | Raw SQL | `sql_query` | `executeSql` / `queryRaw` | ✅ |

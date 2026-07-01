@@ -184,6 +184,30 @@ final class QueryBuilder {
     ].join(', ');
     _sql.write(
         'INSERT INTO ${dialect.quoteIdentifier(stmt.table)} ($cols) VALUES $tuples');
+    if (stmt.conflictTarget case final target?) {
+      _sql.write(' ON CONFLICT');
+      if (target.isNotEmpty) {
+        _sql.write(' (${target.map(dialect.quoteIdentifier).join(', ')})');
+      }
+      if (stmt.conflictDoNothing) {
+        _sql.write(' DO NOTHING');
+      } else {
+        _sql.write(' DO UPDATE SET ');
+        var first = true;
+        for (final a in stmt.conflictSet) {
+          if (!first) _sql.write(', ');
+          first = false;
+          _sql
+            ..write(dialect.quoteIdentifier(a.column))
+            ..write(' = ');
+          if (a.isExcluded) {
+            _sql.write('excluded.${dialect.quoteIdentifier(a.column)}');
+          } else {
+            _sql.write(_bind(a.encoded));
+          }
+        }
+      }
+    }
   }
 
   void _writeUpdate(UpdateStatement stmt) {

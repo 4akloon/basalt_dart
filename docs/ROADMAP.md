@@ -62,9 +62,10 @@ Done:
 - `RETURNING` on writes: `stmt.returning([cols]).map(...)` + `Connection.executeReturning` (returns decoded rows;
   unlocks reading autoincrement ids after insert). UPDATE/DELETE RETURNING work too.
 - Batch insert: `insertInto(t).values([[...], [...]])` (multiple rows in one statement); composes with RETURNING.
+- Upsert: `insertInto(t).onConflict([cols]).doNothing()` / `.doUpdate([col.setToExcluded()/col.set(v)])`
+  (`ON CONFLICT … DO NOTHING / DO UPDATE SET`, with `excluded.col` support).
 
 Remaining:
-- Upsert (`ON CONFLICT … DO UPDATE/NOTHING`).
 - Raw typed SQL fragments (`sql<T>(...)`) as an escape hatch (selectable + readable).
 - Aggregates over non-int numeric columns.
 

@@ -303,6 +303,44 @@ void main() {
     expect(names, ['A', 'B', 'C', 'D']);
   });
 
+  test('upsert: ON CONFLICT DO NOTHING / DO UPDATE', () async {
+    await db.execute(insertInto(Users.table)
+        .value(Users.id.set(1))
+        .value(Users.name.set('Bob'))
+        .value(Users.age.set(30))
+        .value(Users.active.set(true)));
+
+    // DO NOTHING: the conflicting insert is ignored.
+    await db.execute(insertInto(Users.table)
+        .value(Users.id.set(1))
+        .value(Users.name.set('NOPE'))
+        .value(Users.age.set(0))
+        .value(Users.active.set(false))
+        .onConflict([Users.id]).doNothing());
+    expect(
+      await from(Users.table)
+          .where(Users.id.eq(1))
+          .map((r) => r.get(Users.name))
+          .first(db),
+      'Bob',
+    );
+
+    // DO UPDATE: name from excluded (proposed) value, age from a literal.
+    await db.execute(insertInto(Users.table)
+        .value(Users.id.set(1))
+        .value(Users.name.set('Bobby'))
+        .value(Users.age.set(31))
+        .value(Users.active.set(true))
+        .onConflict([Users.id]).doUpdate(
+            [Users.name.setToExcluded(), Users.age.set(40)]));
+    final (name, age) = await from(Users.table)
+        .where(Users.id.eq(1))
+        .map((r) => (r.get(Users.name), r.get(Users.age)))
+        .first(db);
+    expect(name, 'Bobby'); // excluded.name
+    expect(age, 40); // literal
+  });
+
   test('INSERT/UPDATE ... RETURNING', () async {
     // users.id is INTEGER PRIMARY KEY, so omitting it autoincrements the rowid;
     // RETURNING surfaces the generated id (the earlier last-insert-id gap).

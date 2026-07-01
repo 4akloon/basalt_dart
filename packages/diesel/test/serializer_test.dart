@@ -119,6 +119,38 @@ void main() {
       expect(params, [1, null]);
     });
 
+    test('INSERT ... ON CONFLICT DO NOTHING', () {
+      final (sql, params) = compileWrite(
+        insertInto(Users.table)
+            .value(Users.id.set(1))
+            .value(Users.name.set('Bob'))
+            .onConflict([Users.id]).doNothing(),
+      );
+      expect(
+        sql,
+        'INSERT INTO "users" ("id", "name") VALUES (?, ?) '
+        'ON CONFLICT ("id") DO NOTHING',
+      );
+      expect(params, [1, 'Bob']);
+    });
+
+    test('INSERT ... ON CONFLICT DO UPDATE (excluded + literal)', () {
+      final (sql, params) = compileWrite(
+        insertInto(Users.table)
+            .value(Users.id.set(1))
+            .value(Users.name.set('Bob'))
+            .value(Users.age.set(30))
+            .onConflict([Users.id])
+            .doUpdate([Users.name.setToExcluded(), Users.age.set(99)]),
+      );
+      expect(
+        sql,
+        'INSERT INTO "users" ("id", "name", "age") VALUES (?, ?, ?) '
+        'ON CONFLICT ("id") DO UPDATE SET "name" = excluded."name", "age" = ?',
+      );
+      expect(params, [1, 'Bob', 30, 99]);
+    });
+
     test('batch INSERT emits one VALUES tuple per row', () {
       final (sql, params) = compileWrite(
         insertInto(Users.table).values([

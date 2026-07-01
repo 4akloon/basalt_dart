@@ -148,6 +148,24 @@ final newId = ids.single;
 Works for UPDATE/DELETE too. RETURNING columns are referenced unqualified (as SQLite requires); values are read
 back positionally through the same `RowReader`.
 
+### Upsert (ON CONFLICT)
+
+`insertInto(...).onConflict([cols])` then `.doNothing()` or `.doUpdate([...])`:
+
+```dart
+// Ignore duplicates.
+await db.execute(insertInto(Users.table)
+    .value(Users.id.set(1)).value(Users.name.set('Bob'))
+    .onConflict([Users.id]).doNothing());
+
+// Replace on conflict: setToExcluded() takes the value from the row that failed
+// to insert; set(v) uses a literal.
+await db.execute(insertInto(Users.table)
+    .value(Users.id.set(1)).value(Users.name.set('Bob'))
+    .onConflict([Users.id])
+    .doUpdate([Users.name.setToExcluded(), Users.age.set(0)]));
+```
+
 ## Execution
 
 ```dart

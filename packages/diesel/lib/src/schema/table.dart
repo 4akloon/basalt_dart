@@ -82,6 +82,10 @@ sealed class TableColumn<T, Tbl> implements Selection<T> {
   /// `TableColumn<int>.set('x')` is a compile error.
   ColumnValue<Tbl> set(T value) => ColumnValue(name, type.encode(value));
 
+  /// For upserts: `col = excluded."col"` inside `ON CONFLICT ... DO UPDATE`,
+  /// i.e. take the value from the row that failed to insert.
+  ColumnValue<Tbl> setToExcluded() => ColumnValue(name, null, isExcluded: true);
+
   Ordering asc() => Ordering(node, ascending: true);
   Ordering desc() => Ordering(node, ascending: false);
 
@@ -184,7 +188,11 @@ extension IntColumnAggregates<Tbl> on TableColumn<int, Tbl> {
 final class ColumnValue<Tbl> {
   final String column;
   final Object? encoded;
-  const ColumnValue(this.column, this.encoded);
+
+  /// When true this is an upsert `excluded.<column>` reference (no bound value)
+  /// rather than a literal — see [TableColumn.setToExcluded].
+  final bool isExcluded;
+  const ColumnValue(this.column, this.encoded, {this.isExcluded = false});
 }
 
 /// Something a query can read FROM or JOIN: a real table ([TableRef]) or an

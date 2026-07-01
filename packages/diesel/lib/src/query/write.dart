@@ -21,6 +21,16 @@ final class InsertStatement<Tbl> extends WriteStatement {
   /// Encoded value tuples — one list per row (a single-row insert has one).
   final List<List<Object?>> rows = [];
 
+  /// `ON CONFLICT` target columns (`null` = no upsert clause).
+  List<String>? conflictTarget;
+
+  /// `ON CONFLICT ... DO NOTHING` when true; otherwise `DO UPDATE SET`.
+  bool conflictDoNothing = false;
+
+  /// Assignments for `DO UPDATE SET` (a literal via `set`, or `excluded.col` via
+  /// `setToExcluded`).
+  final List<ColumnValue<Object?>> conflictSet = [];
+
   InsertStatement(this.table);
 
   /// Sets one column of a single-row insert; repeated calls build that row.
@@ -45,6 +55,34 @@ final class InsertStatement<Tbl> extends WriteStatement {
       rows.add(encoded);
     }
     return this;
+  }
+
+  /// Begin an upsert: `ON CONFLICT (target)`. An empty [target] emits a bare
+  /// `ON CONFLICT`. Finish with [OnConflict.doNothing] or [OnConflict.doUpdate].
+  OnConflict<Tbl> onConflict(
+          [List<TableColumn<Object?, Object?>> target = const []]) =>
+      OnConflict._(this, [for (final c in target) c.name]);
+}
+
+/// Fluent builder for an `ON CONFLICT` clause (from [InsertStatement.onConflict]).
+final class OnConflict<Tbl> {
+  final InsertStatement<Tbl> _insert;
+  final List<String> _target;
+  OnConflict._(this._insert, this._target);
+
+  /// `ON CONFLICT [(target)] DO NOTHING`.
+  InsertStatement<Tbl> doNothing() {
+    _insert.conflictTarget = _target;
+    _insert.conflictDoNothing = true;
+    return _insert;
+  }
+
+  /// `ON CONFLICT (target) DO UPDATE SET ...`. Use `col.set(v)` for a literal or
+  /// `col.setToExcluded()` to take the failed row's proposed value.
+  InsertStatement<Tbl> doUpdate(List<ColumnValue<Tbl>> assignments) {
+    _insert.conflictTarget = _target;
+    _insert.conflictSet.addAll(assignments);
+    return _insert;
   }
 }
 
