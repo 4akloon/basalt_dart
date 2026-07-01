@@ -2,6 +2,7 @@ import 'package:diesel_codegen/src/queryable/column_arg.dart';
 import 'package:diesel_codegen/src/queryable/query_getter_emitter.dart';
 import 'package:diesel_codegen/src/queryable/reader_emitter.dart';
 import 'package:diesel_codegen/src/queryable/relation_arg.dart';
+import 'package:diesel_codegen/src/queryable/select_query_emitter.dart';
 import 'package:diesel_codegen/src/queryable/relation_call_emitter.dart';
 import 'package:diesel_codegen/src/queryable/relation_edge.dart';
 import 'package:diesel_codegen/src/queryable/tree_node.dart';
@@ -83,6 +84,45 @@ void main() {
         args.single.childCall,
         r"(prefix.isEmpty ? (budget > 1 ? 1 : budget) : budget) <= 0 ? null : $UserFromRow(r, Users.table.aliased('${prefix}author'))",
       );
+    });
+  });
+
+  group('SelectQueryEmitter', () {
+    test('emits a select-narrowing getter over the class columns', () {
+      final code = const SelectQueryEmitter().emit(
+        className: 'UserSummary',
+        queryName: 'userSummaryQuery',
+        tableMarker: 'Users',
+        readerName: r'$UserSummaryFromRow',
+        columnArgs: const [
+          ColumnArg(paramName: 'id', isNamed: false, columnExpr: 'Users.id'),
+          ColumnArg(paramName: 'name', isNamed: false, columnExpr: 'Users.name'),
+        ],
+      );
+      expect(code, contains('MappedQuery<UserSummary> get userSummaryQuery =>'));
+      expect(
+          code,
+          contains(
+              r'from(Users.table).select([Users.id, Users.name]).map($UserSummaryFromRow)'));
+    });
+
+    test('skips writeOnly columns', () {
+      final code = const SelectQueryEmitter().emit(
+        className: 'U',
+        queryName: 'uQuery',
+        tableMarker: 'Users',
+        readerName: r'$UFromRow',
+        columnArgs: const [
+          ColumnArg(paramName: 'id', isNamed: false, columnExpr: 'Users.id'),
+          ColumnArg(
+              paramName: 'secret',
+              isNamed: false,
+              columnExpr: 'Users.secret',
+              writeOnly: true),
+        ],
+      );
+      expect(code, contains('select([Users.id])'));
+      expect(code, isNot(contains('secret')));
     });
   });
 

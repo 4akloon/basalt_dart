@@ -32,7 +32,7 @@ A class may carry several annotations; each generator contributes its own (non-o
 
 | Annotation | Level | Generates |
 |---|---|---|
-| `@Queryable(table)` | class | `$XFromRow` reader, `const xMapper = RowMapper<X>(…)`, and (with `@Relation`) a `xQuery` getter |
+| `@Queryable(table)` | class | `$XFromRow` reader, `const xMapper = RowMapper<X>(…)`, and an `xQuery` getter (a join query when the class has `@Relation`s, otherwise a select-narrowing subset query) |
 | `@Insertable(table)` | class | `extension XInsert { InsertStatement<T> toInsert() }` |
 | `@AsChangeset(table)` | class | `extension XChangeset { UpdateStatement<T> toUpdate() }` (SET only) |
 | `@Column(col, {readOnly, writeOnly})` | field | column mapping + read/write direction |
@@ -77,6 +77,25 @@ final users = await db.fetch(from(Users.table).map(userMapper.read));
 
 The generated `$XFromRow` reader is alias-parameterized and **composable** — it can be called on the same
 `RowReader` to nest objects across a join, which is how relations work.
+
+### Selectable subsets
+
+A `@Queryable` class that maps only *some* of a table's columns is the "Selectable" case: the generator emits
+a **select-narrowing `xQuery`** getter that `SELECT`s exactly those columns (not `SELECT *`):
+
+```dart
+@Queryable(Users.table)
+class UserSummary {
+  final int id;
+  final String name;
+  const UserSummary(this.id, this.name);
+}
+
+// userSummaryQuery == from(Users.table).select([Users.id, Users.name]).map($UserSummaryFromRow)
+final summaries = await db.fetch(userSummaryQuery);
+```
+
+(Classes with `@Relation`s get the join-based `xQuery` instead — see below.)
 
 ## `@Relation` (read-side joins)
 

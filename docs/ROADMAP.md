@@ -72,9 +72,10 @@ Done:
 - `find(pk)` — `findBy(key, value)` on `Query`/`MappedQuery` (type-safe filter by a key column; value type pinned
   by the column, ANDs with any existing predicate). A bare `find(value)` that auto-detects the PK from the schema
   is a codegen follow-up (see Identifiable below).
+- `Selectable`-style subsets: a `@Queryable` class mapping a subset of columns generates a select-narrowing
+  `xQuery` getter (`from(t).select([subset]).map(...)`), so it fetches only those columns.
 
 Remaining:
-- `Selectable`-style subset/embedded structs (project a column subset into a class).
 - `Identifiable` (primary-key identity) — including a generated bare `find(value)` — and richer Associations
   (`belongs_to`, grouped child loads) beyond today's read-only `@Relation` nesting.
 - Custom type-codec registry (enums, value objects) layered on `SqlType`.

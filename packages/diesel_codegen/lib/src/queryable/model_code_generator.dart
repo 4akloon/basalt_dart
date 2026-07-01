@@ -5,6 +5,7 @@ import 'reader_emitter.dart';
 import 'relation_call_emitter.dart';
 import 'relation_edge.dart';
 import 'relation_tree_builder.dart';
+import 'select_query_emitter.dart';
 
 /// Generates reader/mapper/query code from a resolved [QueryableModel].
 ///
@@ -17,11 +18,13 @@ final class ModelCodeGenerator {
   final ReaderEmitter readerEmitter;
   final QueryGetterEmitter queryGetterEmitter;
   final RelationCallEmitter relationCalls;
+  final SelectQueryEmitter selectQueryEmitter;
 
   const ModelCodeGenerator({
     this.readerEmitter = const ReaderEmitter(),
     this.queryGetterEmitter = const QueryGetterEmitter(),
     this.relationCalls = const RelationCallEmitter(),
+    this.selectQueryEmitter = const SelectQueryEmitter(),
   });
 
   List<String> generate(QueryableModel model) {
@@ -65,6 +68,16 @@ final class ModelCodeGenerator {
         readerName: readerName,
         seedBudget: seedBudget,
         treeNodes: treeNodes,
+      ));
+    } else {
+      // No relations: a select-narrowing getter that reads just this class's
+      // columns (Selectable-style subset projection).
+      units.add(selectQueryEmitter.emit(
+        className: className,
+        queryName: '${lowerFirst(className)}Query',
+        tableMarker: root.tableMarker,
+        readerName: readerName,
+        columnArgs: root.columnArgs,
       ));
     }
 

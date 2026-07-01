@@ -63,7 +63,7 @@ Dart generics + phantom types + `build_runner`/`source_gen` codegen. The goal is
 | diesel-rs derive | diesel_dart | Status | Notes |
 |---|---|---|---|
 | `Queryable` | `@Queryable(table)` → `RowMapper`, `$XFromRow` | ✅ | Reads by column name via `RowReader`. |
-| `Selectable` | `@Queryable` + `RowReader` | ◑ | No dedicated subset/embed derive yet (ROADMAP M4). |
+| `Selectable` | `@Queryable` subset class → select-narrowing `xQuery` getter | ✅ | A class with a subset of columns generates an `xQuery` that `SELECT`s just those columns. |
 | `Insertable` | `@Insertable(table)` → `toInsert()` | ✅ | |
 | `AsChangeset` | `@AsChangeset(table)` → `toUpdate()` | ✅ | SET-only; caller adds `.where`. |
 | `Identifiable` | — | ✗ | ROADMAP M4. |

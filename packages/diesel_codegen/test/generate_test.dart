@@ -76,9 +76,13 @@ void main() {
     expect(code, contains('r.get(src.col(Users.id))'));
     expect(
         code, contains(r'const userMapper = RowMapper<User>($UserFromRow);'));
-    // No relations -> no runtime budget machinery, no query getter.
+    // No relations -> no runtime budget machinery, but a select-narrowing getter.
     expect(code, isNot(contains('budget')));
-    expect(code, isNot(contains('MappedQuery')));
+    expect(code, contains(r'MappedQuery<User> get userQuery =>'));
+    expect(
+        code,
+        contains(
+            r'from(Users.table).select([Users.id, Users.name, Users.age, Users.active]).map($UserFromRow)'));
   });
 
   test('self-referential reader recurses into the same public reader', () {

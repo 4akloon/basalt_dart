@@ -14,4 +14,5 @@ export 'relation_call_emitter.dart';
 export 'relation_edge.dart';
 export 'relation_edges_lookup.dart';
 export 'relation_tree_builder.dart';
+export 'select_query_emitter.dart';
 export 'tree_node.dart';
