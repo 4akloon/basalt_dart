@@ -66,7 +66,7 @@ as M3 batch insert.)
 - Raw typed SQL escape hatch: `raw<T>(sql, type, as:)` (typed, readable selection) and `rawCondition(sql)`
   (boolean fragment for `having`/joined `where`), with `?` placeholders. Also `executeSql`/`queryRaw` for full raw.
 
-## ◑ M4 — Derive parity (in progress)
+## ✅ M4 — Derive parity — done
 
 Done:
 - `find(pk)` — `findBy(key, value)` on `Query`/`MappedQuery` (type-safe filter by a key column; value type pinned
@@ -79,9 +79,8 @@ Done:
   registry needed; auto-mapping DB types in `print-schema` remains a possible enhancement.
 - Associations (`belongs_to`): `loadGroupedByFk(db, childTable, fk, parentKeys, readChild)` loads children for a
   set of parents grouped by FK in a single query (avoids N+1), complementing read-side `@Relation` nesting.
-
-Remaining:
-- `Identifiable`: a codegen-generated bare `find(value)` that auto-detects the primary key (today: `findBy`).
+- `Identifiable`: codegen detects the `PrimaryKey` column and emits a bare `findX(pkValue)` (e.g. `findUser(1)`)
+  that composes the class's query getter with the type-safe `findBy`.
 
 ## ⬜ M5 — Postgres backend (`diesel_postgres`)
 

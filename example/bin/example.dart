@@ -167,10 +167,9 @@ Future<void> _writes(Connection db) async {
   _header('Writes (UPDATE / DELETE)');
 
   // `toUpdate()` comes from `@AsChangeset` — it builds the SET clause from every
-  // writable column; we add the WHERE. Re-activate Dave by persisting his row.
-  final dave = (await db
-          .fetch(from(Users.table).where(Users.id.eq(3)).map(userMapper.read)))
-      .single;
+  // writable column; we add the WHERE. `findUser` (generated bare find-by-PK)
+  // fetches Dave, then we re-activate him by persisting his row.
+  final dave = await findUser(3).first(db);
   final activated = await db.execute(
     User(dave.id, dave.name, dave.age, 1, managerId: dave.managerId)
         .toUpdate()

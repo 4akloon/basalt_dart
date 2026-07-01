@@ -202,8 +202,11 @@ final class EdgeAnalyzer {
           element: element);
     }
 
+    final markerElement = _markerElement(element);
     final columnArgs = <ColumnArg>[];
     final ownEdges = <RelationEdge>[];
+    String? pkColumnExpr;
+    String? pkType;
     for (final param in constructor.formalParameters) {
       final name = param.name;
       final field = name == null ? null : element.getField(name);
@@ -219,6 +222,15 @@ final class EdgeAnalyzer {
         _requireOptional(param, field, 'writeOnly');
       }
       columnArgs.add(arg);
+
+      // First readable PK column drives the generated bare findX(value).
+      if (pkColumnExpr == null && !arg.writeOnly) {
+        final valueType = _primaryKeyType(param, field, markerElement);
+        if (valueType != null) {
+          pkColumnExpr = arg.columnExpr;
+          pkType = valueType;
+        }
+      }
     }
 
     return ClassInfo(
@@ -226,7 +238,41 @@ final class EdgeAnalyzer {
       tableMarker: tableMarker,
       columnArgs: columnArgs,
       ownEdges: ownEdges,
+      pkColumnExpr: pkColumnExpr,
+      pkType: pkType,
     );
+  }
+
+  /// The table-marker class element (e.g. `Users`) from `@Queryable(table)` —
+  /// used to inspect name-matched columns' declared types (PK detection).
+  InterfaceElement? _markerElement(ClassElement element) {
+    final ann = queryableChecker.firstAnnotationOfExact(element);
+    if (ann == null) return null;
+    final tableType = ConstantReader(ann).read('table').objectValue.type;
+    if (tableType is! InterfaceType) return null;
+    final marker = tableType.typeArguments.first.element;
+    return marker is InterfaceElement ? marker : null;
+  }
+
+  /// If [param]'s mapped column is a `PrimaryKey`, returns its Dart value type
+  /// (e.g. `int`); otherwise null. Handles `@Column`-mapped and name-matched.
+  String? _primaryKeyType(FormalParameterElement param, FieldElement? field,
+      InterfaceElement? marker) {
+    final colObj =
+        field == null ? null : columnChecker.firstAnnotationOfExact(field)?.getField('column');
+    final DartType? colType;
+    if (colObj != null) {
+      colType = colObj.type;
+    } else {
+      final pname = param.name;
+      colType = (marker != null && pname != null)
+          ? marker.getField(pname)?.type
+          : null;
+    }
+    if (colType is InterfaceType && colType.element.name == 'PrimaryKey') {
+      return colType.typeArguments.first.element?.name;
+    }
+    return null;
   }
 
   /// Every `@Queryable` class reachable from [root] through `@Relation` edges

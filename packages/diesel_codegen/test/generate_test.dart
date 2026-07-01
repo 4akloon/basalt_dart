@@ -46,6 +46,8 @@ void main() {
     className: 'User',
     tableMarker: 'Users',
     columnArgs: userColumns,
+    pkColumnExpr: 'Users.id',
+    pkType: 'int',
   );
 
   const userWithManager = ClassInfo(
@@ -83,6 +85,9 @@ void main() {
         code,
         contains(
             r'from(Users.table).select([Users.id, Users.name, Users.age, Users.active]).map($UserFromRow)'));
+    // A PrimaryKey column -> a bare find-by-key.
+    expect(code, contains('MappedQuery<User> findUser(int id) =>'));
+    expect(code, contains('userQuery.findBy(Users.id, id)'));
   });
 
   test('self-referential reader recurses into the same public reader', () {

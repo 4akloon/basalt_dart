@@ -34,3 +34,6 @@ MappedQuery<Post> get postQuery {
           on: author.col(Users.managerId).eqColumn(authorManager.col(Users.id)))
       .map((r) => $PostFromRow(r, Posts.table, '', 2));
 }
+
+/// Fetch the Post with the given primary key.
+MappedQuery<Post> findPost(int id) => postQuery.findBy(Posts.id, id);

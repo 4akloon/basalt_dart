@@ -66,7 +66,7 @@ Dart generics + phantom types + `build_runner`/`source_gen` codegen. The goal is
 | `Selectable` | `@Queryable` subset class → select-narrowing `xQuery` getter | ✅ | A class with a subset of columns generates an `xQuery` that `SELECT`s just those columns. |
 | `Insertable` | `@Insertable(table)` → `toInsert()` | ✅ | |
 | `AsChangeset` | `@AsChangeset(table)` → `toUpdate()` | ✅ | SET-only; caller adds `.where`. |
-| `Identifiable` | — | ✗ | ROADMAP M4. |
+| `Identifiable` | generated bare `findX(pk)` (auto-detects the `PrimaryKey` column) | ✅ | Composes the class's query getter with the type-safe `findBy`. |
 | `Associations` / `belongs_to` | `@Relation` nesting + `loadGroupedByFk(...)` for grouped child loads | ✅ | Read-side nesting plus one-query, N+1-avoiding grouped children. |
 | field rename / skip | `@Column(col)` rename; read/write via `readOnly`/`writeOnly` | ✅ | `@ignore` was removed in favor of getters. |
 

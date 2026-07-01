@@ -1,5 +1,6 @@
 import 'package:diesel_codegen/src/queryable/column_arg.dart';
 import 'package:diesel_codegen/src/queryable/query_getter_emitter.dart';
+import 'package:diesel_codegen/src/queryable/find_emitter.dart';
 import 'package:diesel_codegen/src/queryable/reader_emitter.dart';
 import 'package:diesel_codegen/src/queryable/relation_arg.dart';
 import 'package:diesel_codegen/src/queryable/select_query_emitter.dart';
@@ -84,6 +85,20 @@ void main() {
         args.single.childCall,
         r"(prefix.isEmpty ? (budget > 1 ? 1 : budget) : budget) <= 0 ? null : $UserFromRow(r, Users.table.aliased('${prefix}author'))",
       );
+    });
+  });
+
+  group('FindEmitter', () {
+    test('emits a find-by-primary-key composing the query getter', () {
+      final code = const FindEmitter().emit(
+        className: 'User',
+        findName: 'findUser',
+        queryName: 'userQuery',
+        pkColumnExpr: 'Users.id',
+        pkType: 'int',
+      );
+      expect(code, contains('MappedQuery<User> findUser(int id) =>'));
+      expect(code, contains('userQuery.findBy(Users.id, id)'));
     });
   });
 

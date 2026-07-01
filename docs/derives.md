@@ -32,7 +32,7 @@ A class may carry several annotations; each generator contributes its own (non-o
 
 | Annotation | Level | Generates |
 |---|---|---|
-| `@Queryable(table)` | class | `$XFromRow` reader, `const xMapper = RowMapper<X>(…)`, and an `xQuery` getter (a join query when the class has `@Relation`s, otherwise a select-narrowing subset query) |
+| `@Queryable(table)` | class | `$XFromRow` reader, `const xMapper = RowMapper<X>(…)`, an `xQuery` getter (a join query when the class has `@Relation`s, otherwise a select-narrowing subset query), and a bare `findX(pk)` when the class maps a `PrimaryKey` |
 | `@Insertable(table)` | class | `extension XInsert { InsertStatement<T> toInsert() }` |
 | `@AsChangeset(table)` | class | `extension XChangeset { UpdateStatement<T> toUpdate() }` (SET only) |
 | `@Column(col, {readOnly, writeOnly})` | field | column mapping + read/write direction |
@@ -96,6 +96,13 @@ final summaries = await db.fetch(userSummaryQuery);
 ```
 
 (Classes with `@Relation`s get the join-based `xQuery` instead — see below.)
+
+Any `@Queryable` class that maps a `PrimaryKey` column also gets a bare `findX(pk)` — a type-safe
+find-by-primary-key that composes `xQuery` with `findBy`:
+
+```dart
+final user = await findUser(1).first(db); // MappedQuery<User>, filtered by Users.id == 1
+```
 
 ## `@Relation` (read-side joins)
 

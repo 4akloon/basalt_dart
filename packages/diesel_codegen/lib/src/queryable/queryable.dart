@@ -2,6 +2,7 @@ export 'changeset_emitter.dart';
 export 'class_info.dart';
 export 'column_arg.dart';
 export 'edge_analyzer.dart';
+export 'find_emitter.dart';
 export 'insert_emitter.dart';
 export 'model_code_generator.dart';
 export 'naming.dart';

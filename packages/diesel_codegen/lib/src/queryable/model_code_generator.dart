@@ -1,3 +1,4 @@
+import 'find_emitter.dart';
 import 'naming.dart';
 import 'query_getter_emitter.dart';
 import 'queryable_model.dart';
@@ -19,12 +20,14 @@ final class ModelCodeGenerator {
   final QueryGetterEmitter queryGetterEmitter;
   final RelationCallEmitter relationCalls;
   final SelectQueryEmitter selectQueryEmitter;
+  final FindEmitter findEmitter;
 
   const ModelCodeGenerator({
     this.readerEmitter = const ReaderEmitter(),
     this.queryGetterEmitter = const QueryGetterEmitter(),
     this.relationCalls = const RelationCallEmitter(),
     this.selectQueryEmitter = const SelectQueryEmitter(),
+    this.findEmitter = const FindEmitter(),
   });
 
   List<String> generate(QueryableModel model) {
@@ -78,6 +81,17 @@ final class ModelCodeGenerator {
         tableMarker: root.tableMarker,
         readerName: readerName,
         columnArgs: root.columnArgs,
+      ));
+    }
+
+    // Bare find-by-primary-key, when the class maps a PrimaryKey column.
+    if (root.pkColumnExpr case final pkExpr? when root.pkType != null) {
+      units.add(findEmitter.emit(
+        className: className,
+        findName: 'find$className',
+        queryName: '${lowerFirst(className)}Query',
+        pkColumnExpr: pkExpr,
+        pkType: root.pkType!,
       ));
     }
 

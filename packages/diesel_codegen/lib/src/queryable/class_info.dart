@@ -13,10 +13,18 @@ final class ClassInfo {
   /// The class's own `@Relation` edges (its outgoing relations).
   final List<RelationEdge> ownEdges;
 
+  /// The primary-key column accessor (e.g. `Users.id`) and its Dart value type
+  /// (e.g. `int`) when the class maps a `PrimaryKey` column — drives the
+  /// generated bare `findX(value)`. Both null when the class has no PK field.
+  final String? pkColumnExpr;
+  final String? pkType;
+
   const ClassInfo({
     required this.className,
     required this.tableMarker,
     required this.columnArgs,
     this.ownEdges = const [],
+    this.pkColumnExpr,
+    this.pkType,
   });
 }

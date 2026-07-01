@@ -36,6 +36,9 @@ MappedQuery<User> get userQuery {
       .map((r) => $UserFromRow(r, Users.table, '', 1));
 }
 
+/// Fetch the User with the given primary key.
+MappedQuery<User> findUser(int id) => userQuery.findBy(Users.id, id);
+
 // **************************************************************************
 // InsertableGenerator
 // **************************************************************************
