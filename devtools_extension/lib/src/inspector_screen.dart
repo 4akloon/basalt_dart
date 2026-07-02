@@ -2,8 +2,12 @@ import 'package:devtools_extensions/devtools_extensions.dart';
 import 'package:flutter/material.dart';
 
 import 'data_grid.dart';
+import 'edit_row_dialog.dart';
+import 'filter_bar.dart';
 import 'inspector_client.dart';
+import 'models/column_filter.dart';
 import 'models/instance_info.dart';
+import 'models/row_edit.dart';
 import 'models/schema_info.dart';
 import 'models/sql_result.dart';
 import 'models/table_info.dart';
@@ -32,6 +36,7 @@ class _InspectorScreenState extends State<InspectorScreen> {
   static const _limit = 50;
   String? _orderBy;
   bool _desc = false;
+  List<ColumnFilter> _filters = const [];
 
   _Mode _mode = _Mode.data;
   SqlResult? _sqlResult;
@@ -104,6 +109,7 @@ class _InspectorScreenState extends State<InspectorScreen> {
         _offset = 0;
         _orderBy = null;
         _desc = false;
+        _filters = const [];
         await _loadPage();
       });
 
@@ -118,8 +124,43 @@ class _InspectorScreenState extends State<InspectorScreen> {
       offset: _offset,
       orderBy: _orderBy,
       desc: _desc,
+      filters: _filters,
     );
     if (mounted) setState(() {});
+  }
+
+  void _applyFilters(List<ColumnFilter> filters) => _guard(() async {
+        _filters = filters;
+        _offset = 0;
+        await _loadPage();
+      });
+
+  Future<void> _editRow(int index) async {
+    final table = _table;
+    final page = _page;
+    if (table == null || page == null) return;
+    if (table.primaryKeys.isEmpty) {
+      ScaffoldMessenger.maybeOf(context)?.showSnackBar(
+        const SnackBar(content: Text('Table has no primary key to edit by')),
+      );
+      return;
+    }
+    final edit = await showDialog<RowEdit>(
+      context: context,
+      builder: (_) => EditRowDialog(
+        table: table,
+        columns: page.columns,
+        row: page.rows[index],
+      ),
+    );
+    if (edit == null) return;
+    final id = _instanceId;
+    if (id == null) return;
+    await _guard(() async {
+      await _client.updateRow(id, table.name,
+          key: edit.key, changes: edit.changes);
+      await _loadPage();
+    });
   }
 
   void _sortBy(String column) => _guard(() async {
@@ -263,12 +304,19 @@ class _InspectorScreenState extends State<InspectorScreen> {
     final shownTo = page.offset + page.rows.length;
     return Column(
       children: [
+        FilterBar(
+          table: table,
+          filters: _filters,
+          onChanged: _applyFilters,
+        ),
+        const Divider(height: 1),
         Expanded(
           child: DataGrid(
             columns: page.columns,
             rows: page.rows,
             primaryKeys: table.primaryKeys,
             onHeaderTap: _sortBy,
+            onRowTap: _editRow,
             sortColumn: _orderBy,
             sortDescending: _desc,
           ),
@@ -279,6 +327,12 @@ class _InspectorScreenState extends State<InspectorScreen> {
           child: Row(
             children: [
               Text('${table.name}: $shownFrom–$shownTo of ${page.total}'),
+              const SizedBox(width: 8),
+              IconButton(
+                tooltip: 'Refresh',
+                icon: const Icon(Icons.refresh, size: 18),
+                onPressed: _loadPage,
+              ),
               const Spacer(),
               IconButton(
                 icon: const Icon(Icons.chevron_left),

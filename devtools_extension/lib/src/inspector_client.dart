@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:devtools_extensions/devtools_extensions.dart';
 
+import 'models/column_filter.dart';
 import 'models/instance_info.dart';
 import 'models/schema_info.dart';
 import 'models/sql_result.dart';
@@ -35,6 +36,7 @@ class InspectorClient {
     int offset = 0,
     String? orderBy,
     bool desc = false,
+    List<ColumnFilter> filters = const [],
   }) async {
     final args = {
       'id': id,
@@ -43,8 +45,24 @@ class InspectorClient {
       'offset': '$offset',
       'orderBy': ?orderBy,
       if (desc) 'desc': 'true',
+      if (filters.isNotEmpty)
+        'filters': jsonEncode([for (final f in filters) f.toJson()]),
     };
     return TablePage.fromJson(await _call('ext.diesel.getTableData', args));
+  }
+
+  Future<void> updateRow(
+    String id,
+    String table, {
+    required Map<String, Object?> key,
+    required Map<String, Object?> changes,
+  }) async {
+    await _call('ext.diesel.updateRow', {
+      'id': id,
+      'table': table,
+      'key': jsonEncode(key),
+      'changes': jsonEncode(changes),
+    });
   }
 
   Future<SqlResult> runSql(

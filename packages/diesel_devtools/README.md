@@ -5,7 +5,8 @@ A [DevTools extension](https://docs.flutter.dev/tools/devtools/extensions) inspe
 
 - pick the active database instance (when several are open),
 - browse the table list and each table's columns / primary keys / foreign keys,
-- page through a table's rows,
+- page through a table's rows, sort by column, and filter (per-column predicates),
+- edit a row in place (by primary key),
 - run raw SQL (reads **and** writes).
 
 It is **dev-only**: connections are exposed only after an explicit `register` call, and the underlying

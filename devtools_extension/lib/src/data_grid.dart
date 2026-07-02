@@ -8,6 +8,9 @@ class DataGrid extends StatelessWidget {
 
   /// Called with the tapped column name (for sorting), if provided.
   final void Function(String column)? onHeaderTap;
+
+  /// Called with the tapped row index (for editing), if provided.
+  final void Function(int rowIndex)? onRowTap;
   final String? sortColumn;
   final bool sortDescending;
 
@@ -17,6 +20,7 @@ class DataGrid extends StatelessWidget {
     required this.rows,
     this.primaryKeys = const {},
     this.onHeaderTap,
+    this.onRowTap,
     this.sortColumn,
     this.sortDescending = false,
   });
@@ -65,11 +69,14 @@ class DataGrid extends StatelessWidget {
                 ),
             ],
             rows: [
-              for (final row in rows)
+              for (var r = 0; r < rows.length; r++)
                 DataRow(
+                  onSelectChanged:
+                      onRowTap == null ? null : (_) => onRowTap!(r),
                   cells: [
                     for (var i = 0; i < columns.length; i++)
-                      DataCell(_cell(theme, i < row.length ? row[i] : null)),
+                      DataCell(
+                          _cell(theme, i < rows[r].length ? rows[r][i] : null)),
                   ],
                 ),
             ],
