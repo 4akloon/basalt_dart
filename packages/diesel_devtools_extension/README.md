@@ -4,8 +4,10 @@ The Flutter web app for the **diesel** DevTools tab. It talks to the connected a
 `ext.diesel.*` VM service extensions (registered by the `diesel_devtools` runtime) to list
 instances, browse tables, page rows, and run SQL.
 
-This app is intentionally **outside** the Dart pub workspace so it resolves against the Flutter SDK
-independently (the runtime packages stay pure Dart).
+It lives under `packages/` for consistency but is intentionally **not** a member of the Dart pub
+workspace (it's absent from the root `workspace:` list and has no `resolution: workspace`), so it
+resolves against the Flutter SDK via `flutter pub get` independently — the runtime packages stay pure
+Dart and `dart pub get` never has to touch Flutter deps.
 
 ## Develop the UI
 
@@ -25,6 +27,6 @@ The compiled output is git-ignored; regenerate it into the `diesel_devtools` pac
 
 ```bash
 dart run devtools_extensions build_and_copy \
-  --source=. --dest=../packages/diesel_devtools/extension/devtools
-dart run devtools_extensions validate --package=../packages/diesel_devtools
+  --source=. --dest=../diesel_devtools/extension/devtools
+dart run devtools_extensions validate --package=../diesel_devtools
 ```

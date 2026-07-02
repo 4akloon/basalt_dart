@@ -38,9 +38,9 @@ The extension's compiled web app (`extension/devtools/build/`) is git-ignored; b
 UI app before the tab will load:
 
 ```bash
-cd devtools_extension
+cd packages/diesel_devtools_extension
 dart run devtools_extensions build_and_copy \
-  --source=. --dest=../packages/diesel_devtools/extension/devtools
+  --source=. --dest=../diesel_devtools/extension/devtools
 ```
 
 Backend-agnostic: because it targets the `Connection` interface, the same inspector works for SQLite and
@@ -52,8 +52,9 @@ Postgres with no extra code.
   core, surfaced over the VM service as `ext.diesel.listInstances` / `getSchema` / `getTableData` /
   `runSql`. `InspectorService` is a plain, unit-tested class — the service-extension handlers are thin
   adapters that parse string params and JSON-encode results.
-- **UI (`devtools_extension/`, Flutter):** a Flutter web app compiled into `extension/devtools/build/`
-  that DevTools loads and which calls those service extensions.
+- **UI (`packages/diesel_devtools_extension/`, Flutter):** a Flutter web app compiled into
+  `extension/devtools/build/` that DevTools loads and which calls those service extensions. It's under
+  `packages/` but not a Dart-workspace member (it's a Flutter app).
 
 ## Try it without DevTools
 
