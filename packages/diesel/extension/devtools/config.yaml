@@ -1,0 +1,8 @@
+# `name` is the DevTools tab title, shown verbatim — but DevTools requires it to
+# match `^[a-z0-9_]*$` (a valid lowercase package name) or it silently drops the
+# extension. So the tab reads "diesel" (a capitalized "Diesel" is not allowed).
+name: diesel
+issueTracker: https://github.com/diesel-rs/diesel/issues
+version: 0.0.1
+materialIconCodePoint: "0xe63a"
+requiresConnection: true

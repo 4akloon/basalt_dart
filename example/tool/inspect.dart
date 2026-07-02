@@ -8,19 +8,19 @@
 // both, so the "diesel" tab is discoverable.
 //
 // Usage (from the repo root):
-//   dart run packages/diesel_devtools/tool/inspect.dart [app.dart]
+//   dart run example/tool/inspect.dart [app.dart]
 //     app.dart  target to run (default: the inspector demo)
-//   dart run packages/diesel_devtools/tool/inspect.dart --check
+//   dart run example/tool/inspect.dart --check
 //     just verify the DTD sees this project's packages, then exit
 //
-// After DevTools opens, enable "diesel" from the Extensions menu (top-right).
+// After DevTools opens, enable "Diesel" from the Extensions menu (top-right).
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
 import 'package:dtd/dtd.dart';
 
-const _defaultTarget = 'packages/diesel_devtools/tool/inspector_demo.dart';
+const _defaultTarget = 'example/tool/inspector_demo.dart';
 
 Future<void> main(List<String> args) async {
   final checkOnly = args.contains('--check');

@@ -1,8 +1,8 @@
 # diesel_devtools_extension
 
 The Flutter web app for the **diesel** DevTools tab. It talks to the connected app's
-`ext.diesel.*` VM service extensions (registered by the `diesel_devtools` runtime) to list
-instances, browse tables, page rows, and run SQL.
+`ext.diesel.*` VM service extensions (registered by the `package:diesel/devtools.dart` runtime) to list
+instances, browse/filter tables, view/edit rows, and run SQL.
 
 It lives under `packages/` for consistency but is intentionally **not** a member of the Dart pub
 workspace (it's absent from the root `workspace:` list and has no `resolution: workspace`), so it
@@ -18,15 +18,16 @@ flutter run -d chrome --dart-define=use_simulated_environment=true
 ```
 
 For a live run, launch a target that registers a connection (e.g.
-`dart run --observe packages/diesel_devtools/tool/inspector_demo.dart`), then open DevTools on its
-VM service URI and use the diesel tab.
+`dart run --observe example/tool/inspector_demo.dart`), then open DevTools on its VM service URI and use
+the diesel tab.
 
 ## Build & publish into the package
 
-The compiled output is git-ignored; regenerate it into the `diesel_devtools` package with:
+The compiled output is git-ignored; regenerate it into the `diesel` package (which ships the extension)
+with:
 
 ```bash
 dart run devtools_extensions build_and_copy \
-  --source=. --dest=../diesel_devtools/extension/devtools
-dart run devtools_extensions validate --package=../diesel_devtools
+  --source=. --dest=../diesel/extension/devtools
+dart run devtools_extensions validate --package=../diesel
 ```

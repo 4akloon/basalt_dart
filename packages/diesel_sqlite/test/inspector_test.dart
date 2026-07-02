@@ -1,4 +1,4 @@
-import 'package:diesel_devtools/diesel_devtools.dart';
+import 'package:diesel/devtools.dart';
 import 'package:diesel_sqlite/diesel_sqlite.dart';
 import 'package:test/test.dart';
 

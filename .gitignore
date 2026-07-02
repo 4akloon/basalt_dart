@@ -7,5 +7,5 @@ devtools_options.yaml
 
 # Compiled DevTools extension web app — regenerate with:
 #   cd packages/diesel_devtools_extension && dart run devtools_extensions \
-#     build_and_copy --source=. --dest=../diesel_devtools/extension/devtools
-packages/diesel_devtools/extension/devtools/build/
+#     build_and_copy --source=. --dest=../diesel/extension/devtools
+packages/diesel/extension/devtools/build/

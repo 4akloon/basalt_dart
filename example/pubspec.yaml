@@ -18,3 +18,5 @@ dev_dependencies:
   # Row-mapper codegen: dart run build_runner build
   diesel_codegen: ^0.0.1
   build_runner: ^2.4.0
+  # DevTools inspector launcher (tool/inspect.dart): starts a Dart Tooling Daemon
+  dtd: ^4.0.0

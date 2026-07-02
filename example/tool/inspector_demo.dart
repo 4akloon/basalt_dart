@@ -2,7 +2,7 @@
 //
 // Run with the VM service on so DevTools can attach:
 //
-//   dart run --observe packages/diesel_devtools/tool/inspector_demo.dart
+//   dart run --observe example/tool/inspector_demo.dart
 //
 // It seeds an in-memory SQLite database, registers it, prints what the
 // inspector's core sees, then stays alive so you can open the "diesel" tab in
@@ -10,7 +10,7 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:diesel_devtools/diesel_devtools.dart';
+import 'package:diesel/devtools.dart';
 import 'package:diesel_sqlite/diesel_sqlite.dart';
 
 Future<void> main() async {
