@@ -79,9 +79,10 @@ Applied versions live in `__basalt_schema_migrations` (`version VARCHAR(50)` pri
 
 ## Library use
 
-The package also exports its engine so you can embed migrations in tests or app startup:
+The package also exports the migration engine and CLI helpers:
 
-- `MigrationRunner` — apply/revert against any `Connection`.
+- `MigrationRunner` / `MigrationSource` — from `package:basalt/migration.dart` (re-exported).
+- `DirectoryMigrationSource` — on-disk migration discovery (`dart:io`).
 - `BasaltConfig` — parse `basalt.yaml` / `DATABASE_URL`.
 - `ConnectionFactory` — open the right backend from a `database_url`.
 - `SchemaGenerator` — the `generate-schema` engine.
@@ -91,5 +92,8 @@ The package also exports its engine so you can embed migrations in tests or app 
 ```dart
 import 'package:basalt_cli/basalt_cli.dart';
 
-await MigrationRunner(connection, 'migrations').runPending(); // apply pending in code
+await MigrationRunner(
+  connection,
+  DirectoryMigrationSource('migrations'),
+).runPending();
 ```

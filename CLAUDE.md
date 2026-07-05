@@ -25,13 +25,14 @@ trivially unit-testable and makes new backends drop-in.
 | `packages/basalt_cli` | `basalt_cli` | `basalt` executable: migrations + `generate-schema`. |
 | `packages/basalt_codegen` | `basalt_codegen` | `build_runner`/`source_gen` derives for the annotations. |
 | `packages/basalt_devtools_extension` | `basalt_devtools_extension` | Flutter web UI for the DevTools "basalt" tab. Under `packages/` but **not** a Dart-workspace member (Flutter app; resolve with `flutter pub get`); compiled into `basalt/extension/devtools/build/`. |
-| `example/` | `basalt_example` | End-to-end demo (migrations → schema → models → queries). |
+| `example/` | `basalt_example` | End-to-end **Flutter** shop app (products/categories/customers/orders/reviews) with clean architecture + cubit — showcases complex relations, transactions, aggregates and raw-SQL analytics. Like the DevTools extension it is **not** a Dart-workspace member (Flutter app; resolve with `flutter pub get`; uses `dependency_overrides` to point the basalt packages at their local paths). |
 
 Dart SDK constraint: `>=3.5.0 <4.0.0`.
 
 ## Commands
 
-- **Analyze:** `dart analyze packages/basalt packages/basalt_sqlite packages/basalt_cli packages/basalt_codegen example`
+- **Analyze:** `dart analyze packages/basalt packages/basalt_sqlite packages/basalt_cli packages/basalt_codegen`
+  (the `example/` Flutter app resolves separately — analyze it with `cd example && flutter analyze`).
 - **Test a package:** `cd packages/<pkg> && dart test`
 - **CLI** (run from a directory containing `basalt.yaml`, e.g. `example/`): `dart run basalt_cli:basalt <command>`
   - `setup` · `migration generate <name>` · `migration run` · `migration revert` · `migration redo` ·
@@ -129,7 +130,8 @@ Generate HTML locally: `cd packages/<pkg> && dart doc .` (output in `doc/api/`, 
 - SQLite round-trips, joins, transactions, nullable: `packages/basalt_sqlite/test/integration_test.dart`
 - Migrations + generate-schema/introspection: `packages/basalt_cli/test/{migrations_test,generate_schema_test}.dart`
 - Codegen emitters + generate + relation tree: `packages/basalt_codegen/test/*`
-- End-to-end: `example/` (`dart run build_runner build`, then `dart run bin/example.dart`)
+- End-to-end: `example/` Flutter app (`flutter pub get`, `dart run build_runner build`, then `flutter run`);
+  repository-layer tests under `example/test/` run against an in-memory `SqliteConnection`
 
 ## Design goals
 

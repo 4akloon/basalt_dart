@@ -1,2 +1,19 @@
+# Dart / Flutter
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+build/
+.idea/
+*.iml
+
+# Local databases (dev DB created by the CLI, plus any journals)
 *.db
 *.db-journal
+
+# macOS
+**/macos/Flutter/ephemeral/
+**/macos/Flutter/GeneratedPluginRegistrant.swift
+**/Pods/
+**/.symlinks/
+.DS_Store

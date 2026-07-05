@@ -36,7 +36,7 @@ void main() {
   setUp(() {
     tmp = Directory.systemTemp.createTempSync('basalt_cli_test');
     db = SqliteConnection.memory();
-    runner = MigrationRunner(db, tmp.path);
+    runner = MigrationRunner(db, DirectoryMigrationSource(tmp.path));
   });
 
   tearDown(() async {

@@ -1,10 +1,11 @@
 import 'dart:io';
 
 import 'package:args/command_runner.dart';
+import 'package:basalt/migration.dart';
 
 import '../config.dart';
 import '../connection_factory.dart';
-import '../migration_runner.dart';
+import '../directory_migration_source.dart';
 
 final class ResetCommand extends Command<int> {
   @override
@@ -26,7 +27,10 @@ final class ResetCommand extends Command<int> {
     }
     final connection = await const ConnectionFactory().open(config);
     try {
-      final ran = await MigrationRunner(connection, config.migrationsDir).runPending();
+      final ran = await MigrationRunner(
+        connection,
+        DirectoryMigrationSource(config.migrationsDir),
+      ).runPending();
       stdout.writeln('Database reset. Applied ${ran.length} migration(s).');
       return 0;
     } finally {

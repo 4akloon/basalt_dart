@@ -1,8 +1,9 @@
 import 'package:args/command_runner.dart';
+import 'package:basalt/migration.dart';
 
 import '../config.dart';
 import '../connection_factory.dart';
-import '../migration_runner.dart';
+import '../directory_migration_source.dart';
 
 /// Shared plumbing: resolve config, open a connection, build a runner.
 abstract base class DbCommand extends Command<int> {
@@ -15,7 +16,12 @@ abstract base class DbCommand extends Command<int> {
     final connection = await const ConnectionFactory().open(config);
     try {
       return await action(
-          config, MigrationRunner(connection, config.migrationsDir),);
+        config,
+        MigrationRunner(
+          connection,
+          DirectoryMigrationSource(config.migrationsDir),
+        ),
+      );
     } finally {
       await connection.close();
     }

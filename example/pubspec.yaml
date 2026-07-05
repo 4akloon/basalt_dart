@@ -1,22 +1,82 @@
 name: basalt_example
-description: Example app — the basalt migration workflow plus typed queries.
-version: 0.0.1
+description: >-
+  A full Flutter shop app (products, categories, customers, orders, reviews)
+  built on basalt_dart with clean architecture and cubit — a showcase of complex
+  relations, transactions, aggregates and raw-SQL analytics.
 publish_to: none
+version: 0.0.1
 
+# NOTE: this is a Flutter app, so it is NOT a member of the root Dart pub
+# workspace. Resolve it on its own with `flutter pub get` (path deps below point
+# at the sibling packages), exactly like the DevTools extension.
 environment:
   sdk: ">=3.5.0 <4.0.0"
-
-resolution: workspace
+  flutter: ">=3.19.0"
 
 dependencies:
-  basalt: ^0.0.1
-  basalt_sqlite: ^0.0.1
+  flutter:
+    sdk: flutter
+
+  # basalt core + SQLite backend, resolved from the monorepo.
+  basalt:
+    path: ../packages/basalt
+  basalt_sqlite:
+    path: ../packages/basalt_sqlite
+
+  # Bundles the native SQLite library (basalt_sqlite talks to it over FFI) for
+  # macOS / iOS / Android.
+  sqlite3_flutter_libs: ^0.6.0+eol
+
+  # Writable location for the on-device database file.
+  path_provider: ^2.1.4
+  path: ^1.9.0
+
+  # State management + DI + value-equality for cubit states.
+  flutter_bloc: ^9.1.1
+  get_it: ^9.2.1
+  equatable: ^2.0.5
+
+  # Money / date formatting in the UI.
+  intl: ^0.20.3
 
 dev_dependencies:
-  # Provides the `basalt` migration CLI: dart run basalt_cli:basalt ...
-  basalt_cli: ^0.0.1
-  # Row-mapper codegen: dart run build_runner build
-  basalt_codegen: ^0.0.1
+  flutter_test:
+    sdk: flutter
+
+  # `dart run basalt_cli:basalt ...` — migrations + generate-schema.
+  basalt_cli:
+    path: ../packages/basalt_cli
+  # Row-mapper / insert / changeset codegen for the annotated data models.
+  basalt_codegen:
+    path: ../packages/basalt_codegen
   build_runner: ^2.4.0
-  # DevTools inspector launcher (tool/inspect.dart): starts a Dart Tooling Daemon
-  dtd: ^4.0.0
+  flutter_lints: ^6.0.0
+
+# The monorepo packages declare `basalt: ^0.0.1` as a *hosted* dependency (they
+# rely on the Dart pub workspace to resolve it). This Flutter app lives outside
+# that workspace, so we override every basalt package to its local path to make
+# the whole graph resolve against the sources in this repo.
+dependency_overrides:
+  basalt:
+    path: ../packages/basalt
+  basalt_sqlite:
+    path: ../packages/basalt_sqlite
+  basalt_postgres:
+    path: ../packages/basalt_postgres
+  basalt_cli:
+    path: ../packages/basalt_cli
+  basalt_codegen:
+    path: ../packages/basalt_codegen
+
+flutter:
+  uses-material-design: true
+  # Migration SQL is shipped as assets so the app can apply pending migrations
+  # at first launch (see lib/core/database/asset_migration_source.dart).
+  assets:
+    - migrations/0001_create_categories/
+    - migrations/0002_create_customers/
+    - migrations/0003_create_addresses/
+    - migrations/0004_create_products/
+    - migrations/0005_create_orders/
+    - migrations/0006_create_order_items/
+    - migrations/0007_create_reviews/

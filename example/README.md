@@ -1,117 +1,86 @@
-# basalt_example
+# basalt_example — Flutter shop
 
-![Dart](https://img.shields.io/badge/Dart-%3E%3D3.5-0175C2?logo=dart&logoColor=white)
-![Runnable](https://img.shields.io/badge/runnable-end--to--end-brightgreen)
+![Flutter](https://img.shields.io/badge/Flutter-3.19%2B-02569B?logo=flutter&logoColor=white)
+![State](https://img.shields.io/badge/state-cubit-6E4AA4)
 ![Part of](https://img.shields.io/badge/part_of-basalt__dart-informational)
 
-**An end-to-end tour of [basalt_dart](../README.md):** apply SQL migrations with the `basalt` CLI,
-generate typed readers/queries from annotations, then exercise the full query surface through the ORM —
-single-table predicates, manual + generated joins, relations, transactions, writes, and raw SQL.
+A full **Flutter** application built on [basalt_dart](../README.md): an online shop with products,
+categories, customers, orders and reviews. It's a showcase of basalt's harder features under a **clean
+architecture** with **cubit** state management.
 
-## Contents
+## What it demonstrates
 
-- [Layout](#layout)
-- [What the codegen emits](#what-the-codegen-emits)
-- [Run (from this directory)](#run-from-this-directory)
-- [The DevTools inspector demo](#the-devtools-inspector-demo)
+| basalt feature | Where |
+|---|---|
+| **Belongs-to relations** (`@Relation`) | `ProductRow.category`, `OrderRow.customer`/`shippingAddress`, `ReviewRow.product`/`customer` |
+| **Self-referential relation** | `CategoryRow.parent` (`categories.parent_id → categories.id`) |
+| **Nested relations with `depth`** | `OrderItemRow.product` (`depth: 2`) loads the product *and* its category in one query |
+| **One-to-many loading** (no N+1) | `loadGroupedByFk` for a customer's addresses; batched item loading in `order_items_loader.dart` |
+| **Many-to-many** | orders ↔ products through the `order_items` junction |
+| **Transactions + `RETURNING`** | `OrderRepositoryImpl.placeOrder` — insert order, insert items, decrement stock, all atomic |
+| **Typed aggregates + `GROUP BY`** | product rating (`AVG`/`COUNT`), per-category product counts, low-stock query |
+| **Raw-SQL escape hatch** | `AnalyticsRepositoryImpl` — revenue & top customers (`SUM(quantity * unit_price)`) |
+| **Migrations** | `migrations/` applied by the CLI (dev) and by the app at startup (bundled assets) |
+| **Codegen** | `@Queryable`/`@Insertable`/`@AsChangeset` derive readers, queries and `toInsert()`/`toUpdate()` |
+| **Read/write model split** | separate `*Row` (read, with relations) and `*Write` (flat insert/update) classes; `CustomerRow` keeps all three derives on one class as the simple combined example |
 
-## Layout
+## Architecture
 
-- `basalt.yaml` — CLI config (`database_url: example.db`, `migrations_dir: migrations`).
-- `migrations/` — `<timestamp>_<name>/{up,down}.sql`. Creates `users` and `posts`,
-  and adds a self-referential `users.manager_id` foreign key.
-- `lib/schema.dart` — **generated** by `basalt generate-schema` (tables/columns only).
-- `lib/user.dart`, `lib/post.dart` — hand-written data classes. `User` carries
-  `@Queryable` + `@Insertable` + `@AsChangeset`; both use `@Relation` for joins.
-- `lib/user.g.dart`, `lib/post.g.dart` — **generated** by `basalt_codegen` (`build_runner`).
-- `bin/example.dart` — seeds via `toInsert()`, mutates via `toUpdate()`, and exercises the query surface.
+```
+lib/
+  core/          # database bootstrap, asset migration runner, seed, DI, formatters
+    database/    #   schema.dart (generated) · app_database · asset_migration_source · seed_data
+    di/          #   get_it service locator
+  domain/        # pure entities (rich DateTime/enum/bool types) + repository interfaces  — no basalt
+    entities/    #   Product, Order, Review, … + view models (ProductWithStats, OrderSummary, …)
+    repositories/#   abstract interfaces
+  data/          # basalt-facing layer
+    models/      #   *Row (read: @Queryable + @Relation) + *Write (@Insertable/@AsChangeset) + generated *.g.dart
+                 #   CustomerRow keeps all three derives on one class — the simple "combined" example
+    mappers/     #   Row -> Entity (int↔bool, epoch↔DateTime, text↔enum)
+    repositories/#   basalt-backed implementations of the domain interfaces
+  presentation/  # cubits + states + Flutter pages (catalogue, product detail, cart, orders, customers, analytics)
+```
 
-## What the codegen emits
+The **layers only depend inwards**: presentation → domain ← data. The presentation layer never imports
+`basalt`; it talks to repository *interfaces* resolved from `get_it`. The mapper layer exists because SQLite
+stores booleans as `0/1`, dates as epoch millis and enums as text — the generated `schema.dart` types those
+as `int`/`String`, and the mappers turn them into rich domain types.
 
-- `@Queryable(table)` → a composable, alias-parameterized row reader `$XFromRow`,
-  a reusable `xMapper` (`RowMapper<X>`), and — when the class has `@Relation`s —
-  a **self-mapping join query** getter (e.g. `userQuery`/`postQuery`) that wires
-  up the joins, table aliases and nested decoding for you, and is still a
-  chainable `MappedQuery`.
-- `@Insertable(table)` → a `toInsert()` extension returning an `InsertStatement`.
-- `@AsChangeset(table)` → a `toUpdate()` extension returning an `UpdateStatement`
-  (the `SET` clause; you append the `.where(...)`).
+## Run it
 
-Fields map to columns by name (camelCase ↔ snake_case). Override or tune a field
-with `@Column(SomeTable.col, readOnly: …, writeOnly: …)`: `readOnly` is read on
-SELECT but skipped on write (autoincrement PKs, server defaults); `writeOnly` is
-written but skipped by the row reader.
+```bash
+cd example
+flutter pub get
 
-`@Relation(fk, depth: n)` unrolls the join `n` levels deep with path-based
-aliases (`author`, `author_manager`, …), so even self-referential and cyclic
-relations are safe. Relation fields must be nullable and optional, and are
-skipped by the write derives.
+# (dev only) apply migrations to a throwaway example.db and regenerate the typed schema:
+dart run basalt_cli:basalt migration run
+dart run basalt_cli:basalt generate-schema          # -> lib/core/database/schema.dart
 
-## Run (from this directory)
-
-```sh
-# 1. Apply migrations — creates example.db (users/posts + manager_id).
-dart run basalt_cli:basalt database reset   # or: migration run
-
-# 2. (Re)generate the typed schema from the migrated database.
-dart run basalt_cli:basalt generate-schema
-
-# 3. Generate row readers / query getters from the annotations.
+# generate the row readers / insert / changeset code:
 dart run build_runner build
 
-# 4. Run the demo.
-dart run bin/example.dart
+flutter run -d macos                                 # or your device of choice
 ```
 
-> Note: SQLite has no native boolean, so `users.active` is an `int` column.
+On first launch the app opens a database in the app documents directory, applies the bundled migrations and
+seeds demo data. Data persists across restarts; delete the app's `basalt_shop.db` to re-seed.
 
-Expected output:
+> This app is **not** a member of the root Dart pub workspace (Flutter apps can't be). It resolves on its own
+> via `flutter pub get`, using `dependency_overrides` to point the `basalt` packages at their local paths.
 
-```
-=== Generated self-mapping join queries ===
-Posts with author + author.manager (most viewed first):
-  Post("Hello", 150 views, by Bob (mgr: Carol))
-  Post("World", 90 views, by Dave (mgr: Bob))
-  Post("Untitled", 5 views, by Carol)
+## Tests
 
-Active users that report to someone:
-  User(#1 Bob, age 30, reports to Carol)
-
-=== Single-table queries & the predicate DSL ===
-Active users older than 28: [Carol, Bob]
-Users whose name contains "a": [Carol, Dave]
-Two youngest aged 26..45: [Bob, Carol]
-Top managers (no manager_id): [Carol]
-
-=== Manual joins & projection control ===
-Every post with its author (leftJoin): [Hello <- Bob, World <- Dave, Untitled <- Carol]
-Popular post titles (>=90 views): [Hello (150), World (90)]
-Reporting lines (name -> manager): [Bob -> Carol, Dave -> Bob]
-
-=== Writes (UPDATE / DELETE) ===
-Reactivated 1 user(s).
-Deleted 1 low-traffic post(s).
-Remaining posts: [Hello, World]
-
-=== Raw SQL escape hatches ===
-Active users: 3, average age: 32.333333333333336
-After raw birthday bump: User(#1 Bob, age 31)
+```bash
+flutter test
 ```
 
-Other CLI commands: `migration generate <name>`, `migration list`,
-`migration revert`, `migration redo`, `database reset`.
+`test/` runs the repository layer against an in-memory `SqliteConnection` (migrations applied from disk, then
+seeded) — covering nested relations, aggregate ratings, and transactional order creation with stock
+decrements.
 
-## The DevTools inspector demo
+## Notes
 
-This package also hosts the launcher and demo target for the
-[DevTools inspector](../packages/basalt#devtools-inspector):
-
-```sh
-# One command: starts a Dart Tooling Daemon, seeds ~100 users in an in-memory DB,
-# and opens DevTools wired to it. Then enable "basalt" in DevTools' Extensions menu.
-dart run tool/inspect.dart
-
-# Or run just the seeded target and attach DevTools yourself:
-dart run --observe tool/inspector_demo.dart
-```
-
+- SQLite comes from `sqlite3_flutter_libs` (native lib for macOS/iOS/Android). The primary target here is
+  `-d macos`; Linux/Windows desktop would additionally need a system `sqlite3`.
+- The "current shopper" for writing reviews and the checkout customer are chosen in-app for demo simplicity.

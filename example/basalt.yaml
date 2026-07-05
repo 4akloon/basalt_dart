@@ -1,4 +1,6 @@
-# Config read by the `basalt` CLI (run from this directory).
+# Config read by the `basalt` CLI (run from this directory). Used at *development
+# time* to apply migrations against a throwaway dev DB and to regenerate the typed
+# schema. The running Flutter app applies the same migrations from bundled assets.
 database_url: example.db
 migrations_dir: migrations
-schema_output: lib/schema.dart
+schema_output: lib/core/database/schema.dart

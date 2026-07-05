@@ -24,6 +24,9 @@ dartdoc:
     connection:
       markdown: doc/connection.md
       displayName: Connection & Backends
+    migrations:
+      markdown: doc/migrations.md
+      displayName: Schema Migrations
     annotations:
       markdown: doc/annotations.md
       displayName: Annotations & Codegen
@@ -36,5 +39,6 @@ dartdoc:
     - writes
     - serialization
     - connection
+    - migrations
     - annotations
   showUndocumentedCategories: true

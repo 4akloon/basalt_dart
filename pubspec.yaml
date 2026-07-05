@@ -14,4 +14,3 @@ workspace:
   - packages/basalt_cli
   - packages/basalt_codegen
   - packages/basalt_postgres
-  - example
