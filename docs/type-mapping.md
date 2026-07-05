@@ -38,7 +38,7 @@ never true in SQL).
 
 SQLite has no native boolean or timestamp type. As a result:
 
-- A `bool` column is declared `INTEGER`; introspection (`print-schema`) can't distinguish it from a plain
+- A `bool` column is declared `INTEGER`; introspection (`generate-schema`) can't distinguish it from a plain
   integer, so a generated boolean-ish column comes back as `int` (`active` in the example). You can still use
   `SqlType.boolean` when you hand-write or adjust the schema.
 - `DateTime` is stored as `INTEGER` epoch milliseconds by `SqlType.dateTime`.
@@ -65,5 +65,5 @@ static const role = ValueColumn<Role, Accounts>('accounts', 'role', roleType);
 ```
 
 The custom type flows through reads (`r.get(Accounts.role)` → `Role`), writes (`Accounts.role.set(Role.admin)`),
-and predicates (`Accounts.role.eq(Role.admin)`). `print-schema` still emits built-in types, so swap in a custom
+and predicates (`Accounts.role.eq(Role.admin)`). `generate-schema` still emits built-in types, so swap in a custom
 `SqlType` by editing the generated schema; auto-mapping DB types to custom codecs is a possible future enhancement.

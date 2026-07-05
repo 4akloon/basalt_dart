@@ -14,7 +14,9 @@ final class ResetCommand extends Command<int> {
 
   @override
   Future<int> run() async {
-    final config = BasaltConfig.load();
+    final config = BasaltConfig.load(
+      configPath: globalResults?['config'] as String? ?? 'basalt.yaml',
+    );
     // SQLite reset = drop the file and re-create. (Per-backend reset can live in
     // the backend later.)
     final path = config.databasePath;

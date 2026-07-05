@@ -1,3 +1,4 @@
 # Config read by the `basalt` CLI (run from this directory).
 database_url: example.db
 migrations_dir: migrations
+schema_output: lib/schema.dart

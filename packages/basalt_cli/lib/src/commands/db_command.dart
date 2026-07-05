@@ -9,7 +9,9 @@ abstract base class DbCommand extends Command<int> {
   Future<int> withRunner(
       Future<int> Function(BasaltConfig config, MigrationRunner runner)
           action) async {
-    final config = BasaltConfig.load();
+    final config = BasaltConfig.load(
+      configPath: globalResults?['config'] as String? ?? 'basalt.yaml',
+    );
     final connection = await const ConnectionFactory().open(config);
     try {
       return await action(config, MigrationRunner(connection, config.migrationsDir));

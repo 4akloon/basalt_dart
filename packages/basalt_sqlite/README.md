@@ -57,7 +57,7 @@ The full [`Connection`](../basalt) interface:
 | `executeReturning(q)` | INSERT/UPDATE/DELETE … `RETURNING`, decode rows |
 | `executeSql(sql, [params])` | raw statement (DDL, migrations) |
 | `queryRaw(sql, [params])` | raw read → `List<Map<String, Object?>>` |
-| `introspect()` | schema → dialect-neutral model (for `print-schema`) |
+| `introspect()` | schema → dialect-neutral model (for `generate-schema`) |
 | `transaction(fn)` | `BEGIN`/`COMMIT`, nested → `SAVEPOINT` |
 | `close()` | dispose the database |
 
@@ -95,14 +95,14 @@ SQLite has no native boolean or timestamp, so:
 | `List<int>` | `BLOB` | `SqlType.blob` |
 
 Because `bool`/`DateTime` are indistinguishable from `int` at the storage level, `introspect()` (and thus
-`print-schema`) reports them as `int`. Full details and the cross-backend story:
+`generate-schema`) reports them as `int`. Full details and the cross-backend story:
 [type mapping](../../docs/type-mapping.md).
 
 ## Introspection
 
 `introspect()` reads `sqlite_master` + `PRAGMA table_info` / `PRAGMA foreign_key_list` into a
 dialect-neutral `List<IntrospectedTable>` (excluding `sqlite_*` and `__basalt_schema_migrations`). This is
-what `basalt print-schema` consumes.
+what `basalt generate-schema` consumes.
 
 ## Testing tips
 

@@ -3,17 +3,12 @@ import 'dart:io';
 import '../schema_generator.dart';
 import 'db_command.dart';
 
-final class PrintSchemaCommand extends DbCommand {
+final class GenerateSchemaCommand extends DbCommand {
   @override
-  final name = 'print-schema';
+  final name = 'generate-schema';
   @override
   final description =
       'Generate the typed schema (tables and columns only) from the database.';
-
-  PrintSchemaCommand() {
-    argParser.addOption('output',
-        abbr: 'o', help: 'Write to this file instead of stdout.');
-  }
 
   @override
   Future<int> run() => withRunner((config, runner) async {
@@ -23,12 +18,11 @@ final class PrintSchemaCommand extends DbCommand {
               'Run `basalt migration run` first.');
         }
         final source = const SchemaGenerator().generate(tables);
-        if (argResults?['output'] case final String path) {
-          File(path).writeAsStringSync(source);
-          stdout.writeln('Wrote ${tables.length} table(s) to $path');
-        } else {
-          stdout.write(source);
-        }
+        final out = File(config.schemaOutput);
+        out.parent.createSync(recursive: true);
+        out.writeAsStringSync(source);
+        stdout.writeln(
+            'Wrote ${tables.length} table(s) to ${config.schemaOutput}');
         return 0;
       });
 }

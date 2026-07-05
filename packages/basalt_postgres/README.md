@@ -24,7 +24,7 @@ end-to-end against **Postgres 16**.
 |---|---|
 | ✅ | `PostgresDialect` — numbered `$N` placeholders (1-based), double-quoted identifiers |
 | ✅ | `PostgresConnection` — the full `Connection` interface (`fetch`, `execute`, `executeReturning`, `executeSql`, `queryRaw`, `transaction` with savepoints, `introspect`, `close`) |
-| ✅ | Introspection via `information_schema` (tables, columns, nullability, primary & foreign keys) for `print-schema` |
+| ✅ | Introspection via `information_schema` (tables, columns, nullability, primary & foreign keys) for `generate-schema` |
 | ✅ | CLI `postgres://` wiring + cross-backend codecs (`int`/`text`/`real`/`bool`/`DateTime`) |
 | ⬜ | Advanced PG types (`uuid`, `json`/`jsonb`, `numeric`, arrays) |
 
@@ -70,7 +70,7 @@ and `timestamp`), while decoders stay lenient so the same Dart types round-trip 
 
 `introspect()` reads `information_schema` into the dialect-neutral `List<IntrospectedTable>` model. The
 `basalt` CLI selects this backend from a `postgres://` / `postgresql://` `database_url`, so
-`migration run` and `print-schema` work against Postgres:
+`migration run` and `generate-schema` work against Postgres:
 
 ```yaml
 # basalt.yaml

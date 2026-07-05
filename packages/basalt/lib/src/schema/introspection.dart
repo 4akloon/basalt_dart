@@ -1,5 +1,5 @@
 /// Dialect-neutral description of a database schema, produced by
-/// [Connection.introspect] and consumed by codegen (e.g. `print-schema`).
+/// [Connection.introspect] and consumed by codegen (e.g. `generate-schema`).
 ///
 /// Each backend maps its own catalog and native types into this model, so the
 /// code generator never needs to know SQLite vs Postgres specifics.

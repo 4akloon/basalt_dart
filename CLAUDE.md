@@ -22,7 +22,7 @@ trivially unit-testable and makes new backends drop-in.
 | `packages/basalt` | `basalt` | Dialect-agnostic core: types, schema, expressions, query/write builders, serializer, `Connection`/`SqlDialect` interfaces, annotations. No driver dep. Also provides the **DevTools inspector runtime** as a separate entrypoint `package:basalt/devtools.dart` (registry + `InspectorService` over `ext.basalt.*`; `lib/src/devtools/`) and ships the DevTools extension (`extension/devtools/`). |
 | `packages/basalt_sqlite` | `basalt_sqlite` | SQLite backend: `SqliteConnection` + `SqliteDialect` (on `package:sqlite3`). |
 | `packages/basalt_postgres` | `basalt_postgres` | Postgres backend: `PostgresConnection` + `PostgresDialect` (on `package:postgres`), with `information_schema` introspection. |
-| `packages/basalt_cli` | `basalt_cli` | `basalt` executable: migrations + `print-schema`. |
+| `packages/basalt_cli` | `basalt_cli` | `basalt` executable: migrations + `generate-schema`. |
 | `packages/basalt_codegen` | `basalt_codegen` | `build_runner`/`source_gen` derives for the annotations. |
 | `packages/basalt_devtools_extension` | `basalt_devtools_extension` | Flutter web UI for the DevTools "basalt" tab. Under `packages/` but **not** a Dart-workspace member (Flutter app; resolve with `flutter pub get`); compiled into `basalt/extension/devtools/build/`. |
 | `example/` | `basalt_example` | End-to-end demo (migrations → schema → models → queries). |
@@ -35,7 +35,7 @@ Dart SDK constraint: `>=3.5.0 <4.0.0`.
 - **Test a package:** `cd packages/<pkg> && dart test`
 - **CLI** (run from a directory containing `basalt.yaml`, e.g. `example/`): `dart run basalt_cli:basalt <command>`
   - `setup` · `migration generate <name>` · `migration run` · `migration revert` · `migration redo` ·
-    `migration list` · `database reset` · `print-schema [-o <file>]`
+    `migration list` · `database reset` · `generate-schema` · `--config <path>`
 - **Codegen** (in `example/`): `dart run build_runner build`
 
 ## Key invariants & conventions (don't break these)
@@ -94,7 +94,7 @@ Dart SDK constraint: `>=3.5.0 <4.0.0`.
 
 - Serializer (SQL/params, scope validation, joins): `packages/basalt/test/serializer_test.dart`
 - SQLite round-trips, joins, transactions, nullable: `packages/basalt_sqlite/test/integration_test.dart`
-- Migrations + print-schema/introspection: `packages/basalt_cli/test/{migrations_test,print_schema_test}.dart`
+- Migrations + generate-schema/introspection: `packages/basalt_cli/test/{migrations_test,generate_schema_test}.dart`
 - Codegen emitters + generate + relation tree: `packages/basalt_codegen/test/*`
 - End-to-end: `example/` (`dart run build_runner build`, then `dart run bin/example.dart`)
 

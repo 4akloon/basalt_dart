@@ -20,7 +20,7 @@ single-table predicates, manual + generated joins, relations, transactions, writ
 - `basalt.yaml` — CLI config (`database_url: example.db`, `migrations_dir: migrations`).
 - `migrations/` — `<timestamp>_<name>/{up,down}.sql`. Creates `users` and `posts`,
   and adds a self-referential `users.manager_id` foreign key.
-- `lib/schema.dart` — **generated** by `basalt print-schema` (tables/columns only).
+- `lib/schema.dart` — **generated** by `basalt generate-schema` (tables/columns only).
 - `lib/user.dart`, `lib/post.dart` — hand-written data classes. `User` carries
   `@Queryable` + `@Insertable` + `@AsChangeset`; both use `@Relation` for joins.
 - `lib/user.g.dart`, `lib/post.g.dart` — **generated** by `basalt_codegen` (`build_runner`).
@@ -54,7 +54,7 @@ skipped by the write derives.
 dart run basalt_cli:basalt database reset   # or: migration run
 
 # 2. (Re)generate the typed schema from the migrated database.
-dart run basalt_cli:basalt print-schema -o lib/schema.dart
+dart run basalt_cli:basalt generate-schema
 
 # 3. Generate row readers / query getters from the annotations.
 dart run build_runner build

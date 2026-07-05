@@ -78,7 +78,7 @@ cd packages/basalt_postgres && dart test        # override via BASALT_PG_HOST / 
 
 **The CLI** (run from a dir with a `basalt.yaml`, e.g. `example/`):
 `dart run basalt_cli:basalt <command>` — `setup`, `migration generate/run/revert/redo/list`,
-`database reset`, `print-schema [-o <file>]`.
+`database reset`, `generate-schema`. Global `--config/-c` selects a non-default `basalt.yaml`.
 
 ## Architecture at a glance
 
@@ -144,7 +144,7 @@ Prefer fast, pure unit tests; the architecture is built for them.
 
 - Serializer (SQL/params, scope validation, joins): `packages/basalt/test/serializer_test.dart`.
 - SQLite round-trips, joins, transactions, nullables: `packages/basalt_sqlite/test/`.
-- Migrations + print-schema/introspection: `packages/basalt_cli/test/`.
+- Migrations + generate-schema/introspection: `packages/basalt_cli/test/`.
 - Codegen **emitters** (pure, no analyzer) + generate goldens + relation tree: `packages/basalt_codegen/test/`.
 - End-to-end: `example/` (`build_runner build`, then `dart run bin/example.dart`).
 

@@ -11,7 +11,8 @@ generation.
 dart run basalt_cli:basalt <command>
 ```
 
-Run it from a directory containing a `basalt.yaml` (or with `DATABASE_URL` set).
+Run it from a directory containing a `basalt.yaml` (or with `DATABASE_URL` set). Use `--config/-c`
+to point at a non-default config file.
 
 ## Contents
 
@@ -35,6 +36,7 @@ dev_dependencies:
 # basalt.yaml
 database_url: app.db        # SQLite path; the DATABASE_URL env var overrides this
 migrations_dir: migrations  # default: migrations
+schema_output: lib/schema.dart  # default: lib/schema.dart
 ```
 
 The backend is chosen by URL scheme (`ConnectionFactory`): `postgres://` / `postgresql://` use the Postgres
@@ -51,7 +53,7 @@ backend (`postgres://user:pass@host:5432/db?sslmode=disable`); anything else is 
 | `migration redo` | Revert then re-apply the latest migration. |
 | `migration list` | Show applied vs pending. |
 | `database reset` | Recreate the database from scratch. |
-| `print-schema [-o <file>]` | Introspect the DB into a typed Dart schema (stdout or `-o` file). |
+| `generate-schema` | Introspect the DB into a typed Dart schema (`schema_output` in config). |
 
 ## The migration workflow
 
@@ -63,7 +65,7 @@ dart run basalt_cli:basalt migration generate create_users
 dart run basalt_cli:basalt migration run
 
 # 3. Regenerate the typed schema after any schema change.
-dart run basalt_cli:basalt print-schema -o lib/schema.dart
+dart run basalt_cli:basalt generate-schema
 ```
 
 A migration is a directory `migrations/<version>_<name>/` with `up.sql` (apply) and `down.sql` (revert);
@@ -82,7 +84,7 @@ The package also exports its engine so you can embed migrations in tests or app 
 - `MigrationRunner` — apply/revert against any `Connection`.
 - `BasaltConfig` — parse `basalt.yaml` / `DATABASE_URL`.
 - `ConnectionFactory` — open the right backend from a `database_url`.
-- `SchemaGenerator` — the `print-schema` engine.
+- `SchemaGenerator` — the `generate-schema` engine.
 - `MigrationScaffolder` — the `migration generate` engine.
 - `CliRunner` — the whole command dispatcher.
 

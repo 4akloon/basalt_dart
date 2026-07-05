@@ -17,7 +17,9 @@ final class GenerateCommand extends Command<int> {
     if (rest.isEmpty) {
       usageException('Provide a migration name: migration generate <name>.');
     }
-    final config = BasaltConfig.load();
+    final config = BasaltConfig.load(
+      configPath: globalResults?['config'] as String? ?? 'basalt.yaml',
+    );
     final dir = const MigrationScaffolder().scaffold(rest.first, config.migrationsDir);
     stdout.writeln('Created $dir');
     return 0;

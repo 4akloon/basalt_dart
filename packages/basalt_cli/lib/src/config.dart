@@ -7,8 +7,13 @@ import 'package:yaml/yaml.dart';
 final class BasaltConfig {
   final String databaseUrl;
   final String migrationsDir;
+  final String schemaOutput;
 
-  const BasaltConfig({required this.databaseUrl, required this.migrationsDir});
+  const BasaltConfig({
+    required this.databaseUrl,
+    required this.migrationsDir,
+    required this.schemaOutput,
+  });
 
   /// SQLite filesystem path (scheme stripped). `:memory:` is passed through.
   String get databasePath {
@@ -27,6 +32,7 @@ final class BasaltConfig {
     final env = environment ?? Platform.environment;
     var databaseUrl = env['DATABASE_URL'];
     var migrationsDir = 'migrations';
+    var schemaOutput = 'lib/schema.dart';
 
     final file = File(configPath);
     if (file.existsSync()) {
@@ -34,11 +40,16 @@ final class BasaltConfig {
       if (yaml is Map) {
         databaseUrl ??= yaml['database_url'] as String?;
         if (yaml['migrations_dir'] case final String dir) migrationsDir = dir;
+        if (yaml['schema_output'] case final String path) schemaOutput = path;
       }
     }
 
     if (databaseUrl case final url?) {
-      return BasaltConfig(databaseUrl: url, migrationsDir: migrationsDir);
+      return BasaltConfig(
+        databaseUrl: url,
+        migrationsDir: migrationsDir,
+        schemaOutput: schemaOutput,
+      );
     }
     throw StateError(
         'No database configured. Set DATABASE_URL or `database_url:` in basalt.yaml.');

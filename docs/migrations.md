@@ -31,7 +31,7 @@ backend (e.g. `postgres://user:pass@host:5432/db?sslmode=disable`); anything els
 | `migration redo` | Revert then re-apply the most recent migration. |
 | `migration list` | Show applied vs pending migrations. |
 | `database reset` | Drop/recreate and re-apply (fresh database). |
-| `print-schema [-o <file>]` | Introspect the database into a typed Dart schema (stdout, or a file with `-o`). |
+| `generate-schema` | Introspect the database into a typed Dart schema (`schema_output` in `basalt.yaml`). |
 
 ## Migration layout
 
