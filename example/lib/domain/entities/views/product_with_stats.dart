@@ -3,9 +3,8 @@ import 'package:basalt_example/domain/entities/review.dart';
 
 /// A product enriched with aggregate review data — the product-detail view.
 ///
-/// [averageRating] and [reviewCount] come from a single `AVG(rating)` /
-/// `COUNT(*)` aggregate query; [reviews] are the individual reviews (each with
-/// its author) loaded alongside.
+/// [averageRating] and [reviewCount] are derived from [reviews] after a single
+/// fold query loads the product, category, and each review (with author).
 class ProductWithStats {
   const ProductWithStats({
     required this.product,

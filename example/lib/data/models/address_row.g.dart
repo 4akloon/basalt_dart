@@ -35,7 +35,3 @@ MappedQuery<AddressRow> get addressRowQuery {
       )
       .map((r) => $AddressRowFromRow(r, Addresses.table, '', 1));
 }
-
-/// Fetch the AddressRow with the given primary key.
-MappedQuery<AddressRow> findAddressRow(int id) =>
-    addressRowQuery.findBy(Addresses.id, id);

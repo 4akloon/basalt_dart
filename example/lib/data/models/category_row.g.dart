@@ -39,7 +39,3 @@ MappedQuery<CategoryRow> get categoryRowQuery {
       )
       .map((r) => $CategoryRowFromRow(r, Categories.table, '', 1));
 }
-
-/// Fetch the CategoryRow with the given primary key.
-MappedQuery<CategoryRow> findCategoryRow(int id) =>
-    categoryRowQuery.findBy(Categories.id, id);

@@ -22,7 +22,7 @@ class CustomerRepositoryImpl implements CustomerRepository {
 
   @override
   Future<CustomerProfile?> profile(int id) async {
-    final row = await findCustomerProfileRow(id).optional(_db);
+    final row = await customerProfileRowQuery.findBy(Customers.id, id).optional(_db);
     return row?.toDomain();
   }
 }

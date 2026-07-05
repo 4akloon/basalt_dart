@@ -1,9 +1,9 @@
 import 'package:basalt/basalt.dart';
 import 'package:basalt_example/core/database/schema.dart';
+import 'package:basalt_example/data/mappers/product_detail_mapper.dart';
 import 'package:basalt_example/data/mappers/product_mapper.dart';
-import 'package:basalt_example/data/mappers/review_mapper.dart';
+import 'package:basalt_example/data/models/product_detail_row.dart';
 import 'package:basalt_example/data/models/product_row.dart';
-import 'package:basalt_example/data/models/review_row.dart';
 import 'package:basalt_example/domain/entities/product.dart';
 import 'package:basalt_example/domain/entities/views/product_with_stats.dart';
 import 'package:basalt_example/domain/repositories/product_repository.dart';
@@ -31,31 +31,10 @@ class ProductRepositoryImpl implements ProductRepository {
 
   @override
   Future<ProductWithStats?> detail(int id) async {
-    final row = await findProductRow(id).optional(_db);
-    if (row == null) return null;
-
-    // Reviews (each with its author) via the generated relation query.
-    final reviewRows = await reviewRowQuery
-        .where(Reviews.productId.eq(id))
-        .orderBy(Reviews.createdAt.desc())
-        .load(_db);
-
-    // Aggregate rating + count in one grouped-free aggregate query.
-    final avgRating = Reviews.rating.avg();
-    final total = countAll();
-    final stats = await _db.fetch(
-      from(Reviews.table)
-          .select([avgRating, total])
-          .where(Reviews.productId.eq(id))
-          .map((r) => (avg: r.get(avgRating), count: r.get(total))),
-    );
-    final agg = stats.single;
-
-    return ProductWithStats(
-      product: row.toDomain(),
-      averageRating: agg.avg,
-      reviewCount: agg.count,
-      reviews: [for (final review in reviewRows) review.toDomain()],
-    );
+    final row = await productDetailRowQuery
+        .findBy(Products.id, id)
+        .order(Reviews.createdAt.desc())
+        .optional(_db);
+    return row?.toDomain();
   }
 }

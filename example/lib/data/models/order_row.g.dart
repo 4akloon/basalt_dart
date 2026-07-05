@@ -117,7 +117,3 @@ FoldMappedQuery<OrderRow> get orderRowQuery {
       .mapFold($OrderRowFold)
       .withRootPk(Orders.id);
 }
-
-/// Fetch the OrderRow with the given primary key.
-FoldMappedQuery<OrderRow> findOrderRow(int id) =>
-    orderRowQuery.findBy(Orders.id, id);

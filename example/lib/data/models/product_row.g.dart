@@ -41,7 +41,3 @@ MappedQuery<ProductRow> get productRowQuery {
       )
       .map((r) => $ProductRowFromRow(r, Products.table, '', 1));
 }
-
-/// Fetch the ProductRow with the given primary key.
-MappedQuery<ProductRow> findProductRow(int id) =>
-    productRowQuery.findBy(Products.id, id);

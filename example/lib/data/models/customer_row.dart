@@ -5,7 +5,7 @@ part 'customer_row.g.dart';
 
 /// The **combined** example: a simple model (no relations) that carries all
 /// three derives on one class — `@Queryable` (read + `customerRowMapper` /
-/// `customerRowQuery` / `findCustomerRow`), `@Insertable` (`toInsert()`) and
+/// `customerRowQuery`), `@Insertable` (`toInsert()`) and
 /// `@AsChangeset` (`toUpdate()`).
 ///
 /// For rows *with* relations we split read and write into separate classes

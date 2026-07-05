@@ -93,9 +93,9 @@ void main() {
         r'from(Users.table).select([Users.id, Users.name, Users.age, Users.active]).map($UserFromRow)',
       ),
     );
-    // A PrimaryKey column -> a bare find-by-key.
-    expect(code, contains('MappedQuery<User> findUser(int id) =>'));
-    expect(code, contains('userQuery.findBy(Users.id, id)'));
+    // A PrimaryKey column -> find via the query getter's findBy.
+    expect(code, isNot(contains('findUser(')));
+    expect(code, contains('MappedQuery<User> get userQuery'));
   });
 
   test('self-referential reader recurses into the same public reader', () {

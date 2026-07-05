@@ -33,7 +33,7 @@ class OrderRepositoryImpl implements OrderRepository {
 
   @override
   Future<OrderSummary?> detail(int id) async {
-    final order = await findOrderRow(id).optional(_db);
+    final order = await orderRowQuery.findBy(Orders.id, id).optional(_db);
     if (order == null) return null;
     return OrderSummary(
       order: order.toDomain(),
@@ -78,7 +78,7 @@ class OrderRepositoryImpl implements OrderRepository {
 
   @override
   Future<void> updateStatus(int orderId, OrderStatus status) async {
-    final current = await findOrderRow(orderId).optional(_db);
+    final current = await orderRowQuery.findBy(Orders.id, orderId).optional(_db);
     if (current == null) return;
     await _db.execute(
       OrderWrite(

@@ -28,10 +28,6 @@ MappedQuery<CustomerRow> get customerRowQuery => from(Customers.table).select([
       Customers.createdAt
     ]).map($CustomerRowFromRow);
 
-/// Fetch the CustomerRow with the given primary key.
-MappedQuery<CustomerRow> findCustomerRow(int id) =>
-    customerRowQuery.findBy(Customers.id, id);
-
 // **************************************************************************
 // InsertableGenerator
 // **************************************************************************

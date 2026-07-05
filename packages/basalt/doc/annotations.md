@@ -97,10 +97,10 @@ final summaries = await db.fetch(userSummaryQuery);
 
 (Classes with `@Relation`s get the join-based `xQuery` instead.)
 
-Any `@Queryable` class that maps a `PrimaryKey` column also gets `findX(pk)`:
+Find by primary key via the query getter:
 
 ```dart
-final user = await findUser(1).first(db);
+final user = await userQuery.findBy(Users.id, 1).first(db);
 ```
 
 ## `@Relation` (read-side joins)

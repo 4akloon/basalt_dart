@@ -49,7 +49,3 @@ MappedQuery<ReviewRow> get reviewRowQuery {
       )
       .map((r) => $ReviewRowFromRow(r, Reviews.table, '', 1));
 }
-
-/// Fetch the ReviewRow with the given primary key.
-MappedQuery<ReviewRow> findReviewRow(int id) =>
-    reviewRowQuery.findBy(Reviews.id, id);

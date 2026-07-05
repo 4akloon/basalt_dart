@@ -169,7 +169,3 @@ FoldMappedQuery<CustomerProfileRow> get customerProfileRowQuery {
       .mapFold($CustomerProfileRowFold)
       .withRootPk(Customers.id);
 }
-
-/// Fetch the CustomerProfileRow with the given primary key.
-FoldMappedQuery<CustomerProfileRow> findCustomerProfileRow(int id) =>
-    customerProfileRowQuery.findBy(Customers.id, id);

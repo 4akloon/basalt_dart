@@ -92,7 +92,7 @@ User $UserFromRow(RowReader r, [QuerySource<Users> src = Users.table, ...]) =>
 
 const userMapper = RowMapper<User>($UserFromRow);
 MappedQuery<User> get userQuery { /* leftJoin the manager, map */ }
-MappedQuery<User> findUser(int id) => userQuery.findBy(Users.id, id);
+// find by PK: userQuery.findBy(Users.id, id)
 ```
 
 See [`example/`](../../example) for a complete two-file model (cross-file `@Relation`) and its generated output.

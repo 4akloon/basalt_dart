@@ -1,5 +1,4 @@
 import 'aggregate_query_emitter.dart';
-import 'find_emitter.dart';
 import 'has_many_fold_emitter.dart';
 import 'has_many_query_emitter.dart';
 import 'naming.dart';
@@ -24,7 +23,6 @@ final class ModelCodeGenerator {
     this.queryGetterEmitter = const QueryGetterEmitter(),
     this.relationCalls = const RelationCallEmitter(),
     this.selectQueryEmitter = const SelectQueryEmitter(),
-    this.findEmitter = const FindEmitter(),
     this.hasManyQueryEmitter = const HasManyQueryEmitter(),
     this.hasManyFoldEmitter = const HasManyFoldEmitter(),
     this.aggregateQueryEmitter = const AggregateQueryEmitter(),
@@ -33,7 +31,6 @@ final class ModelCodeGenerator {
   final QueryGetterEmitter queryGetterEmitter;
   final RelationCallEmitter relationCalls;
   final SelectQueryEmitter selectQueryEmitter;
-  final FindEmitter findEmitter;
   final HasManyQueryEmitter hasManyQueryEmitter;
   final HasManyFoldEmitter hasManyFoldEmitter;
   final AggregateQueryEmitter aggregateQueryEmitter;
@@ -112,19 +109,6 @@ final class ModelCodeGenerator {
           tableMarker: root.tableMarker,
           readerName: readerName,
           columnArgs: root.columnArgs,
-        ),
-      );
-    }
-
-    if (root.pkColumnExpr case final pkExpr? when root.pkType != null) {
-      units.add(
-        findEmitter.emit(
-          className: className,
-          findName: 'find$className',
-          queryName: queryName,
-          pkColumnExpr: pkExpr,
-          pkType: root.pkType!,
-          foldQuery: root.hasManyEdges.isNotEmpty,
         ),
       );
     }

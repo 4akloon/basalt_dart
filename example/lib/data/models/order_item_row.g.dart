@@ -46,7 +46,3 @@ MappedQuery<OrderItemRow> get orderItemRowQuery {
       )
       .map((r) => $OrderItemRowFromRow(r, OrderItems.table, '', 2));
 }
-
-/// Fetch the OrderItemRow with the given primary key.
-MappedQuery<OrderItemRow> findOrderItemRow(int id) =>
-    orderItemRowQuery.findBy(OrderItems.id, id);

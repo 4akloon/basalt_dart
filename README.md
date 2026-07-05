@@ -273,7 +273,7 @@ deleteFrom(Posts.table).where(Posts.views.lt(10));
 
 Annotate a data class over your generated schema; `build_runner` emits the boilerplate into `<file>.g.dart`.
 Same `User` / `NewUser` / `UserPatch` classes as [Getting started](#3-write-your-own-queryinsertupdate-data-classes)
-above — `@Queryable` on `User` is what generates `$UserFromRow`, `userMapper`, `userQuery`, and `findUser(pk)`;
+above — `@Queryable` on `User` is what generates `$UserFromRow`, `userMapper`, and `userQuery`;
 `@Relation(Users.managerId)` is what makes `userQuery` resolve the self-join. Full guide:
 **[packages/basalt/doc/annotations.md](packages/basalt/doc/annotations.md)**.
 
