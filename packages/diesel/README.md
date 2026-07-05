@@ -174,14 +174,9 @@ the launcher:
 dart run example/tool/inspect.dart   # starts a DTD + app + DevTools; then enable "diesel" in the Extensions menu
 ```
 
-## Design notes
-
-- **Build vs execute.** Serialization is a pure transform; a `Connection` just runs the result.
-- **One class per file; sealed hierarchies use `part`s.** The sealed `TableColumn` / `SqlNode` /
-  `WriteStatement` trees each live as a `library` entry file with one-class `part` files under a subdir.
-- **Avoid `!`** — prefer `if (x case final y?)` / pattern matching (project style).
-
 ## Reference
 
 - [Query DSL](../../docs/query-dsl.md) · [Type mapping](../../docs/type-mapping.md) ·
   [Derives](../../docs/derives.md) · [diesel-rs comparison](../../docs/diesel-rs-comparison.md)
+- Working on the core itself? See [CONTRIBUTING.md](../../CONTRIBUTING.md) (architecture, conventions,
+  the build-vs-execute design, sealed-`part` layout).

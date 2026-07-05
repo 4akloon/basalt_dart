@@ -107,6 +107,5 @@ EdgeAnalyzer (analyzer elements → a plain model)
 ```
 
 Emitters are **pure functions**, unit-tested under `test/` without the analyzer; the generators are thin
-analyzer bridges. To add a new derive, add the annotation in `package:diesel`, a `TypeChecker` + parsing in
-`edge_analyzer.dart`, a pure emitter, a `GeneratorForAnnotation`, and register it in `builder.dart`. See
-[CLAUDE.md](../../CLAUDE.md).
+analyzer bridges. Adding a new derive is a five-step recipe (annotation → `TypeChecker`/parsing → emitter →
+generator → register in `builder.dart`) — see [CONTRIBUTING.md](../../CONTRIBUTING.md#extending-the-project).

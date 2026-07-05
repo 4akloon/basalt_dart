@@ -269,17 +269,15 @@ optional work (MySQL, connection pooling, advanced Postgres types, schema-first)
 
 ## Contributing
 
-```sh
-# Analyze everything and run each package's tests.
-dart analyze packages example
-for p in diesel diesel_sqlite diesel_cli diesel_codegen diesel_postgres; do (cd packages/$p && dart test); done
+Setup, day-to-day commands, the architecture, how to add a backend / derive / CLI command, and the coding
+conventions are all in **[CONTRIBUTING.md](CONTRIBUTING.md)** (with [CLAUDE.md](CLAUDE.md) as the exhaustive
+repo guide). The short version:
 
-# End-to-end demo.
+```sh
+dart pub get
+dart analyze packages example
 cd example && dart run build_runner build && dart run bin/example.dart
 ```
-
-Conventions, invariants, and the "how to add a backend / derive / CLI command" guides are in
-[CLAUDE.md](CLAUDE.md).
 
 ## License
 
