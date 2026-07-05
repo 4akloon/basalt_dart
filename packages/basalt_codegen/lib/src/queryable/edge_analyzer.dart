@@ -1,11 +1,15 @@
+import 'package:analyzer/dart/constant/value.dart';
 import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/nullability_suffix.dart';
 import 'package:analyzer/dart/element/type.dart';
 import 'package:basalt/basalt.dart';
 import 'package:source_gen/source_gen.dart';
 
+import 'aggregate_info.dart';
+import 'aggregate_join.dart';
 import 'class_info.dart';
 import 'column_arg.dart';
+import 'has_many_edge.dart';
 import 'naming.dart';
 import 'relation_edge.dart';
 
@@ -19,6 +23,8 @@ const asChangesetChecker =
     TypeChecker.typeNamed(AsChangeset, inPackage: 'basalt');
 const columnChecker = TypeChecker.typeNamed(Column, inPackage: 'basalt');
 const relationChecker = TypeChecker.typeNamed(Relation, inPackage: 'basalt');
+const hasManyChecker = TypeChecker.typeNamed(HasMany, inPackage: 'basalt');
+const aggChecker = TypeChecker.typeNamed(Agg, inPackage: 'basalt');
 
 /// ponytail: top-level so depth guard is unit-testable without analyzer mocks.
 int validateRelationDepth(int depth, Element element) {
@@ -113,6 +119,133 @@ final class EdgeAnalyzer {
     );
   }
 
+  HasManyEdge parseHasManyEdge({
+    required FieldElement field,
+    required FormalParameterElement param,
+    required String parentTableMarker,
+    required ClassElement parentElement,
+  }) {
+    final paramType = param.type;
+    if (paramType is! InterfaceType || paramType.element.name != 'List') {
+      throw InvalidGenerationSourceError(
+        '@HasMany field "${param.name}" must be List<ChildRow>.',
+        element: field,
+      );
+    }
+    if (paramType.typeArguments.isEmpty) {
+      throw InvalidGenerationSourceError(
+        '@HasMany field "${param.name}" must be List<ChildRow>.',
+        element: field,
+      );
+    }
+    final childType = paramType.typeArguments.first;
+    if (childType is! InterfaceType) {
+      throw InvalidGenerationSourceError(
+        '@HasMany child type must be a @Queryable class.',
+        element: field,
+      );
+    }
+    final childClass = childType.element;
+    if (!queryableChecker.hasAnnotationOfExact(childClass)) {
+      throw InvalidGenerationSourceError(
+        '@HasMany child ${childClass.name} must be @Queryable.',
+        element: field,
+      );
+    }
+
+    final ann = hasManyChecker.firstAnnotationOfExact(field)!;
+    final colObj = ann.getField('column');
+    if (colObj == null) {
+      throw InvalidGenerationSourceError(
+        '@HasMany(column) must reference a child FK (e.g. Addresses.customerId).',
+        element: field,
+      );
+    }
+    final colType = colObj.type;
+    if (colType is! InterfaceType || colType.typeArguments.length < 3) {
+      throw InvalidGenerationSourceError(
+        '@HasMany(column) must reference a child FK (e.g. Addresses.customerId).',
+        element: field,
+      );
+    }
+
+    final childMarker = colType.typeArguments[1].element?.name;
+    final parentMarker = colType.typeArguments[2].element?.name;
+    final sqlName = colObj.getField('name')?.toStringValue();
+    final pkObj = colObj.getField('references');
+    final pkSqlName = pkObj?.getField('name')?.toStringValue();
+    final pkMarker = pkObj?.type is InterfaceType
+        ? (pkObj!.type as InterfaceType).typeArguments[1].element?.name
+        : null;
+
+    if (childMarker == null ||
+        parentMarker == null ||
+        sqlName == null ||
+        pkSqlName == null ||
+        pkMarker == null) {
+      throw InvalidGenerationSourceError(
+        '@HasMany(column) must reference a child FK (e.g. Addresses.customerId).',
+        element: field,
+      );
+    }
+
+    if (parentMarker != parentTableMarker) {
+      throw InvalidGenerationSourceError(
+        '@HasMany(${childMarker}.${camelCase(sqlName)}) must reference a FK '
+        'to $parentTableMarker (got $parentMarker).',
+        element: field,
+      );
+    }
+
+    final childFkColumnExpr = '$childMarker.${camelCase(sqlName)}';
+    final parentPkColumnExpr = '$parentMarker.${camelCase(pkSqlName)}';
+    final childFkParamName = _fkParamNameOnChild(
+      childClass as ClassElement,
+      childFkColumnExpr,
+      field,
+    );
+
+    return HasManyEdge(
+      fieldName: param.name!,
+      childClass: childClass.name!,
+      childMarker: childMarker,
+      childFkColumnExpr: childFkColumnExpr,
+      childFkParamName: childFkParamName,
+      parentPkColumnExpr: parentPkColumnExpr,
+      parentPkParamName: _parentPkParamName(parentElement, parentPkColumnExpr),
+    );
+  }
+
+  String _fkParamNameOnChild(
+    ClassElement child,
+    String fkColumnExpr,
+    FieldElement field,
+  ) {
+    final info = describe(child);
+    for (final arg in info.columnArgs) {
+      if (arg.columnExpr == fkColumnExpr) return arg.paramName;
+    }
+    throw InvalidGenerationSourceError(
+      'Child ${child.name} has no constructor field mapped to $fkColumnExpr.',
+      element: field,
+    );
+  }
+
+  String _parentPkParamName(ClassElement parent, String pkColumnExpr) {
+    final ctor = parent.unnamedConstructor;
+    if (ctor == null) {
+      throw StateError('${parent.name} has no unnamed constructor.');
+    }
+    final tableMarker = tableMarkerOf(parent)!;
+    for (final param in ctor.formalParameters) {
+      final name = param.name;
+      final f = name == null ? null : parent.getField(name);
+      final arg = parseColumnArg(param: param, field: f, tableMarker: tableMarker);
+      if (arg.columnExpr == pkColumnExpr) return arg.paramName;
+    }
+    throw StateError('$pkColumnExpr not mapped on ${parent.name}.');
+  }
+
   ColumnArg parseColumnArg({
     required FormalParameterElement param,
     required FieldElement? field,
@@ -198,6 +331,9 @@ final class EdgeAnalyzer {
       if (field != null && relationChecker.hasAnnotationOfExact(field)) {
         continue;
       }
+      if (field != null && hasManyChecker.hasAnnotationOfExact(field)) {
+        continue;
+      }
       args.add(
         parseColumnArg(param: param, field: field, tableMarker: tableMarker),
       );
@@ -226,8 +362,11 @@ final class EdgeAnalyzer {
     final markerElement = _markerElement(element);
     final columnArgs = <ColumnArg>[];
     final ownEdges = <RelationEdge>[];
+    final hasManyEdges = <HasManyEdge>[];
+    final aggregates = <AggregateField>[];
     String? pkColumnExpr;
     String? pkType;
+    String? pkParamName;
     for (final param in constructor.formalParameters) {
       final name = param.name;
       final field = name == null ? null : element.getField(name);
@@ -237,6 +376,22 @@ final class EdgeAnalyzer {
         ownEdges.add(parseRelationEdge(field, param));
         continue;
       }
+      if (field != null && hasManyChecker.hasAnnotationOfExact(field)) {
+        _requireNamedOptional(param, field, kind: 'HasMany');
+        hasManyEdges.add(
+          parseHasManyEdge(
+            field: field,
+            param: param,
+            parentTableMarker: tableMarker,
+            parentElement: element,
+          ),
+        );
+        continue;
+      }
+      if (field != null && aggChecker.hasAnnotationOfExact(field)) {
+        aggregates.add(parseAggregateField(field, param));
+        continue;
+      }
       final arg =
           parseColumnArg(param: param, field: field, tableMarker: tableMarker);
       if (arg.writeOnly && field != null) {
@@ -244,14 +399,34 @@ final class EdgeAnalyzer {
       }
       columnArgs.add(arg);
 
-      // First readable PK column drives the generated bare findX(value).
       if (pkColumnExpr == null && !arg.writeOnly) {
         final valueType = _primaryKeyType(param, field, markerElement);
         if (valueType != null) {
           pkColumnExpr = arg.columnExpr;
           pkType = valueType;
+          pkParamName = param.name;
         }
       }
+    }
+
+    AggregateInfo? aggregateInfo;
+    if (aggregates.isNotEmpty) {
+      if (ownEdges.isNotEmpty || hasManyEdges.isNotEmpty) {
+        throw InvalidGenerationSourceError(
+          'Aggregate @Queryable classes cannot declare @Relation or @HasMany.',
+          element: element,
+        );
+      }
+      final ann = queryableChecker.firstAnnotationOfExact(element)!;
+      final reader = ConstantReader(ann);
+      aggregateInfo = AggregateInfo(
+        fromMarker: tableMarker,
+        joins: _parseAggregateJoins(reader, element),
+        dimensions: columnArgs,
+        aggregates: aggregates,
+        orderByCall: _parseOrderByCall(reader, element),
+        orderDesc: reader.read('orderDesc').boolValue,
+      );
     }
 
     return ClassInfo(
@@ -259,9 +434,117 @@ final class EdgeAnalyzer {
       tableMarker: tableMarker,
       columnArgs: columnArgs,
       ownEdges: ownEdges,
+      hasManyEdges: hasManyEdges,
+      aggregateInfo: aggregateInfo,
       pkColumnExpr: pkColumnExpr,
       pkType: pkType,
+      pkParamName: pkParamName,
     );
+  }
+
+  AggregateField parseAggregateField(
+    FieldElement field,
+    FormalParameterElement param,
+  ) {
+    final ann = aggChecker.firstAnnotationOfExact(field)!;
+    final selectCall = _selectCallFrom(
+      ConstantReader(ann).read('select'),
+      field,
+      label: '@Agg(select)',
+    );
+    return AggregateField(
+      fieldName: param.name!,
+      selectCall: selectCall,
+      zeroFallback: _needsZeroFallback(param.type),
+    );
+  }
+
+  bool _needsZeroFallback(DartType type) {
+    if (type.nullabilitySuffix != NullabilitySuffix.none) return false;
+    final name = type.element?.name;
+    return name == 'int' || name == 'double' || name == 'num';
+  }
+
+  List<AggregateJoin> _parseAggregateJoins(
+    ConstantReader ann,
+    Element element,
+  ) {
+    final joins = ann.read('joins');
+    if (joins.isNull) return const [];
+    return [
+      for (final value in joins.listValue) _joinFromRef(value, element),
+    ];
+  }
+
+  AggregateJoin _joinFromRef(DartObject ref, Element element) {
+    final colType = ref.type;
+    if (colType is! InterfaceType || colType.typeArguments.length < 3) {
+      throw InvalidGenerationSourceError(
+        '@Queryable.joins entries must be schema FK refs.',
+        element: element,
+      );
+    }
+    final parentMarker = colType.typeArguments[1].element?.name;
+    final targetMarker = colType.typeArguments[2].element?.name;
+    final sqlName = ref.getField('name')?.toStringValue();
+    if (parentMarker == null || targetMarker == null || sqlName == null) {
+      throw InvalidGenerationSourceError(
+        '@Queryable.joins entries must be schema FK refs.',
+        element: element,
+      );
+    }
+    final fkType = colType.typeArguments[0];
+    return AggregateJoin(
+      targetMarker: targetMarker,
+      fkColumnExpr: '$parentMarker.${camelCase(sqlName)}',
+      nullable: fkType.nullabilitySuffix == NullabilitySuffix.question,
+    );
+  }
+
+  String? _parseOrderByCall(ConstantReader ann, Element element) {
+    final orderBy = ann.read('orderBy');
+    if (orderBy.isNull) return null;
+    return _selectCallFrom(orderBy, element, label: '@Queryable.orderBy');
+  }
+
+  String _selectCallFrom(
+    ConstantReader reader,
+    Element element, {
+    required String label,
+  }) {
+    if (reader.isNull) {
+      throw InvalidGenerationSourceError(
+        '$label must be a private static tear-off.',
+        element: element,
+      );
+    }
+    final fn = reader.objectValue.toFunctionValue();
+    if (fn is! MethodElement) {
+      throw InvalidGenerationSourceError(
+        '$label must be a static method tear-off.',
+        element: element,
+      );
+    }
+    if (!fn.isStatic) {
+      throw InvalidGenerationSourceError(
+        '$label must reference a static method.',
+        element: element,
+      );
+    }
+    if (fn.name == null || !fn.name!.startsWith('_')) {
+      throw InvalidGenerationSourceError(
+        '$label must reference a private static method (name starts with _).',
+        element: element,
+      );
+    }
+    final enclosing = fn.enclosingElement;
+    if (enclosing is! ClassElement) {
+      throw InvalidGenerationSourceError(
+        '$label must reference a static method on the view class.',
+        element: element,
+      );
+    }
+    return '${enclosing.name}.${fn.name}()';
   }
 
   /// The table-marker class element (e.g. `Users`) from `@Queryable(table)` —
@@ -315,15 +598,31 @@ final class EdgeAnalyzer {
       for (final param in ctor.formalParameters) {
         final pname = param.name;
         final field = pname == null ? null : element.getField(pname);
-        if (field == null || !relationChecker.hasAnnotationOfExact(field)) {
+        if (field != null && relationChecker.hasAnnotationOfExact(field)) {
+          final paramType = param.type;
+          if (paramType is InterfaceType) {
+            final target = paramType.element;
+            if (target is ClassElement &&
+                queryableChecker.hasAnnotationOfExact(target)) {
+              visit(target);
+            }
+          }
           continue;
         }
-        final paramType = param.type;
-        if (paramType is! InterfaceType) continue;
-        final target = paramType.element;
-        if (target is ClassElement &&
-            queryableChecker.hasAnnotationOfExact(target)) {
-          visit(target);
+        if (field != null && hasManyChecker.hasAnnotationOfExact(field)) {
+          final paramType = param.type;
+          if (paramType is InterfaceType &&
+              paramType.element.name == 'List' &&
+              paramType.typeArguments.isNotEmpty) {
+            final childType = paramType.typeArguments.first;
+            if (childType is InterfaceType) {
+              final target = childType.element;
+              if (target is ClassElement &&
+                  queryableChecker.hasAnnotationOfExact(target)) {
+                visit(target);
+              }
+            }
+          }
         }
       }
     }
@@ -346,16 +645,18 @@ final class EdgeAnalyzer {
     }
   }
 
-  // The base reader omits relation fields and the tree reader sets them by
-  // name, so a relation must be an *optional named* parameter.
-  void _requireNamedOptional(FormalParameterElement param, FieldElement field) {
+  void _requireNamedOptional(
+    FormalParameterElement param,
+    FieldElement field, {
+    String kind = 'Relation',
+  }) {
     if (!param.isNamed) {
       throw InvalidGenerationSourceError(
-        'Relation field "${param.name}" must be a named constructor '
+        '$kind field "${param.name}" must be a named constructor '
         'parameter (e.g. `{this.author}`).',
         element: field,
       );
     }
-    _requireOptional(param, field, 'Relation');
+    _requireOptional(param, field, kind);
   }
 }

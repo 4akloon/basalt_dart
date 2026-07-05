@@ -72,11 +72,13 @@ final class QueryBuilder {
     }
     if (stmt.orderings.isNotEmpty) {
       _sql.write(' ORDER BY ');
-      _sql.write(
-        stmt.orderings
-            .map((o) => '${_column(o.column)} ${o.ascending ? 'ASC' : 'DESC'}')
-            .join(', '),
-      );
+      var first = true;
+      for (final o in stmt.orderings) {
+        if (!first) _sql.write(', ');
+        first = false;
+        _writeNode(o.expression);
+        _sql.write(o.ascending ? ' ASC' : ' DESC');
+      }
     }
     if (stmt.limitCount case final limit?) {
       _sql
@@ -104,7 +106,7 @@ final class QueryBuilder {
       _checkNode(p.expression, allowed);
     }
     for (final ordering in stmt.orderings) {
-      _checkColumn(ordering.column, allowed);
+      _checkNode(ordering.expression, allowed);
     }
     for (final column in stmt.groupByColumns) {
       _checkColumn(column, allowed);
@@ -221,12 +223,23 @@ final class QueryBuilder {
   }
 
   void _writeUpdate(UpdateStatement stmt) {
-    final assignments = [
-      for (var i = 0; i < stmt.assignColumns.length; i++)
-        '${dialect.quoteIdentifier(stmt.assignColumns[i])} = ${_bind(stmt.assignValues[i])}',
-    ].join(', ');
-    _sql.write(
-        'UPDATE ${dialect.quoteIdentifier(stmt.table)} SET $assignments',);
+    _sql.write('UPDATE ${dialect.quoteIdentifier(stmt.table)} SET ');
+    var first = true;
+    for (final a in stmt.assignments) {
+      if (a.isExcluded) {
+        throw StateError('setToExcluded is only valid in upsert ON CONFLICT');
+      }
+      if (!first) _sql.write(', ');
+      first = false;
+      _sql
+        ..write(dialect.quoteIdentifier(a.column))
+        ..write(' = ');
+      if (a.valueExpr case final expr?) {
+        _writeNode(expr);
+      } else {
+        _sql.write(_bind(a.encoded));
+      }
+    }
     if (stmt.whereNode case final where?) {
       _sql.write(' WHERE ');
       _writeNode(where);
@@ -269,10 +282,11 @@ final class QueryBuilder {
           ..write(_bind(low))
           ..write(' AND ')
           ..write(_bind(high));
-      case FunctionNode(:final name, :final argument):
+      case FunctionNode(:final name, :final argument, :final distinct):
         _sql
           ..write(name)
           ..write('(');
+        if (distinct) _sql.write('DISTINCT ');
         if (argument == null) {
           _sql.write('*');
         } else {

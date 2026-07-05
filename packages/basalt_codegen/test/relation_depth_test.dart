@@ -92,13 +92,13 @@ void main() {
     expect(
       code,
       contains(
-        r"author: (prefix.isEmpty ? (budget > 1 ? 1 : budget) : budget) <= 0 ? null : $UserFromRow(r, Users.table.aliased('${prefix}author'), '${prefix}author_', (prefix.isEmpty ? (budget > 1 ? 1 : budget) : budget) - 1)",
+        r"author: (prefix.isEmpty ? (budget > 1 ? 1 : budget) : budget) <= 0 ? null : $UserFromRow(r, Users.table.aliased('${prefix}author'), '${prefix}author_', (prefix.isEmpty ? (budget > 1 ? 1 : budget) : budget) - 1,)",
       ),
     );
     expect(
       code,
       contains(
-        r"editor: (prefix.isEmpty ? (budget > 2 ? 2 : budget) : budget) <= 0 ? null : $UserFromRow(r, Users.table.aliased('${prefix}editor'), '${prefix}editor_', (prefix.isEmpty ? (budget > 2 ? 2 : budget) : budget) - 1)",
+        r"editor: (prefix.isEmpty ? (budget > 2 ? 2 : budget) : budget) <= 0 ? null : $UserFromRow(r, Users.table.aliased('${prefix}editor'), '${prefix}editor_', (prefix.isEmpty ? (budget > 2 ? 2 : budget) : budget) - 1,)",
       ),
     );
     expect(code, contains(r".map((r) => $PostFromRow(r, Posts.table, '', 2))"));
@@ -141,19 +141,19 @@ void main() {
     expect(
       code,
       contains(
-        '.innerJoin(author, on: Posts.authorId.eqColumn(author.col(Users.id)))',
+        '.innerJoin(author, on: Posts.authorId.eqColumn(author.col(Users.id)),)',
       ),
     );
     expect(
       code,
       contains(
-        '.leftJoin(authorManager, on: author.col(Users.managerId).eqColumn(authorManager.col(Users.id)))',
+        '.leftJoin(authorManager, on: author.col(Users.managerId).eqColumn(authorManager.col(Users.id)),)',
       ),
     );
     expect(
       code,
       contains(
-        '.leftJoin(authorMentor, on: author.col(Users.mentorId).eqColumn(authorMentor.col(Users.id)))',
+        '.leftJoin(authorMentor, on: author.col(Users.mentorId).eqColumn(authorMentor.col(Users.id)),)',
       ),
     );
   });
@@ -189,7 +189,7 @@ void main() {
       expect(
         code,
         contains(
-          '.leftJoin(manager, on: Users.managerId.eqColumn(manager.col(Users.id)))',
+          '.leftJoin(manager, on: Users.managerId.eqColumn(manager.col(Users.id)),)',
         ),
       );
     });
@@ -221,7 +221,7 @@ void main() {
       expect(
         code,
         contains(
-          '.innerJoin(author, on: Posts.authorId.eqColumn(author.col(Users.id)))',
+          '.innerJoin(author, on: Posts.authorId.eqColumn(author.col(Users.id)),)',
         ),
       );
     });

@@ -5,9 +5,15 @@ part of 'table.dart';
 ///
 /// {@category schema}
 final class ColumnValue<Tbl> {
-  const ColumnValue(this.column, this.encoded, {this.isExcluded = false});
+  const ColumnValue(
+    this.column,
+    this.encoded, {
+    this.isExcluded = false,
+    this.valueExpr,
+  });
   final String column;
   final Object? encoded;
+  final SqlNode? valueExpr;
 
   /// When true this is an upsert `excluded.<column>` reference (no bound value)
   /// rather than a literal — see [TableColumn.setToExcluded].

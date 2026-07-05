@@ -3,6 +3,7 @@ import 'dart:async';
 import 'query/query.dart';
 import 'query/write.dart';
 import 'schema/introspection.dart';
+import 'serialize/sql_dialect.dart';
 
 /// Database-agnostic execution surface. The query builder produces statements;
 /// a `Connection` implementation serializes and runs them against a driver.
@@ -14,6 +15,9 @@ import 'schema/introspection.dart';
 ///
 /// {@category connection}
 abstract interface class Connection {
+  /// Dialect used to serialize queries for this connection.
+  SqlDialect get dialect;
+
   /// Runs a `SELECT` (single-table or joined) and maps each row to `R`.
   Future<List<R>> fetch<R>(SelectQuery<R> statement);
 

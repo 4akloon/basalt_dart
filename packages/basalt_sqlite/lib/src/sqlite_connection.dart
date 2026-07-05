@@ -27,6 +27,9 @@ final class SqliteConnection implements Connection {
   int _txDepth = 0;
 
   @override
+  SqlDialect get dialect => _dialect;
+
+  @override
   Future<List<R>> fetch<R>(SelectQuery<R> statement) async {
     final (sql, params) = QueryBuilder(_dialect).buildSelect(statement);
     final result = _db.select(sql, params);

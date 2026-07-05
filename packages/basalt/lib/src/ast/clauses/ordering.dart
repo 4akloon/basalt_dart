@@ -4,7 +4,7 @@ part of '../sql_node.dart';
 ///
 /// {@category queries}
 final class Ordering {
-  const Ordering(this.column, {this.ascending = true});
-  final ColumnNode column;
+  const Ordering(this.expression, {this.ascending = true});
+  final SqlNode expression;
   final bool ascending;
 }

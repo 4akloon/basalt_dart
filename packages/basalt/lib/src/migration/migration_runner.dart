@@ -1,5 +1,6 @@
 import 'package:basalt/basalt.dart';
 
+import 'migration_ddl.dart';
 import 'migration_source.dart';
 import 'migration_status.dart';
 import 'schema_migrations_table.dart';
@@ -14,9 +15,7 @@ final class MigrationRunner {
   final MigrationSource source;
 
   Future<void> ensureTrackerTable() => connection.executeSql(
-        'CREATE TABLE IF NOT EXISTS __basalt_schema_migrations '
-        '(version VARCHAR(50) PRIMARY KEY NOT NULL, '
-        'run_on TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP)',
+        createSchemaMigrationsTableSql(connection.dialect),
       );
 
   /// Applied versions, ascending.

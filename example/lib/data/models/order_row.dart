@@ -2,6 +2,7 @@ import 'package:basalt/basalt.dart';
 import 'package:basalt_example/core/database/schema.dart';
 import 'package:basalt_example/data/models/address_row.dart';
 import 'package:basalt_example/data/models/customer_row.dart';
+import 'package:basalt_example/data/models/order_item_row.dart';
 
 part 'order_row.g.dart';
 
@@ -18,6 +19,7 @@ class OrderRow {
     this.shippingAddressId,
     this.customer,
     this.shippingAddress,
+    this.items = const [],
   });
 
   final int id;
@@ -31,4 +33,7 @@ class OrderRow {
 
   @Relation(Orders.shippingAddressId)
   final AddressRow? shippingAddress;
+
+  @HasMany(OrderItems.orderId)
+  final List<OrderItemRow> items;
 }

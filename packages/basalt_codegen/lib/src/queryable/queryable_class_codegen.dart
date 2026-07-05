@@ -14,8 +14,8 @@ final class QueryableClassCodegen {
   final ModelCodeGenerator modelGenerator;
 
   Iterable<String> generate(ClassElement element) {
-    // Resolve the whole relation closure (across libraries) so the emitted code
-    // never depends on generated symbols from another file.
+    // Resolve the relation closure so nested `@HasMany` loaders call the child's
+    // generated `loadChild` from its own library (imported by the model file).
     final classInfos = edgeAnalyzer.reachableFrom(element);
     final root = classInfos[element.name]!;
     return modelGenerator.generate(

@@ -97,6 +97,10 @@ sealed class TableColumn<T, Tbl> implements Selection<T> {
   /// `TableColumn<int>.set('x')` is a compile error.
   ColumnValue<Tbl> set(T value) => ColumnValue(name, type.encode(value));
 
+  /// RHS expression for UPDATE, e.g. `stock = stock - ?`.
+  ColumnValue<Tbl> setExpr(Expression<Object?, Tbl> value) =>
+      ColumnValue(name, null, valueExpr: value.node);
+
   /// For upserts: `col = excluded."col"` inside `ON CONFLICT ... DO UPDATE`,
   /// i.e. take the value from the row that failed to insert.
   ColumnValue<Tbl> setToExcluded() => ColumnValue(name, null, isExcluded: true);

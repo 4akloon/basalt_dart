@@ -47,7 +47,7 @@ void main() {
       expect(
         code,
         contains(
-          r'$UserFromRow(RowReader r, [QuerySource<Users> src = Users.table])',
+          r'$UserFromRow(RowReader r, [QuerySource<Users> src = Users.table,])',
         ),
       );
       expect(code, contains('r.get(src.col(Users.id))'));
@@ -67,7 +67,7 @@ void main() {
       expect(
         code,
         contains(
-          r"$PostFromRow(RowReader r, [QuerySource<Posts> src = Posts.table, String prefix = '', int budget = 0])",
+          r"$PostFromRow(RowReader r, [QuerySource<Posts> src = Posts.table, String prefix = '', int budget = 0,])",
         ),
       );
       expect(code, contains('author: AUTHOR_CALL'));
@@ -79,7 +79,7 @@ void main() {
       final args = relationCalls.forReader([authorEdge], (_) => true);
       expect(
         args.single.childCall,
-        r"(prefix.isEmpty ? (budget > 1 ? 1 : budget) : budget) <= 0 ? null : $UserFromRow(r, Users.table.aliased('${prefix}author'), '${prefix}author_', (prefix.isEmpty ? (budget > 1 ? 1 : budget) : budget) - 1)",
+        r"(prefix.isEmpty ? (budget > 1 ? 1 : budget) : budget) <= 0 ? null : $UserFromRow(r, Users.table.aliased('${prefix}author'), '${prefix}author_', (prefix.isEmpty ? (budget > 1 ? 1 : budget) : budget) - 1,)",
       );
     });
 
@@ -172,7 +172,7 @@ void main() {
       expect(
         code,
         contains(
-          '.innerJoin(author, on: Posts.authorId.eqColumn(author.col(Users.id)))',
+          '.innerJoin(author, on: Posts.authorId.eqColumn(author.col(Users.id)),)',
         ),
       );
       expect(

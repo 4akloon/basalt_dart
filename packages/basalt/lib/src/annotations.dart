@@ -3,8 +3,10 @@
 /// for the generator.
 library;
 
+export 'annotations/agg.dart';
 export 'annotations/as_changeset.dart';
 export 'annotations/column.dart';
+export 'annotations/has_many.dart';
 export 'annotations/insertable.dart';
 export 'annotations/queryable.dart';
 export 'annotations/relation.dart';

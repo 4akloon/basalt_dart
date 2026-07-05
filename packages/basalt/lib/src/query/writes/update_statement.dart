@@ -6,13 +6,11 @@ part of '../write.dart';
 final class UpdateStatement<Tbl> extends WriteStatement {
   UpdateStatement(this.table);
   final String table;
-  final List<String> assignColumns = [];
-  final List<Object?> assignValues = [];
+  final List<ColumnValue<Tbl>> assignments = [];
   SqlNode? whereNode;
 
   UpdateStatement<Tbl> value(ColumnValue<Tbl> assignment) {
-    assignColumns.add(assignment.column);
-    assignValues.add(assignment.encoded);
+    assignments.add(assignment);
     return this;
   }
 

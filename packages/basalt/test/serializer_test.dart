@@ -121,6 +121,19 @@ void main() {
       expect(params, [31, 'Bob']);
     });
 
+    test('UPDATE with column-relative expression', () {
+      final (sql, params) = compileWrite(
+        update(Users.table)
+            .value(Users.age.setExpr(Users.age - 1))
+            .where(Users.id.eq(5)),
+      );
+      expect(
+        sql,
+        'UPDATE "users" SET "age" = ("users"."age" - ?) WHERE ("users"."id" = ?)',
+      );
+      expect(params, [1, 5]);
+    });
+
     test('DELETE with where', () {
       final (sql, params) =
           compileWrite(deleteFrom(Users.table).where(Users.age.lt(18)));
@@ -455,6 +468,55 @@ void main() {
         'HAVING (SUM("posts"."views") > ?)',
       );
       expect(params, [100]);
+    });
+
+    test('SUM over arithmetic expression', () {
+      final revenue = sum(Posts.views * 2, as: 'revenue');
+      final (sql, _) = compileSelect(
+        from(Posts.table)
+            .select([Posts.authorId, revenue])
+            .groupBy([Posts.authorId])
+            .map(_ignore),
+      );
+      expect(
+        sql,
+        'SELECT "posts"."author_id", SUM(("posts"."views" * ?)) AS "revenue" '
+        'FROM "posts" GROUP BY "posts"."author_id"',
+      );
+    });
+
+    test('SUM over int column with custom alias', () {
+      final units = sum<int>(Posts.views, as: 'units_sold');
+      final (sql, _) = compileSelect(
+        from(Posts.table).select([units]).map(_ignore),
+      );
+      expect(sql, 'SELECT SUM("posts"."views") AS "units_sold" FROM "posts"');
+      expect(units.type, SqlType.integerOrNull);
+    });
+
+    test('COUNT(DISTINCT col)', () {
+      final distinctAuthors = countDistinct(Posts.authorId, as: 'n');
+      final (sql, _) = compileSelect(
+        from(Posts.table).select([distinctAuthors]).map(_ignore),
+      );
+      expect(sql, 'SELECT COUNT(DISTINCT "posts"."author_id") AS "n" FROM "posts"');
+    });
+
+    test('ORDER BY aggregate alias expression', () {
+      final total = Posts.views.sum();
+      final (sql, _) = compileSelect(
+        from(Posts.table)
+            .select([Posts.authorId, total])
+            .groupBy([Posts.authorId])
+            .orderBy(total.desc())
+            .map(_ignore),
+      );
+      expect(
+        sql,
+        'SELECT "posts"."author_id", SUM("posts"."views") AS "sum_views" '
+        'FROM "posts" GROUP BY "posts"."author_id" '
+        'ORDER BY SUM("posts"."views") DESC',
+      );
     });
   });
 }

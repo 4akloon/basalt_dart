@@ -76,7 +76,7 @@ void main() {
     expect(
       code,
       contains(
-        r'$UserFromRow(RowReader r, [QuerySource<Users> src = Users.table])',
+        r'$UserFromRow(RowReader r, [QuerySource<Users> src = Users.table,])',
       ),
     );
     expect(code, contains('r.get(src.col(Users.id))'));
@@ -109,13 +109,13 @@ void main() {
     expect(
       code,
       contains(
-        r"$UserFromRow(RowReader r, [QuerySource<Users> src = Users.table, String prefix = '', int budget = 0])",
+        r"$UserFromRow(RowReader r, [QuerySource<Users> src = Users.table, String prefix = '', int budget = 0,])",
       ),
     );
     expect(
       code,
       contains(
-        r"manager: (prefix.isEmpty ? (budget > 1 ? 1 : budget) : budget) <= 0 ? null : r.get(src.col(Users.managerId)) == null ? null : $UserFromRow(r, Users.table.aliased('${prefix}manager'), '${prefix}manager_', (prefix.isEmpty ? (budget > 1 ? 1 : budget) : budget) - 1)",
+        r"manager: (prefix.isEmpty ? (budget > 1 ? 1 : budget) : budget) <= 0 ? null : r.get(src.col(Users.managerId)) == null ? null : $UserFromRow(r, Users.table.aliased('${prefix}manager'), '${prefix}manager_', (prefix.isEmpty ? (budget > 1 ? 1 : budget) : budget) - 1,)",
       ),
     );
     expect(code, contains('MappedQuery<User> get userQuery'));
@@ -142,7 +142,7 @@ void main() {
     expect(
       code,
       contains(
-        '.innerJoin(author, on: Posts.authorId.eqColumn(author.col(Users.id)))',
+        '.innerJoin(author, on: Posts.authorId.eqColumn(author.col(Users.id)),)',
       ),
     );
     expect(code, contains(r".map((r) => $PostFromRow(r, Posts.table, '', 1))"));
@@ -151,7 +151,7 @@ void main() {
       code,
       isNot(
         contains(
-          r'$UserFromRow(RowReader r, [QuerySource<Users> src = Users.table])',
+          r'$UserFromRow(RowReader r, [QuerySource<Users> src = Users.table,])',
         ),
       ),
     );
@@ -170,7 +170,7 @@ void main() {
     expect(
       code,
       contains(
-        r"author: (prefix.isEmpty ? (budget > 2 ? 2 : budget) : budget) <= 0 ? null : $UserFromRow(r, Users.table.aliased('${prefix}author'), '${prefix}author_', (prefix.isEmpty ? (budget > 2 ? 2 : budget) : budget) - 1)",
+        r"author: (prefix.isEmpty ? (budget > 2 ? 2 : budget) : budget) <= 0 ? null : $UserFromRow(r, Users.table.aliased('${prefix}author'), '${prefix}author_', (prefix.isEmpty ? (budget > 2 ? 2 : budget) : budget) - 1,)",
       ),
     );
     expect(
@@ -180,7 +180,7 @@ void main() {
     expect(
       code,
       contains(
-        '.leftJoin(authorManager, on: author.col(Users.managerId).eqColumn(authorManager.col(Users.id)))',
+        '.leftJoin(authorManager, on: author.col(Users.managerId).eqColumn(authorManager.col(Users.id)),)',
       ),
     );
     expect(code, contains(r".map((r) => $PostFromRow(r, Posts.table, '', 2))"));

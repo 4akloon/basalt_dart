@@ -56,3 +56,39 @@ MappedQuery<OrderRow> get orderRowQuery {
 /// Fetch the OrderRow with the given primary key.
 MappedQuery<OrderRow> findOrderRow(int id) =>
     orderRowQuery.findBy(Orders.id, id);
+
+Future<List<OrderRow>> loadOrderRow(
+  Connection db, {
+  MappedQuery<OrderRow>? query,
+}) async {
+  final base = await (query ?? orderRowQuery).load(db);
+  if (base.isEmpty) return base;
+  final keys = [for (final row in base) row.id];
+  final itemsByParent = {
+    for (final k in keys) k: <OrderItemRow>[],
+  };
+  final itemsRows =
+      await orderItemRowQuery.where(OrderItems.orderId.isIn(keys)).load(db);
+  for (final row in itemsRows) {
+    (itemsByParent[row.orderId] ??= []).add(row);
+  }
+  return [
+    for (final row in base)
+      OrderRow(
+        id: row.id,
+        customerId: row.customerId,
+        status: row.status,
+        createdAt: row.createdAt,
+        shippingAddressId: row.shippingAddressId,
+        customer: row.customer,
+        shippingAddress: row.shippingAddress,
+        items: itemsByParent[row.id] ?? const [],
+      ),
+  ];
+}
+
+Future<OrderRow?> findOrderRowById(Connection db, int id) async {
+  final rows =
+      await loadOrderRow(db, query: orderRowQuery.findBy(Orders.id, id));
+  return rows.isEmpty ? null : rows.single;
+}

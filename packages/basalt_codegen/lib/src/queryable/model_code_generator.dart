@@ -1,4 +1,6 @@
+import 'aggregate_query_emitter.dart';
 import 'find_emitter.dart';
+import 'has_many_loader_emitter.dart';
 import 'naming.dart';
 import 'query_getter_emitter.dart';
 import 'queryable_model.dart';
@@ -22,23 +24,37 @@ final class ModelCodeGenerator {
     this.relationCalls = const RelationCallEmitter(),
     this.selectQueryEmitter = const SelectQueryEmitter(),
     this.findEmitter = const FindEmitter(),
+    this.hasManyLoader = const HasManyLoaderEmitter(),
+    this.aggregateQueryEmitter = const AggregateQueryEmitter(),
   });
   final ReaderEmitter readerEmitter;
   final QueryGetterEmitter queryGetterEmitter;
   final RelationCallEmitter relationCalls;
   final SelectQueryEmitter selectQueryEmitter;
   final FindEmitter findEmitter;
+  final HasManyLoaderEmitter hasManyLoader;
+  final AggregateQueryEmitter aggregateQueryEmitter;
 
   List<String> generate(QueryableModel model) {
     final root = model.root;
     final infos = model.classInfos;
     final className = root.className;
     final readerName = '\$${className}FromRow';
+    final units = <String>[];
+
+    if (root.aggregateInfo case final agg?) {
+      units.add(
+        aggregateQueryEmitter.emit(
+          className: className,
+          queryName: '${lowerFirst(className)}Query',
+          info: agg,
+        ),
+      );
+      return units;
+    }
 
     bool hasRelations(String cls) =>
         (infos[cls]?.ownEdges ?? const <RelationEdge>[]).isNotEmpty;
-
-    final units = <String>[];
 
     // The class's own public, reusable reader + mapper. Relations recurse into
     // the targets' public readers (resolved across libraries via import).
@@ -99,6 +115,12 @@ final class ModelCodeGenerator {
           pkColumnExpr: pkExpr,
           pkType: root.pkType!,
         ),
+      );
+    }
+
+    if (root.hasManyEdges.isNotEmpty) {
+      units.add(
+        hasManyLoader.emit(info: root, classInfos: model.classInfos),
       );
     }
 

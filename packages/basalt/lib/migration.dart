@@ -8,6 +8,7 @@
 library;
 
 export 'src/migration/migration.dart';
+export 'src/migration/migration_ddl.dart';
 export 'src/migration/migration_runner.dart';
 export 'src/migration/migration_source.dart';
 export 'src/migration/migration_status.dart';

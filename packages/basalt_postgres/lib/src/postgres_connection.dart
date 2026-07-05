@@ -17,6 +17,9 @@ final class PostgresConnection implements Connection {
   final SqlDialect _dialect;
   int _txDepth = 0;
 
+  @override
+  SqlDialect get dialect => _dialect;
+
   /// Opens a connection. Set [ssl] false for local/dev servers.
   static Future<PostgresConnection> open({
     required String host,
