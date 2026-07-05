@@ -5,6 +5,7 @@ import 'package:basalt_example/domain/repositories/customer_repository.dart';
 import 'package:basalt_example/presentation/cart/cart_cubit.dart';
 import 'package:basalt_example/presentation/cart/cart_state.dart';
 import 'package:basalt_example/presentation/common/load_status.dart';
+import 'package:basalt_example/presentation/common/refresh_icon_button.dart';
 import 'package:basalt_example/presentation/common/status_views.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -18,14 +19,25 @@ class CartPage extends StatefulWidget {
 }
 
 class _CartPageState extends State<CartPage> {
-  late final Future<List<Customer>> _customers =
+  late Future<List<Customer>> _customers =
       getIt<CustomerRepository>().all();
   Customer? _selected;
+
+  void _refresh() {
+    setState(() {
+      _customers = getIt<CustomerRepository>().all();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Cart')),
+      appBar: AppBar(
+        title: const Text('Cart'),
+        actions: [
+          RefreshIconButton(onRefresh: () async => _refresh()),
+        ],
+      ),
       body: BlocConsumer<CartCubit, CartState>(
         listener: (context, state) {
           if (state.checkout == LoadStatus.success && state.lastOrderId != null) {

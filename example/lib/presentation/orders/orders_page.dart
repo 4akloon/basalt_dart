@@ -1,6 +1,7 @@
 import 'package:basalt_example/core/di/injector.dart';
 import 'package:basalt_example/core/util/formatters.dart';
 import 'package:basalt_example/presentation/common/load_status.dart';
+import 'package:basalt_example/presentation/common/refresh_icon_button.dart';
 import 'package:basalt_example/presentation/common/status_views.dart';
 import 'package:basalt_example/presentation/orders/order_detail_page.dart';
 import 'package:basalt_example/presentation/orders/order_status_chip.dart';
@@ -28,7 +29,14 @@ class _OrdersView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Orders')),
+      appBar: AppBar(
+        title: const Text('Orders'),
+        actions: [
+          RefreshIconButton(
+            onRefresh: () => context.read<OrdersCubit>().load(),
+          ),
+        ],
+      ),
       body: BlocBuilder<OrdersCubit, OrdersState>(
         builder: (context, state) {
           switch (state.status) {

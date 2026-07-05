@@ -1,6 +1,7 @@
 import 'aggregate_query_emitter.dart';
 import 'find_emitter.dart';
-import 'has_many_loader_emitter.dart';
+import 'has_many_fold_emitter.dart';
+import 'has_many_query_emitter.dart';
 import 'naming.dart';
 import 'query_getter_emitter.dart';
 import 'queryable_model.dart';
@@ -24,7 +25,8 @@ final class ModelCodeGenerator {
     this.relationCalls = const RelationCallEmitter(),
     this.selectQueryEmitter = const SelectQueryEmitter(),
     this.findEmitter = const FindEmitter(),
-    this.hasManyLoader = const HasManyLoaderEmitter(),
+    this.hasManyQueryEmitter = const HasManyQueryEmitter(),
+    this.hasManyFoldEmitter = const HasManyFoldEmitter(),
     this.aggregateQueryEmitter = const AggregateQueryEmitter(),
   });
   final ReaderEmitter readerEmitter;
@@ -32,7 +34,8 @@ final class ModelCodeGenerator {
   final RelationCallEmitter relationCalls;
   final SelectQueryEmitter selectQueryEmitter;
   final FindEmitter findEmitter;
-  final HasManyLoaderEmitter hasManyLoader;
+  final HasManyQueryEmitter hasManyQueryEmitter;
+  final HasManyFoldEmitter hasManyFoldEmitter;
   final AggregateQueryEmitter aggregateQueryEmitter;
 
   List<String> generate(QueryableModel model) {
@@ -56,8 +59,6 @@ final class ModelCodeGenerator {
     bool hasRelations(String cls) =>
         (infos[cls]?.ownEdges ?? const <RelationEdge>[]).isNotEmpty;
 
-    // The class's own public, reusable reader + mapper. Relations recurse into
-    // the targets' public readers (resolved across libraries via import).
     units.add(
       readerEmitter.emit(
         className: className,
@@ -71,13 +72,25 @@ final class ModelCodeGenerator {
       'const ${lowerFirst(className)}Mapper = RowMapper<$className>($readerName);',
     );
 
-    // A self-mapping join query getter for this class's relations.
-    if (root.ownEdges.isNotEmpty) {
-      final queryName = '${lowerFirst(className)}Query';
+    final queryName = '${lowerFirst(className)}Query';
+    final foldName = '\$${className}Fold';
+
+    if (root.hasManyEdges.isNotEmpty) {
+      units.add(
+        hasManyFoldEmitter.emit(root: root, classInfos: infos),
+      );
+      units.add(
+        hasManyQueryEmitter.emit(
+          root: root,
+          classInfos: infos,
+          queryName: queryName,
+          foldName: foldName,
+        ),
+      );
+    } else if (root.ownEdges.isNotEmpty) {
       List<RelationEdge> edgesOf(String cls) =>
           infos[cls]?.ownEdges ?? const <RelationEdge>[];
       final treeNodes = RelationTreeBuilder(edgesOf).unrollRoots(root.ownEdges);
-      // One runtime budget seeds the whole tree; the deepest root relation wins.
       final seedBudget =
           root.ownEdges.map((e) => e.depth).reduce((a, b) => a > b ? a : b);
 
@@ -92,12 +105,10 @@ final class ModelCodeGenerator {
         ),
       );
     } else {
-      // No relations: a select-narrowing getter that reads just this class's
-      // columns (Selectable-style subset projection).
       units.add(
         selectQueryEmitter.emit(
           className: className,
-          queryName: '${lowerFirst(className)}Query',
+          queryName: queryName,
           tableMarker: root.tableMarker,
           readerName: readerName,
           columnArgs: root.columnArgs,
@@ -105,22 +116,16 @@ final class ModelCodeGenerator {
       );
     }
 
-    // Bare find-by-primary-key, when the class maps a PrimaryKey column.
     if (root.pkColumnExpr case final pkExpr? when root.pkType != null) {
       units.add(
         findEmitter.emit(
           className: className,
           findName: 'find$className',
-          queryName: '${lowerFirst(className)}Query',
+          queryName: queryName,
           pkColumnExpr: pkExpr,
           pkType: root.pkType!,
+          foldQuery: root.hasManyEdges.isNotEmpty,
         ),
-      );
-    }
-
-    if (root.hasManyEdges.isNotEmpty) {
-      units.add(
-        hasManyLoader.emit(info: root, classInfos: model.classInfos),
       );
     }
 

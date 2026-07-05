@@ -8,8 +8,8 @@ part of 'top_customer_row.dart';
 
 MappedQuery<TopCustomerRow> get topCustomerRowQuery {
   return from(Customers.table)
-      .innerJoin(Customers.table, onFk: Orders.customerId)
-      .innerJoin(Orders.table, onFk: OrderItems.orderId)
+      .innerJoin(Orders.table, onFk: Orders.customerId)
+      .innerJoin(OrderItems.table, onFk: OrderItems.orderId)
       .select([
         Customers.id,
         Customers.name,

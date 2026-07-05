@@ -191,7 +191,7 @@ final class EdgeAnalyzer {
 
     if (parentMarker != parentTableMarker) {
       throw InvalidGenerationSourceError(
-        '@HasMany(${childMarker}.${camelCase(sqlName)}) must reference a FK '
+        '@HasMany($childMarker.${camelCase(sqlName)}) must reference a FK '
         'to $parentTableMarker (got $parentMarker).',
         element: field,
       );
@@ -495,6 +495,7 @@ final class EdgeAnalyzer {
     }
     final fkType = colType.typeArguments[0];
     return AggregateJoin(
+      parentMarker: parentMarker,
       targetMarker: targetMarker,
       fkColumnExpr: '$parentMarker.${camelCase(sqlName)}',
       nullable: fkType.nullabilitySuffix == NullabilitySuffix.question,

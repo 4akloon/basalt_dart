@@ -18,10 +18,10 @@ class OrderRepositoryImpl implements OrderRepository {
 
   @override
   Future<List<OrderSummary>> recent({int limit = 50}) async {
-    final orders = await loadOrderRow(
-      _db,
-      query: orderRowQuery.orderBy(Orders.createdAt.desc()).limit(limit),
-    );
+    final orders = await orderRowQuery
+        .orderBy(Orders.createdAt.desc())
+        .limit(limit)
+        .load(_db);
     return [
       for (final order in orders)
         OrderSummary(
@@ -33,7 +33,7 @@ class OrderRepositoryImpl implements OrderRepository {
 
   @override
   Future<OrderSummary?> detail(int id) async {
-    final order = await findOrderRowById(_db, id);
+    final order = await findOrderRow(id).optional(_db);
     if (order == null) return null;
     return OrderSummary(
       order: order.toDomain(),

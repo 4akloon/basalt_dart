@@ -37,9 +37,57 @@ OrderRow $OrderRowFromRow(
 
 const orderRowMapper = RowMapper<OrderRow>($OrderRowFromRow);
 
-MappedQuery<OrderRow> get orderRowQuery {
+final class _OrderRowFoldAcc {
+  _OrderRowFoldAcc(this.base);
+  final OrderRow base;
+  final items = <int, OrderItemRow>{};
+
+  OrderRow build() => OrderRow(
+        id: base.id,
+        customerId: base.customerId,
+        status: base.status,
+        createdAt: base.createdAt,
+        shippingAddressId: base.shippingAddressId,
+        customer: base.customer,
+        shippingAddress: base.shippingAddress,
+        items: [for (final c in items.values) c],
+      );
+}
+
+List<OrderRow> $OrderRowFold(
+  List<RowReader> rows,
+) {
+  final parents = <int, _OrderRowFoldAcc>{};
+  for (final r in rows) {
+    final pk = r.get(Orders.id);
+    final acc = parents.putIfAbsent(
+        pk,
+        () => _OrderRowFoldAcc(
+              $OrderRowFromRow(r, Orders.table, '', 1),
+            ));
+    if (r.isPresent(OrderItems.table.aliased('items').col(OrderItems.id))) {
+      final childPk =
+          r.get(OrderItems.table.aliased('items').col(OrderItems.id));
+      acc.items.putIfAbsent(
+          childPk,
+          () => $OrderItemRowFromRow(
+                r,
+                OrderItems.table.aliased('items'),
+                'items_',
+                2,
+              ));
+    }
+  }
+  return [for (final a in parents.values) a.build()];
+}
+
+FoldMappedQuery<OrderRow> get orderRowQuery {
   final customer = Customers.table.aliased('customer');
   final shippingAddress = Addresses.table.aliased('shippingAddress');
+  final items = OrderItems.table.aliased('items');
+  final itemsProduct = Products.table.aliased('items_product');
+  final itemsProductCategory =
+      Categories.table.aliased('items_product_category');
   return from(Orders.table)
       .innerJoin(
         customer,
@@ -50,45 +98,26 @@ MappedQuery<OrderRow> get orderRowQuery {
         on: Orders.shippingAddressId
             .eqColumn(shippingAddress.col(Addresses.id)),
       )
-      .map((r) => $OrderRowFromRow(r, Orders.table, '', 1));
+      .leftJoin(
+        items,
+        on: items.col(OrderItems.orderId).eqColumn(Orders.id),
+      )
+      .leftJoin(
+        itemsProduct,
+        on: items
+            .col(OrderItems.productId)
+            .eqColumn(itemsProduct.col(Products.id)),
+      )
+      .leftJoin(
+        itemsProductCategory,
+        on: itemsProduct
+            .col(Products.categoryId)
+            .eqColumn(itemsProductCategory.col(Categories.id)),
+      )
+      .mapFold($OrderRowFold)
+      .withRootPk(Orders.id);
 }
 
 /// Fetch the OrderRow with the given primary key.
-MappedQuery<OrderRow> findOrderRow(int id) =>
+FoldMappedQuery<OrderRow> findOrderRow(int id) =>
     orderRowQuery.findBy(Orders.id, id);
-
-Future<List<OrderRow>> loadOrderRow(
-  Connection db, {
-  MappedQuery<OrderRow>? query,
-}) async {
-  final base = await (query ?? orderRowQuery).load(db);
-  if (base.isEmpty) return base;
-  final keys = [for (final row in base) row.id];
-  final itemsByParent = {
-    for (final k in keys) k: <OrderItemRow>[],
-  };
-  final itemsRows =
-      await orderItemRowQuery.where(OrderItems.orderId.isIn(keys)).load(db);
-  for (final row in itemsRows) {
-    (itemsByParent[row.orderId] ??= []).add(row);
-  }
-  return [
-    for (final row in base)
-      OrderRow(
-        id: row.id,
-        customerId: row.customerId,
-        status: row.status,
-        createdAt: row.createdAt,
-        shippingAddressId: row.shippingAddressId,
-        customer: row.customer,
-        shippingAddress: row.shippingAddress,
-        items: itemsByParent[row.id] ?? const [],
-      ),
-  ];
-}
-
-Future<OrderRow?> findOrderRowById(Connection db, int id) async {
-  final rows =
-      await loadOrderRow(db, query: orderRowQuery.findBy(Orders.id, id));
-  return rows.isEmpty ? null : rows.single;
-}

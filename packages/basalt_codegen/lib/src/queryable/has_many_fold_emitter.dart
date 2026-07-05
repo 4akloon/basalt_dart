@@ -1,0 +1,172 @@
+import 'class_info.dart';
+import 'has_many_edge.dart';
+
+/// Emits `$ClassFold(List<RowReader>)` and nested `_ClassFoldAcc` helpers.
+final class HasManyFoldEmitter {
+  const HasManyFoldEmitter();
+
+  String emit({
+    required ClassInfo root,
+    required Map<String, ClassInfo> classInfos,
+  }) {
+    final units = <String>[];
+    final emitted = <String>{};
+
+    void ensureAcc(ClassInfo info) {
+      if (info.hasManyEdges.isEmpty) return;
+      final name = '_${info.className}FoldAcc';
+      if (!emitted.add(name)) return;
+      units.add(_emitAccClass(info, classInfos));
+      for (final edge in info.hasManyEdges) {
+        final child = classInfos[edge.childClass];
+        if (child != null) ensureAcc(child);
+      }
+    }
+
+    ensureAcc(root);
+    units.add(_emitFoldFn(root, classInfos));
+    return units.join('\n\n');
+  }
+
+  String _emitAccClass(
+    ClassInfo info,
+    Map<String, ClassInfo> classInfos,
+  ) {
+    final buf = StringBuffer()
+      ..writeln('final class _${info.className}FoldAcc {')
+      ..writeln('  _${info.className}FoldAcc(this.base);')
+      ..writeln('  final ${info.className} base;');
+
+    for (final edge in info.hasManyEdges) {
+      final child = classInfos[edge.childClass]!;
+      final childType = child.hasManyEdges.isNotEmpty
+          ? '_${child.className}FoldAcc'
+          : child.className;
+      buf.writeln('  final ${edge.fieldName} = <int, $childType>{};');
+    }
+
+    buf
+      ..writeln()
+      ..writeln('  ${info.className} build() => ${info.className}(');
+
+    for (final col in info.columnArgs) {
+      if (!col.writeOnly) {
+        buf.writeln('    ${col.paramName}: base.${col.paramName},');
+      }
+    }
+    for (final rel in info.ownEdges) {
+      buf.writeln('    ${rel.fieldName}: base.${rel.fieldName},');
+    }
+    for (final edge in info.hasManyEdges) {
+      final child = classInfos[edge.childClass]!;
+      if (child.hasManyEdges.isNotEmpty) {
+        buf.writeln(
+          '    ${edge.fieldName}: [for (final c in ${edge.fieldName}.values) c.build()],',
+        );
+      } else {
+        buf.writeln(
+          '    ${edge.fieldName}: [for (final c in ${edge.fieldName}.values) c],',
+        );
+      }
+    }
+
+    buf
+      ..writeln('  );')
+      ..writeln('}');
+    return buf.toString();
+  }
+
+  String _emitFoldFn(ClassInfo root, Map<String, ClassInfo> classInfos) {
+    final pkType = root.pkType ?? 'Object';
+    final pkExpr = root.pkColumnExpr!;
+    final reader = '\$${root.className}FromRow';
+    final relationBudget = root.ownEdges.isEmpty
+        ? 0
+        : root.ownEdges.map((e) => e.depth).reduce((a, b) => a > b ? a : b);
+
+    final buf = StringBuffer()
+      ..writeln('List<${root.className}> \$${root.className}Fold(')
+      ..writeln('  List<RowReader> rows,')
+      ..writeln(') {')
+      ..writeln('  final parents = <$pkType, _${root.className}FoldAcc>{};')
+      ..writeln('  for (final r in rows) {')
+      ..writeln('    final pk = r.get($pkExpr);')
+      ..writeln(
+        '    final acc = parents.putIfAbsent(pk, () => _${root.className}FoldAcc(',
+      );
+
+    if (root.ownEdges.isNotEmpty) {
+      buf.writeln(
+        '      $reader(r, ${root.tableMarker}.table, \'\', $relationBudget),',
+      );
+    } else {
+      buf.writeln('      ${root.className}(');
+      for (final col in root.columnArgs) {
+        if (!col.writeOnly) {
+          buf.writeln('        ${col.paramName}: r.get(${col.columnExpr}),');
+        }
+      }
+      buf.writeln('      ),');
+    }
+
+    buf.writeln('    ));');
+
+    for (final edge in root.hasManyEdges) {
+      buf.write(_mergeHasMany(edge, edge.fieldName, 'acc', classInfos));
+    }
+
+    buf
+      ..writeln('  }')
+      ..writeln('  return [for (final a in parents.values) a.build()];')
+      ..writeln('}');
+    return buf.toString();
+  }
+
+  String _mergeHasMany(
+    HasManyEdge edge,
+    String aliasPath,
+    String parentAccVar,
+    Map<String, ClassInfo> classInfos,
+  ) {
+    final child = classInfos[edge.childClass]!;
+    final childPk = child.pkColumnExpr!;
+    final src = '${child.tableMarker}.table.aliased(\'$aliasPath\')';
+    final childPkSel = '$src.col($childPk)';
+    final reader = '\$${child.className}FromRow';
+    final budget = child.ownEdges.isEmpty
+        ? 0
+        : child.ownEdges.map((e) => e.depth).reduce((a, b) => a > b ? a : b);
+    final prefix = '${aliasPath}_';
+    final readerCall = budget == 0
+        ? '$reader(r, $src)'
+        : '$reader(r, $src, \'$prefix\', $budget,)';
+
+    final buf = StringBuffer()
+      ..writeln('    if (r.isPresent($childPkSel)) {')
+      ..writeln('      final childPk = r.get($childPkSel);');
+
+    if (child.hasManyEdges.isNotEmpty) {
+      buf.writeln(
+        '      final childAcc = $parentAccVar.${edge.fieldName}'
+        '.putIfAbsent(childPk, () => _${child.className}FoldAcc($readerCall));',
+      );
+      for (final nested in child.hasManyEdges) {
+        buf.write(
+          _mergeHasMany(
+            nested,
+            '${aliasPath}_${nested.fieldName}',
+            'childAcc',
+            classInfos,
+          ),
+        );
+      }
+    } else {
+      buf.writeln(
+        '      $parentAccVar.${edge.fieldName}.putIfAbsent(childPk, () => $readerCall);',
+      );
+    }
+
+    buf.writeln('    }');
+    return buf.toString();
+  }
+}

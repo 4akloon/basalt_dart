@@ -518,5 +518,30 @@ void main() {
         'ORDER BY SUM("posts"."views") DESC',
       );
     });
+
+    test('FoldMappedQuery parent limit uses IN subquery on root pk', () {
+      List<int> fold(List<RowReader> _) => [];
+      final (sql, params) = compileSelect(
+        from(Posts.table)
+            .leftJoin(Comments.table, onFk: Comments.postId)
+            .where(Posts.views.gt(10))
+            .orderBy(Posts.id.desc())
+            .mapFold(fold)
+            .withRootPk(Posts.id)
+            .limit(50)
+            .offset(10),
+      );
+      expect(
+        sql,
+        'SELECT "posts"."id", "posts"."author_id", "posts"."title", '
+        '"posts"."views", "comments"."id", "comments"."post_id", '
+        '"comments"."body" FROM "posts" '
+        'LEFT JOIN "comments" ON ("comments"."post_id" = "posts"."id") '
+        'WHERE "posts"."id" IN (SELECT "posts"."id" FROM "posts" '
+        'WHERE ("posts"."views" > ?) ORDER BY "posts"."id" DESC '
+        'LIMIT ? OFFSET ?)',
+      );
+      expect(params, [10, 50, 10]);
+    });
   });
 }

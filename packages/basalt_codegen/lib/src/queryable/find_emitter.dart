@@ -10,10 +10,13 @@ final class FindEmitter {
     required String queryName,
     required String pkColumnExpr,
     required String pkType,
+    bool foldQuery = false,
   }) {
+    final queryType =
+        foldQuery ? 'FoldMappedQuery<$className>' : 'MappedQuery<$className>';
     return '''
 /// Fetch the $className with the given primary key.
-MappedQuery<$className> $findName($pkType id) =>
+$queryType $findName($pkType id) =>
     $queryName.findBy($pkColumnExpr, id);
 ''';
   }

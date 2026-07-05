@@ -3,6 +3,7 @@ import 'package:basalt_example/core/util/formatters.dart';
 import 'package:basalt_example/domain/entities/order_status.dart';
 import 'package:basalt_example/domain/entities/views/order_summary.dart';
 import 'package:basalt_example/presentation/common/load_status.dart';
+import 'package:basalt_example/presentation/common/refresh_icon_button.dart';
 import 'package:basalt_example/presentation/common/status_views.dart';
 import 'package:basalt_example/presentation/orders/order_detail_cubit.dart';
 import 'package:basalt_example/presentation/orders/order_detail_state.dart';
@@ -33,7 +34,14 @@ class _OrderDetailView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Order #$orderId')),
+      appBar: AppBar(
+        title: Text('Order #$orderId'),
+        actions: [
+          RefreshIconButton(
+            onRefresh: () => context.read<OrderDetailCubit>().load(),
+          ),
+        ],
+      ),
       body: BlocBuilder<OrderDetailCubit, OrderDetailState>(
         builder: (context, state) {
           switch (state.status) {

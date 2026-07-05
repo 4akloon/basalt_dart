@@ -23,4 +23,11 @@ final class RowReader {
     }
     return selection.type.decode(_row[index]);
   }
+
+  /// Whether [selection] is non-null in this row (e.g. a LEFT JOIN miss).
+  bool isPresent(Selection<Object?> selection) {
+    final index = _columnIndex[selection.readKey];
+    if (index == null) return false;
+    return _row[index] != null;
+  }
 }

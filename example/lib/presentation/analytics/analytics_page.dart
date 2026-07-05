@@ -4,6 +4,7 @@ import 'package:basalt_example/domain/entities/views/analytics.dart';
 import 'package:basalt_example/presentation/analytics/analytics_cubit.dart';
 import 'package:basalt_example/presentation/analytics/analytics_state.dart';
 import 'package:basalt_example/presentation/common/load_status.dart';
+import 'package:basalt_example/presentation/common/refresh_icon_button.dart';
 import 'package:basalt_example/presentation/common/status_views.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -27,7 +28,14 @@ class _AnalyticsView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Analytics')),
+      appBar: AppBar(
+        title: const Text('Analytics'),
+        actions: [
+          RefreshIconButton(
+            onRefresh: () => context.read<AnalyticsCubit>().load(),
+          ),
+        ],
+      ),
       body: BlocBuilder<AnalyticsCubit, AnalyticsState>(
         builder: (context, state) {
           switch (state.status) {

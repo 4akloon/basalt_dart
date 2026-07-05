@@ -1,4 +1,5 @@
 import '../ast/sql_node.dart';
+import '../query/fold_query.dart';
 import '../query/query.dart';
 import '../query/write.dart';
 import 'sql_dialect.dart';
@@ -58,7 +59,10 @@ final class QueryBuilder {
       _sql.write(' ON ');
       _writeNode(join.on);
     }
-    if (stmt.whereNode case final where?) {
+    if (stmt is FoldMappedQuery &&
+        (stmt.parentLimit != null || stmt.parentOffset != null)) {
+      _writeParentLimitedWhere(stmt);
+    } else if (stmt.whereNode case final where?) {
       _sql.write(' WHERE ');
       _writeNode(where);
     }
@@ -70,7 +74,7 @@ final class QueryBuilder {
       _sql.write(' HAVING ');
       _writeNode(having);
     }
-    if (stmt.orderings.isNotEmpty) {
+    if (stmt is! FoldMappedQuery && stmt.orderings.isNotEmpty) {
       _sql.write(' ORDER BY ');
       var first = true;
       for (final o in stmt.orderings) {
@@ -91,6 +95,53 @@ final class QueryBuilder {
         ..write(_bind(offset));
     }
     return _result();
+  }
+
+  void _writeParentLimitedWhere(FoldMappedQuery<dynamic> stmt) {
+    final pk = stmt.rootPkColumn;
+    if (pk == null) {
+      throw StateError(
+        'FoldMappedQuery.limit()/offset() requires withRootPk(pk) before load.',
+      );
+    }
+    final pkNode = pk.node;
+    _sql.write(' WHERE ');
+    _writeNode(pkNode);
+    _sql.write(' IN (SELECT ');
+    _writeNode(pkNode);
+    _sql
+      ..write(' FROM ')
+      ..write(dialect.quoteIdentifier(stmt.fromTable));
+    if (stmt.fromAlias case final alias?) {
+      _sql
+        ..write(' AS ')
+        ..write(dialect.quoteIdentifier(alias));
+    }
+    if (stmt.whereNode case final where?) {
+      _sql.write(' WHERE ');
+      _writeNode(where);
+    }
+    if (stmt.orderings.isNotEmpty) {
+      _sql.write(' ORDER BY ');
+      var first = true;
+      for (final o in stmt.orderings) {
+        if (!first) _sql.write(', ');
+        first = false;
+        _writeNode(o.expression);
+        _sql.write(o.ascending ? ' ASC' : ' DESC');
+      }
+    }
+    if (stmt.parentLimit case final limit?) {
+      _sql
+        ..write(' LIMIT ')
+        ..write(_bind(limit));
+    }
+    if (stmt.parentOffset case final offset?) {
+      _sql
+        ..write(' OFFSET ')
+        ..write(_bind(offset));
+    }
+    _sql.write(')');
   }
 
   /// Verifies every referenced column belongs to a table in the FROM/JOIN

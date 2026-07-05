@@ -4,6 +4,7 @@ import 'package:basalt_example/presentation/catalog/catalog_cubit.dart';
 import 'package:basalt_example/presentation/catalog/catalog_state.dart';
 import 'package:basalt_example/presentation/catalog/product_card.dart';
 import 'package:basalt_example/presentation/common/load_status.dart';
+import 'package:basalt_example/presentation/common/refresh_icon_button.dart';
 import 'package:basalt_example/presentation/common/status_views.dart';
 import 'package:basalt_example/presentation/product_detail/product_detail_page.dart';
 import 'package:flutter/material.dart';
@@ -28,7 +29,14 @@ class _CatalogView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Catalogue')),
+      appBar: AppBar(
+        title: const Text('Catalogue'),
+        actions: [
+          RefreshIconButton(
+            onRefresh: () => context.read<CatalogCubit>().load(),
+          ),
+        ],
+      ),
       body: Column(
         children: [
           const _SearchField(),

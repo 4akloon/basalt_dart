@@ -1,8 +1,79 @@
+import 'dart:async';
+
 import 'package:basalt/basalt.dart';
 import 'package:basalt_sqlite/basalt_sqlite.dart';
 import 'package:test/test.dart';
 
 import 'test_schema.dart';
+
+/// ponytail: test-only fetch counter; delegates every other [Connection] method.
+final class _CountingConnection implements Connection {
+  _CountingConnection(this._inner);
+  final Connection _inner;
+  int fetchCount = 0;
+
+  @override
+  SqlDialect get dialect => _inner.dialect;
+
+  @override
+  Future<List<R>> fetch<R>(SelectQuery<R> statement) async {
+    fetchCount++;
+    return _inner.fetch(statement);
+  }
+
+  @override
+  Future<int> execute(WriteStatement statement) => _inner.execute(statement);
+
+  @override
+  Future<List<R>> executeReturning<R>(ReturningQuery<R> statement) =>
+      _inner.executeReturning(statement);
+
+  @override
+  Future<void> executeSql(String sql, [List<Object?> params = const []]) =>
+      _inner.executeSql(sql, params);
+
+  @override
+  Future<List<Map<String, Object?>>> queryRaw(
+    String sql, [
+    List<Object?> params = const [],
+  ]) =>
+      _inner.queryRaw(sql, params);
+
+  @override
+  Future<List<IntrospectedTable>> introspect() => _inner.introspect();
+
+  @override
+  Future<T> transaction<T>(FutureOr<T> Function(Connection tx) action) =>
+      _inner.transaction(action);
+
+  @override
+  Future<void> close() => _inner.close();
+}
+
+class _UserPosts {
+  const _UserPosts(this.user, this.posts);
+  final User user;
+  final List<Post> posts;
+}
+
+List<_UserPosts> _foldUsersWithPosts(List<RowReader> rows) {
+  final acc = <int, ({User user, Map<int, Post> posts})>{};
+  for (final r in rows) {
+    final uid = r.get(Users.id);
+    final entry = acc.putIfAbsent(
+      uid,
+      () => (user: readUser(r), posts: {}),
+    );
+    if (r.isPresent(Posts.id)) {
+      final post = readPost(r);
+      entry.posts.putIfAbsent(post.id, () => post);
+    }
+  }
+  return [
+    for (final e in acc.values)
+      _UserPosts(e.user, [for (final p in e.posts.values) p]),
+  ];
+}
 
 // A custom column type: an enum stored by name via a const SqlType with top-level
 // codec tear-offs (const-compatible, so it works in `static const` columns).
@@ -580,5 +651,39 @@ void main() {
       ),
     );
     expect(updated, [(1, 21)]);
+  });
+
+  test('FoldMappedQuery.load uses one fetch and folds JOIN rows', () async {
+    await seed();
+    await db.execute(insertInto(Posts.table)
+        .value(Posts.id.set(1))
+        .value(Posts.authorId.set(1))
+        .value(Posts.title.set('a'))
+        .value(Posts.views.set(1)),);
+    await db.execute(insertInto(Posts.table)
+        .value(Posts.id.set(2))
+        .value(Posts.authorId.set(1))
+        .value(Posts.title.set('b'))
+        .value(Posts.views.set(2)),);
+    await db.execute(insertInto(Posts.table)
+        .value(Posts.id.set(3))
+        .value(Posts.authorId.set(3))
+        .value(Posts.title.set('c'))
+        .value(Posts.views.set(3)),);
+
+    final counting = _CountingConnection(db);
+    final rows = await from(Users.table)
+        .leftJoin(Posts.table, onFk: Posts.authorId)
+        .orderBy(Users.name.asc())
+        .mapFold(_foldUsersWithPosts)
+        .withRootPk(Users.id)
+        .load(counting);
+    expect(counting.fetchCount, 1);
+    expect(rows.length, 3);
+    final bob = rows.firstWhere((r) => r.user.name == 'Bob');
+    expect(bob.posts.map((p) => p.title), ['a', 'b']);
+    final carol = rows.firstWhere((r) => r.user.name == 'Carol');
+    expect(carol.posts.map((p) => p.title), ['c']);
+    expect(rows.firstWhere((r) => r.user.name == 'Alice').posts, isEmpty);
   });
 }

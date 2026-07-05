@@ -1,10 +1,11 @@
 import 'package:basalt_codegen/src/queryable/aggregate_info.dart';
 import 'package:basalt_codegen/src/queryable/aggregate_join.dart';
 import 'package:basalt_codegen/src/queryable/aggregate_query_emitter.dart';
-import 'package:basalt_codegen/src/queryable/column_arg.dart';
 import 'package:basalt_codegen/src/queryable/class_info.dart';
+import 'package:basalt_codegen/src/queryable/column_arg.dart';
 import 'package:basalt_codegen/src/queryable/has_many_edge.dart';
-import 'package:basalt_codegen/src/queryable/has_many_loader_emitter.dart';
+import 'package:basalt_codegen/src/queryable/has_many_fold_emitter.dart';
+import 'package:basalt_codegen/src/queryable/has_many_query_emitter.dart';
 import 'package:test/test.dart';
 
 void main() {
@@ -12,15 +13,17 @@ void main() {
     final code = const AggregateQueryEmitter().emit(
       className: 'CategoryRevenueRow',
       queryName: 'categoryRevenueRowQuery',
-      info: AggregateInfo(
+      info: const AggregateInfo(
         fromMarker: 'OrderItems',
         joins: [
           AggregateJoin(
+            parentMarker: 'OrderItems',
             targetMarker: 'Products',
             fkColumnExpr: 'OrderItems.productId',
             nullable: false,
           ),
           AggregateJoin(
+            parentMarker: 'Products',
             targetMarker: 'Categories',
             fkColumnExpr: 'Products.categoryId',
             nullable: false,
@@ -50,7 +53,48 @@ void main() {
     expect(code, contains('.orderBy(CategoryRevenueRow._revenue().desc())'));
   });
 
-  test('HasManyLoaderEmitter batches children and rebuilds parent rows', () {
+  test('AggregateQueryEmitter joins child tables when FROM is the FK target', () {
+    final code = const AggregateQueryEmitter().emit(
+      className: 'TopCustomerRow',
+      queryName: 'topCustomerRowQuery',
+      info: const AggregateInfo(
+        fromMarker: 'Customers',
+        joins: [
+          AggregateJoin(
+            parentMarker: 'Orders',
+            targetMarker: 'Customers',
+            fkColumnExpr: 'Orders.customerId',
+            nullable: false,
+          ),
+          AggregateJoin(
+            parentMarker: 'OrderItems',
+            targetMarker: 'Orders',
+            fkColumnExpr: 'OrderItems.orderId',
+            nullable: false,
+          ),
+        ],
+        dimensions: [
+          ColumnArg(paramName: 'id', isNamed: false, columnExpr: 'Customers.id'),
+        ],
+        aggregates: [
+          AggregateField(
+            fieldName: 'totalSpent',
+            selectCall: 'TopCustomerRow._totalSpent()',
+            zeroFallback: true,
+          ),
+        ],
+      ),
+    );
+    expect(code, contains('from(Customers.table)'));
+    expect(code, contains('.innerJoin(Orders.table, onFk: Orders.customerId)'));
+    expect(
+      code,
+      contains('.innerJoin(OrderItems.table, onFk: OrderItems.orderId)'),
+    );
+    expect(code, isNot(contains('Customers.table, onFk: Orders.customerId')));
+  });
+
+  test('HasManyQueryEmitter emits fold query with LEFT JOINs', () {
     const root = ClassInfo(
       className: 'CustomerProfileRow',
       tableMarker: 'Customers',
@@ -84,13 +128,27 @@ void main() {
           columnExpr: 'Addresses.customerId',
         ),
       ],
+      pkColumnExpr: 'Addresses.id',
+      pkType: 'int',
+      pkParamName: 'id',
     );
-    final code = const HasManyLoaderEmitter().emit(
-      info: root,
+    final queryCode = const HasManyQueryEmitter().emit(
+      root: root,
+      classInfos: {'CustomerProfileRow': root, 'AddressRow': child},
+      queryName: 'customerProfileRowQuery',
+      foldName: r'$CustomerProfileRowFold',
+    );
+    expect(queryCode, contains('FoldMappedQuery<CustomerProfileRow>'));
+    expect(queryCode, contains('.leftJoin('));
+    expect(queryCode, isNot(contains('.innerJoin(addressesCustomer')));
+    expect(queryCode, contains(r'.mapFold($CustomerProfileRowFold)'));
+    expect(queryCode, contains('.withRootPk(Customers.id)'));
+
+    final foldCode = const HasManyFoldEmitter().emit(
+      root: root,
       classInfos: {'CustomerProfileRow': root, 'AddressRow': child},
     );
-    expect(code, contains('Future<List<CustomerProfileRow>> loadCustomerProfileRow'));
-    expect(code, contains('addressRowQuery.where(Addresses.customerId.isIn(keys))'));
-    expect(code, contains('findCustomerProfileRowById'));
+    expect(foldCode, contains(r'List<CustomerProfileRow> $CustomerProfileRowFold'));
+    expect(foldCode, isNot(contains('loadCustomerProfileRow')));
   });
 }

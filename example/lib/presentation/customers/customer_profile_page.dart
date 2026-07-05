@@ -2,6 +2,7 @@ import 'package:basalt_example/core/di/injector.dart';
 import 'package:basalt_example/core/util/formatters.dart';
 import 'package:basalt_example/domain/entities/views/customer_profile.dart';
 import 'package:basalt_example/presentation/common/load_status.dart';
+import 'package:basalt_example/presentation/common/refresh_icon_button.dart';
 import 'package:basalt_example/presentation/common/status_views.dart';
 import 'package:basalt_example/presentation/customers/customer_profile_cubit.dart';
 import 'package:basalt_example/presentation/customers/customer_profile_state.dart';
@@ -31,7 +32,14 @@ class _ProfileView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Customer')),
+      appBar: AppBar(
+        title: const Text('Customer'),
+        actions: [
+          RefreshIconButton(
+            onRefresh: () => context.read<CustomerProfileCubit>().load(),
+          ),
+        ],
+      ),
       body: BlocBuilder<CustomerProfileCubit, CustomerProfileState>(
         builder: (context, state) {
           switch (state.status) {

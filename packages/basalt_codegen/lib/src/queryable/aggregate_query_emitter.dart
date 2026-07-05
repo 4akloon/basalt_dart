@@ -17,10 +17,15 @@ final class AggregateQueryEmitter {
         [for (final d in info.dimensions) d.columnExpr].join(', ');
 
     final joinLines = StringBuffer();
+    final tablesInScope = {info.fromMarker};
     for (final j in info.joins) {
+      final joinMarker = tablesInScope.contains(j.parentMarker)
+          ? j.targetMarker
+          : j.parentMarker;
+      tablesInScope.add(joinMarker);
       final kind = j.nullable ? 'leftJoin' : 'innerJoin';
       joinLines.writeln(
-        '    .$kind(${j.targetMarker}.table, onFk: ${j.fkColumnExpr})',
+        '    .$kind($joinMarker.table, onFk: ${j.fkColumnExpr})',
       );
     }
 

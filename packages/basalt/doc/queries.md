@@ -114,6 +114,30 @@ final kinds = await from(Users.table)
 > Aggregate result types: `count`/`countAll` → `int`; `sum`/`min`/`max` →
 > `int?`; `avg` → `double?`. Non-int numeric columns are not yet supported.
 
+## `@HasMany` fold queries (one SQL + JOIN)
+
+Codegen for `@HasMany` emits a `FoldMappedQuery<T>` getter: one `SELECT` with
+`LEFT JOIN`s for children (and nested children), then a generated
+`$ClassFold(List<RowReader>)` that dedupes the cartesian product into parent
+rows with `List<Child>` fields.
+
+```dart
+// Generated — one round-trip via Connection.fetch, fold in Dart.
+final rows = await customerProfileRowQuery
+    .order(Customers.name.asc())
+    .limit(50)
+    .load(db);
+```
+
+- **`.mapFold(folder)`** — after manual JOINs, same pattern without codegen.
+- **`.load(db)`** / **`.optional(db)`** / **`.first(db)`** — on
+  `FoldMappedQuery` via `FoldMappedQueryExecute` (`fold(await db.fetch(this))`).
+- **Parent `limit` / `offset`** — not SQL `LIMIT` on flat JOIN rows; the
+  serializer adds `WHERE root_pk IN (SELECT … ORDER BY … LIMIT/OFFSET)`. Call
+  **`.withRootPk(rootPk)`** before `.limit()` / `.offset()`.
+- **Do not** use `.distinct()` or `GROUP BY` on a fold query — deduping belongs
+  in the folder.
+
 ## Associations (grouped child loads)
 
 `loadGroupedByFk` loads the children of many parents in one query and groups

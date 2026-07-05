@@ -1,5 +1,6 @@
 import 'package:basalt_example/core/di/injector.dart';
 import 'package:basalt_example/presentation/common/load_status.dart';
+import 'package:basalt_example/presentation/common/refresh_icon_button.dart';
 import 'package:basalt_example/presentation/common/status_views.dart';
 import 'package:basalt_example/presentation/customers/customer_profile_page.dart';
 import 'package:basalt_example/presentation/customers/customers_cubit.dart';
@@ -26,7 +27,14 @@ class _CustomersView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Customers')),
+      appBar: AppBar(
+        title: const Text('Customers'),
+        actions: [
+          RefreshIconButton(
+            onRefresh: () => context.read<CustomersCubit>().load(),
+          ),
+        ],
+      ),
       body: BlocBuilder<CustomersCubit, CustomersState>(
         builder: (context, state) {
           switch (state.status) {

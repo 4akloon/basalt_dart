@@ -4,6 +4,7 @@ import 'package:basalt_example/domain/entities/review.dart';
 import 'package:basalt_example/domain/entities/views/product_with_stats.dart';
 import 'package:basalt_example/presentation/cart/cart_cubit.dart';
 import 'package:basalt_example/presentation/common/load_status.dart';
+import 'package:basalt_example/presentation/common/refresh_icon_button.dart';
 import 'package:basalt_example/presentation/common/star_rating.dart';
 import 'package:basalt_example/presentation/common/status_views.dart';
 import 'package:basalt_example/presentation/product_detail/product_detail_cubit.dart';
@@ -35,7 +36,14 @@ class _ProductDetailView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Product')),
+      appBar: AppBar(
+        title: const Text('Product'),
+        actions: [
+          RefreshIconButton(
+            onRefresh: () => context.read<ProductDetailCubit>().load(),
+          ),
+        ],
+      ),
       body: BlocBuilder<ProductDetailCubit, ProductDetailState>(
         builder: (context, state) {
           switch (state.status) {

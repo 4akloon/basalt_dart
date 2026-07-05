@@ -26,7 +26,7 @@ final class ClassInfo {
   /// The class's own `@Relation` edges (its outgoing relations).
   final List<RelationEdge> ownEdges;
 
-  /// The class's own `@HasMany` edges (children loaded in a second batched query).
+  /// The class's own `@HasMany` edges (folded via JOIN in one SQL query).
   final List<HasManyEdge> hasManyEdges;
 
   /// Non-null when the class is an aggregate `@Queryable` (`@Agg` fields).

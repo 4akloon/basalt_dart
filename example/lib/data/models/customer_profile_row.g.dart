@@ -21,61 +21,155 @@ CustomerProfileRow $CustomerProfileRowFromRow(
 const customerProfileRowMapper =
     RowMapper<CustomerProfileRow>($CustomerProfileRowFromRow);
 
-MappedQuery<CustomerProfileRow> get customerProfileRowQuery =>
-    from(Customers.table).select([
-      Customers.id,
-      Customers.name,
-      Customers.email,
-      Customers.loyaltyTier,
-      Customers.createdAt
-    ]).map($CustomerProfileRowFromRow);
+final class _CustomerProfileRowFoldAcc {
+  _CustomerProfileRowFoldAcc(this.base);
+  final CustomerProfileRow base;
+  final addresses = <int, AddressRow>{};
+  final orders = <int, _OrderRowFoldAcc>{};
+
+  CustomerProfileRow build() => CustomerProfileRow(
+        id: base.id,
+        name: base.name,
+        email: base.email,
+        loyaltyTier: base.loyaltyTier,
+        createdAt: base.createdAt,
+        addresses: [for (final c in addresses.values) c],
+        orders: [for (final c in orders.values) c.build()],
+      );
+}
+
+final class _OrderRowFoldAcc {
+  _OrderRowFoldAcc(this.base);
+  final OrderRow base;
+  final items = <int, OrderItemRow>{};
+
+  OrderRow build() => OrderRow(
+        id: base.id,
+        customerId: base.customerId,
+        status: base.status,
+        createdAt: base.createdAt,
+        shippingAddressId: base.shippingAddressId,
+        customer: base.customer,
+        shippingAddress: base.shippingAddress,
+        items: [for (final c in items.values) c],
+      );
+}
+
+List<CustomerProfileRow> $CustomerProfileRowFold(
+  List<RowReader> rows,
+) {
+  final parents = <int, _CustomerProfileRowFoldAcc>{};
+  for (final r in rows) {
+    final pk = r.get(Customers.id);
+    final acc = parents.putIfAbsent(
+        pk,
+        () => _CustomerProfileRowFoldAcc(
+              CustomerProfileRow(
+                id: r.get(Customers.id),
+                name: r.get(Customers.name),
+                email: r.get(Customers.email),
+                loyaltyTier: r.get(Customers.loyaltyTier),
+                createdAt: r.get(Customers.createdAt),
+              ),
+            ));
+    if (r.isPresent(Addresses.table.aliased('addresses').col(Addresses.id))) {
+      final childPk =
+          r.get(Addresses.table.aliased('addresses').col(Addresses.id));
+      acc.addresses.putIfAbsent(
+          childPk,
+          () => $AddressRowFromRow(
+                r,
+                Addresses.table.aliased('addresses'),
+                'addresses_',
+                1,
+              ));
+    }
+    if (r.isPresent(Orders.table.aliased('orders').col(Orders.id))) {
+      final childPk = r.get(Orders.table.aliased('orders').col(Orders.id));
+      final childAcc = acc.orders.putIfAbsent(
+          childPk,
+          () => _OrderRowFoldAcc($OrderRowFromRow(
+                r,
+                Orders.table.aliased('orders'),
+                'orders_',
+                1,
+              )));
+      if (r.isPresent(
+          OrderItems.table.aliased('orders_items').col(OrderItems.id))) {
+        final childPk =
+            r.get(OrderItems.table.aliased('orders_items').col(OrderItems.id));
+        childAcc.items.putIfAbsent(
+            childPk,
+            () => $OrderItemRowFromRow(
+                  r,
+                  OrderItems.table.aliased('orders_items'),
+                  'orders_items_',
+                  2,
+                ));
+      }
+    }
+  }
+  return [for (final a in parents.values) a.build()];
+}
+
+FoldMappedQuery<CustomerProfileRow> get customerProfileRowQuery {
+  final addresses = Addresses.table.aliased('addresses');
+  final addressesCustomer = Customers.table.aliased('addresses_customer');
+  final orders = Orders.table.aliased('orders');
+  final ordersCustomer = Customers.table.aliased('orders_customer');
+  final ordersShippingAddress =
+      Addresses.table.aliased('orders_shippingAddress');
+  final ordersItems = OrderItems.table.aliased('orders_items');
+  final ordersItemsProduct = Products.table.aliased('orders_items_product');
+  final ordersItemsProductCategory =
+      Categories.table.aliased('orders_items_product_category');
+  return from(Customers.table)
+      .leftJoin(
+        addresses,
+        on: addresses.col(Addresses.customerId).eqColumn(Customers.id),
+      )
+      .leftJoin(
+        addressesCustomer,
+        on: addresses
+            .col(Addresses.customerId)
+            .eqColumn(addressesCustomer.col(Customers.id)),
+      )
+      .leftJoin(
+        orders,
+        on: orders.col(Orders.customerId).eqColumn(Customers.id),
+      )
+      .leftJoin(
+        ordersCustomer,
+        on: orders
+            .col(Orders.customerId)
+            .eqColumn(ordersCustomer.col(Customers.id)),
+      )
+      .leftJoin(
+        ordersShippingAddress,
+        on: orders
+            .col(Orders.shippingAddressId)
+            .eqColumn(ordersShippingAddress.col(Addresses.id)),
+      )
+      .leftJoin(
+        ordersItems,
+        on: ordersItems.col(OrderItems.orderId).eqColumn(orders.col(Orders.id)),
+      )
+      .leftJoin(
+        ordersItemsProduct,
+        on: ordersItems
+            .col(OrderItems.productId)
+            .eqColumn(ordersItemsProduct.col(Products.id)),
+      )
+      .leftJoin(
+        ordersItemsProductCategory,
+        on: ordersItemsProduct
+            .col(Products.categoryId)
+            .eqColumn(ordersItemsProductCategory.col(Categories.id)),
+      )
+      .mapFold($CustomerProfileRowFold)
+      .withRootPk(Customers.id);
+}
 
 /// Fetch the CustomerProfileRow with the given primary key.
-MappedQuery<CustomerProfileRow> findCustomerProfileRow(int id) =>
+FoldMappedQuery<CustomerProfileRow> findCustomerProfileRow(int id) =>
     customerProfileRowQuery.findBy(Customers.id, id);
-
-Future<List<CustomerProfileRow>> loadCustomerProfileRow(
-  Connection db, {
-  MappedQuery<CustomerProfileRow>? query,
-}) async {
-  final base = await (query ?? customerProfileRowQuery).load(db);
-  if (base.isEmpty) return base;
-  final keys = [for (final row in base) row.id];
-  final addressesByParent = {
-    for (final k in keys) k: <AddressRow>[],
-  };
-  final addressesRows =
-      await addressRowQuery.where(Addresses.customerId.isIn(keys)).load(db);
-  for (final row in addressesRows) {
-    (addressesByParent[row.customerId] ??= []).add(row);
-  }
-  final ordersByParent = {
-    for (final k in keys) k: <OrderRow>[],
-  };
-  final ordersRows = await loadOrderRow(
-    db,
-    query: orderRowQuery.where(Orders.customerId.isIn(keys)),
-  );
-  for (final row in ordersRows) {
-    (ordersByParent[row.customerId] ??= []).add(row);
-  }
-  return [
-    for (final row in base)
-      CustomerProfileRow(
-        id: row.id,
-        name: row.name,
-        email: row.email,
-        loyaltyTier: row.loyaltyTier,
-        createdAt: row.createdAt,
-        addresses: addressesByParent[row.id] ?? const [],
-        orders: ordersByParent[row.id] ?? const [],
-      ),
-  ];
-}
-
-Future<CustomerProfileRow?> findCustomerProfileRowById(
-    Connection db, int id) async {
-  final rows = await loadCustomerProfileRow(db,
-      query: customerProfileRowQuery.findBy(Customers.id, id));
-  return rows.isEmpty ? null : rows.single;
-}
