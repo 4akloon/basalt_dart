@@ -58,8 +58,8 @@ from(Users.table).where((Users.age > 28) & Users.active.eq(1));
 ```
 
 > **`where` vs `filter`:** chaining `.where(a).where(b)` **replaces** the predicate (last wins) — use a single
-> `.where(...)` with `&`/`|`, or use the diesel-style `.filter(...)`, which **ANDs** repeated calls
-> (`filter(a).filter(b)` ⇒ `WHERE a AND b`). See [diesel-style aliases](#diesel-style-aliases).
+> `.where(...)` with `&`/`|`, or use the basalt-style `.filter(...)`, which **ANDs** repeated calls
+> (`filter(a).filter(b)` ⇒ `WHERE a AND b`). See [basalt-style aliases](#basalt-style-aliases).
 
 ## Ordering, limit, offset
 
@@ -241,11 +241,11 @@ final kinds = await from(Users.table)
 > Aggregate result types: `count`/`countAll` → `int`; `sum`/`min`/`max` → `int?`; `avg` → `double?`
 > (SQLite returns NULL over an empty set). Non-int numeric columns are not yet supported.
 
-## diesel-style aliases
+## basalt-style aliases
 
-If you're coming from diesel-rs, several methods read the same way (the Dart-idiomatic names still work too):
+If you're coming from basalt, several methods read the same way (the Dart-idiomatic names still work too):
 
-| diesel-rs | diesel_dart |
+| basalt | basalt_dart |
 |---|---|
 | `users.filter(p)` | `from(Users.table).filter(p)` — ANDs repeated calls |
 | `.order(col.asc())` | `.order(Users.col.asc())` — alias for `orderBy` |
@@ -269,13 +269,13 @@ final bob = await from(Users.table)
     .optional(db);
 ```
 
-diesel's bare `find(1)` auto-detects the primary key; `findBy(Users.id, 1)` is the type-safe equivalent (the
-value is checked against the column's type). An auto-PK bare `find` is a possible codegen follow-up.
+A bare `find(1)` that auto-detects the primary key is a possible codegen follow-up; `findBy(Users.id, 1)` is the type-safe equivalent (the
+value is checked against the column's type).
 
 ## Associations (grouped child loads)
 
 `loadGroupedByFk` loads the children of many parents in one query and groups them by foreign key — the
-diesel `belonging_to(...).grouped_by(...)` pattern, which avoids N+1:
+`belonging_to(...).grouped_by(...)` pattern, which avoids N+1:
 
 ```dart
 final users = await from(Users.table).map(userMapper.read).load(db);

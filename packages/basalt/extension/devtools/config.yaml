@@ -1,0 +1,8 @@
+# `name` is the DevTools tab title, shown verbatim — but DevTools requires it to
+# match `^[a-z0-9_]*$` (a valid lowercase package name) or it silently drops the
+# extension. So the tab reads "basalt" (a capitalized "Basalt" is not allowed).
+name: basalt
+issueTracker: https://github.com/basalt/basalt_dart/issues
+version: 0.0.1
+materialIconCodePoint: "0xe63a"
+requiresConnection: true

@@ -1,0 +1,22 @@
+name: basalt_cli
+description: CLI (basalt) for the Basalt Dart ORM — migrations and codegen.
+version: 0.0.1
+
+environment:
+  sdk: ">=3.5.0 <4.0.0"
+
+resolution: workspace
+
+executables:
+  basalt:
+
+dependencies:
+  basalt: ^0.0.1
+  basalt_sqlite: ^0.0.1
+  basalt_postgres: ^0.0.1
+  args: ^2.5.0
+  path: ^1.9.0
+  yaml: ^3.1.2
+
+dev_dependencies:
+  test: ^1.26.3

@@ -1,6 +1,6 @@
-# Contributing to diesel_dart
+# Contributing to basalt_dart
 
-Thanks for helping build diesel_dart! This guide covers everything about *developing the project itself* —
+Thanks for helping build basalt_dart! This guide covers everything about *developing the project itself* —
 setup, day-to-day commands, the architecture, how to extend it, and the conventions to follow. The package
 READMEs stay user-facing; this file (and [CLAUDE.md](CLAUDE.md), the exhaustive repo guide) is for
 contributors.
@@ -22,8 +22,8 @@ contributors.
 
 - **Dart SDK `>=3.5.0 <4.0.0`** — the whole workspace targets this range.
 - **Flutter** (stable) — only to build the DevTools UI in
-  [`packages/diesel_devtools_extension`](packages/diesel_devtools_extension).
-- **Docker** — only to run the `diesel_postgres` integration tests (a throwaway Postgres).
+  [`packages/basalt_devtools_extension`](packages/basalt_devtools_extension).
+- **Docker** — only to run the `basalt_postgres` integration tests (a throwaway Postgres).
 
 ## Getting the code
 
@@ -31,21 +31,21 @@ This repo is a **Dart pub workspace** (monorepo): one `dart pub get` at the root
 together against a single lockfile.
 
 ```sh
-git clone <repo> diesel_dart && cd diesel_dart
+git clone <repo> basalt_dart && cd basalt_dart
 dart pub get
 ```
 
 The Flutter UI package is intentionally **not** a workspace member (it needs the Flutter SDK), so resolve it
-separately when you touch it: `cd packages/diesel_devtools_extension && flutter pub get`.
+separately when you touch it: `cd packages/basalt_devtools_extension && flutter pub get`.
 
 ## Repository layout
 
 See the [packages table in the root README](README.md#packages) for what each package does. Key points for
 contributors:
 
-- Core lives in `packages/diesel` and has **no driver dependency**; backends depend on it.
-- `packages/diesel_devtools_extension` is a Flutter app **outside** the workspace; its compiled output is
-  copied into `packages/diesel/extension/devtools/build/` (git-ignored).
+- Core lives in `packages/basalt` and has **no driver dependency**; backends depend on it.
+- `packages/basalt_devtools_extension` is a Flutter app **outside** the workspace; its compiled output is
+  copied into `packages/basalt/extension/devtools/build/` (git-ignored).
 - `example/` is the end-to-end demo *and* hosts the DevTools inspector demo/launcher (`example/tool/`).
 
 ## Everyday commands
@@ -58,7 +58,7 @@ dart analyze packages example
 cd packages/<pkg> && dart test
 
 # Test them all.
-for p in diesel diesel_sqlite diesel_cli diesel_codegen diesel_postgres; do
+for p in basalt basalt_sqlite basalt_cli basalt_codegen basalt_postgres; do
   (cd packages/$p && dart test); done
 
 # End-to-end: regenerate codegen + run the demo.
@@ -71,13 +71,13 @@ dart format .
 **Postgres tests** need a server; the suite skips gracefully if none is reachable:
 
 ```sh
-docker run -d --name diesel_pg \
-  -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=diesel_test -p 5433:5432 postgres:16
-cd packages/diesel_postgres && dart test        # override via DIESEL_PG_HOST / DIESEL_PG_PORT
+docker run -d --name basalt_pg \
+  -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=basalt_test -p 5433:5432 postgres:16
+cd packages/basalt_postgres && dart test        # override via BASALT_PG_HOST / BASALT_PG_PORT
 ```
 
-**The CLI** (run from a dir with a `diesel.yaml`, e.g. `example/`):
-`dart run diesel_cli:diesel_dart <command>` — `setup`, `migration generate/run/revert/redo/list`,
+**The CLI** (run from a dir with a `basalt.yaml`, e.g. `example/`):
+`dart run basalt_cli:basalt <command>` — `setup`, `migration generate/run/revert/redo/list`,
 `database reset`, `print-schema [-o <file>]`.
 
 ## Architecture at a glance
@@ -98,30 +98,30 @@ The file map ("where things live") is in [CLAUDE.md](CLAUDE.md).
 
 ## Extending the project
 
-- **New backend:** implement `Connection` + `SqlDialect` + `introspect()` in a new `diesel_<db>` package,
-  then wire it into `ConnectionFactory.open` (in `diesel_cli`) by URL scheme. No core/command changes.
-- **New annotation / derive:** add the annotation in `packages/diesel/lib/src/annotations/`, a `TypeChecker`
+- **New backend:** implement `Connection` + `SqlDialect` + `introspect()` in a new `basalt_<db>` package,
+  then wire it into `ConnectionFactory.open` (in `basalt_cli`) by URL scheme. No core/command changes.
+- **New annotation / derive:** add the annotation in `packages/basalt/lib/src/annotations/`, a `TypeChecker`
   + parsing in `edge_analyzer.dart`, a pure emitter, a `GeneratorForAnnotation` (see `write_generator.dart`),
   and register it in `builder.dart`'s `SharedPartBuilder`. Keep emitters pure and unit-tested.
-- **New CLI command:** add a `Command` under `diesel_cli/lib/src/commands/` (extend `DbCommand` for
+- **New CLI command:** add a `Command` under `basalt_cli/lib/src/commands/` (extend `DbCommand` for
   DB-connected ones) and register it in `CliRunner.build()`.
 
 ## The DevTools extension
 
-The inspector runtime lives in core (`package:diesel/devtools.dart`; `packages/diesel/lib/src/devtools/`).
-The UI is the Flutter app in `packages/diesel_devtools_extension`. After changing the UI, rebuild the
-git-ignored web bundle into the `diesel` package:
+The inspector runtime lives in core (`package:basalt/devtools.dart`; `packages/basalt/lib/src/devtools/`).
+The UI is the Flutter app in `packages/basalt_devtools_extension`. After changing the UI, rebuild the
+git-ignored web bundle into the `basalt` package:
 
 ```sh
-cd packages/diesel_devtools_extension
+cd packages/basalt_devtools_extension
 flutter pub get
-dart run devtools_extensions build_and_copy --source=. --dest=../diesel/extension/devtools
-dart run devtools_extensions validate --package=../diesel
+dart run devtools_extensions build_and_copy --source=. --dest=../basalt/extension/devtools
+dart run devtools_extensions validate --package=../basalt
 ```
 
 Try it end-to-end with the launcher (starts a Dart Tooling Daemon + a seeded app + DevTools):
-`dart run example/tool/inspect.dart`, then enable **diesel** in DevTools' Extensions menu. Unit tests for the
-runtime live in `packages/diesel_sqlite/test/inspector_test.dart`.
+`dart run example/tool/inspect.dart`, then enable **basalt** in DevTools' Extensions menu. Unit tests for the
+runtime live in `packages/basalt_sqlite/test/inspector_test.dart`.
 
 ## Coding conventions
 
@@ -142,10 +142,10 @@ runtime live in `packages/diesel_sqlite/test/inspector_test.dart`.
 
 Prefer fast, pure unit tests; the architecture is built for them.
 
-- Serializer (SQL/params, scope validation, joins): `packages/diesel/test/serializer_test.dart`.
-- SQLite round-trips, joins, transactions, nullables: `packages/diesel_sqlite/test/`.
-- Migrations + print-schema/introspection: `packages/diesel_cli/test/`.
-- Codegen **emitters** (pure, no analyzer) + generate goldens + relation tree: `packages/diesel_codegen/test/`.
+- Serializer (SQL/params, scope validation, joins): `packages/basalt/test/serializer_test.dart`.
+- SQLite round-trips, joins, transactions, nullables: `packages/basalt_sqlite/test/`.
+- Migrations + print-schema/introspection: `packages/basalt_cli/test/`.
+- Codegen **emitters** (pure, no analyzer) + generate goldens + relation tree: `packages/basalt_codegen/test/`.
 - End-to-end: `example/` (`build_runner build`, then `dart run bin/example.dart`).
 
 New behaviour should come with a test at the lowest layer that can cover it (usually a pure emitter or the

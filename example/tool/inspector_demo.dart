@@ -1,4 +1,4 @@
-// Smoke/target harness for the diesel DevTools inspector.
+// Smoke/target harness for the basalt DevTools inspector.
 //
 // Run with the VM service on so DevTools can attach:
 //
@@ -6,13 +6,13 @@
 //
 // It seeds an in-memory SQLite database with ~100 users (plus related posts),
 // registers it, prints a short summary, then stays alive so you can open the
-// "diesel" tab in DevTools and browse / filter / edit it live.
+// "basalt" tab in DevTools and browse / filter / edit it live.
 import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 
-import 'package:diesel/devtools.dart';
-import 'package:diesel_sqlite/diesel_sqlite.dart';
+import 'package:basalt/devtools.dart';
+import 'package:basalt_sqlite/basalt_sqlite.dart';
 
 const _userCount = 100;
 
@@ -35,7 +35,7 @@ const _titles = [
 Future<void> main() async {
   final conn = SqliteConnection.memory();
   final posts = await _seed(conn);
-  final id = DieselDevTools.register(conn, name: 'demo');
+  final id = BasaltDevTools.register(conn, name: 'demo');
 
   const service = InspectorService();
   final pretty = const JsonEncoder.withIndent('  ');
@@ -48,7 +48,7 @@ Future<void> main() async {
   stdout.writeln('first 3 users: ${pretty.convert(sample.rows)}');
 
   stdout.writeln('\nRegistered instance "$id". Open DevTools on this VM '
-      'service and use the diesel tab (try filtering users by name / age / '
+      'service and use the basalt tab (try filtering users by name / age / '
       'email IS NULL, or edit a row). Press Enter to exit.');
   await stdin.first;
   await conn.close();

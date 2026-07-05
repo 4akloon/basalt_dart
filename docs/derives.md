@@ -1,21 +1,21 @@
 # Derives (codegen)
 
-`diesel_codegen` is a `build_runner`/`source_gen` generator that derives row mappers and write statements for
-your data classes from five annotations (all in `package:diesel`). It is the Dart analog of diesel-rs's
+`basalt_codegen` is a `build_runner`/`source_gen` generator that derives row mappers and write statements for
+your data classes from five annotations (all in `package:basalt`). It is the Dart analog of basalt's
 `#[derive(...)]` macros.
 
 ## Setup
 
 ```yaml
 dev_dependencies:
-  diesel_codegen:
+  basalt_codegen:
   build_runner: ^2.4.0
 ```
 
 Add a `part` directive and run the builder:
 
 ```dart
-import 'package:diesel/diesel.dart';
+import 'package:basalt/basalt.dart';
 import 'schema.dart';
 
 part 'user.g.dart';

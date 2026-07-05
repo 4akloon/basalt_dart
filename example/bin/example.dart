@@ -1,11 +1,11 @@
-import 'package:diesel/diesel.dart';
-import 'package:diesel_example/models.dart';
-import 'package:diesel_example/schema.dart';
-import 'package:diesel_sqlite/diesel_sqlite.dart';
+import 'package:basalt/basalt.dart';
+import 'package:basalt_example/models.dart';
+import 'package:basalt_example/schema.dart';
+import 'package:basalt_sqlite/basalt_sqlite.dart';
 
-/// A tour of (almost) everything diesel_dart can do. Run AFTER applying the
+/// A tour of (almost) everything basalt_dart can do. Run AFTER applying the
 /// migrations with the CLI:
-///   dart run diesel_cli:diesel_dart database reset
+///   dart run basalt_cli:basalt database reset
 ///   dart run bin/example.dart
 Future<void> main() async {
   final db = SqliteConnection.open('example.db');

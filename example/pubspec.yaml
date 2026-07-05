@@ -1,5 +1,5 @@
-name: diesel_example
-description: Example app — the diesel_dart CLI migration workflow plus typed queries.
+name: basalt_example
+description: Example app — the basalt migration workflow plus typed queries.
 version: 0.0.1
 publish_to: none
 
@@ -9,14 +9,14 @@ environment:
 resolution: workspace
 
 dependencies:
-  diesel: ^0.0.1
-  diesel_sqlite: ^0.0.1
+  basalt: ^0.0.1
+  basalt_sqlite: ^0.0.1
 
 dev_dependencies:
-  # Provides the `diesel_dart` migration CLI: dart run diesel_cli:diesel_dart ...
-  diesel_cli: ^0.0.1
+  # Provides the `basalt` migration CLI: dart run basalt_cli:basalt ...
+  basalt_cli: ^0.0.1
   # Row-mapper codegen: dart run build_runner build
-  diesel_codegen: ^0.0.1
+  basalt_codegen: ^0.0.1
   build_runner: ^2.4.0
   # DevTools inspector launcher (tool/inspect.dart): starts a Dart Tooling Daemon
   dtd: ^4.0.0

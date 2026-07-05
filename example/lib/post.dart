@@ -1,11 +1,11 @@
-import 'package:diesel/diesel.dart';
+import 'package:basalt/basalt.dart';
 
 import 'schema.dart';
 import 'user.dart';
 
 part 'post.g.dart';
 
-/// Lives in a different file than [User] on purpose: `diesel_codegen` resolves
+/// Lives in a different file than [User] on purpose: `basalt_codegen` resolves
 /// the cross-file `@Relation` and emits a self-contained `post.g.dart`.
 @Queryable(Posts.table)
 class Post {
@@ -19,7 +19,7 @@ class Post {
   @Relation(Posts.authorId, depth: 2)
   final User? author;
 
-  /// Fully named constructor — `diesel_codegen` maps columns by name, so mixing
+  /// Fully named constructor — `basalt_codegen` maps columns by name, so mixing
   /// named (and positional) parameters works either way.
   const Post({
     required this.id,

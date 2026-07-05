@@ -1,10 +1,10 @@
-# diesel_example
+# basalt_example
 
 ![Dart](https://img.shields.io/badge/Dart-%3E%3D3.5-0175C2?logo=dart&logoColor=white)
 ![Runnable](https://img.shields.io/badge/runnable-end--to--end-brightgreen)
-![Part of](https://img.shields.io/badge/part_of-diesel__dart-informational)
+![Part of](https://img.shields.io/badge/part_of-basalt__dart-informational)
 
-**An end-to-end tour of [diesel_dart](../README.md):** apply SQL migrations with the `diesel_dart` CLI,
+**An end-to-end tour of [basalt_dart](../README.md):** apply SQL migrations with the `basalt` CLI,
 generate typed readers/queries from annotations, then exercise the full query surface through the ORM —
 single-table predicates, manual + generated joins, relations, transactions, writes, and raw SQL.
 
@@ -17,13 +17,13 @@ single-table predicates, manual + generated joins, relations, transactions, writ
 
 ## Layout
 
-- `diesel.yaml` — CLI config (`database_url: example.db`, `migrations_dir: migrations`).
+- `basalt.yaml` — CLI config (`database_url: example.db`, `migrations_dir: migrations`).
 - `migrations/` — `<timestamp>_<name>/{up,down}.sql`. Creates `users` and `posts`,
   and adds a self-referential `users.manager_id` foreign key.
-- `lib/schema.dart` — **generated** by `diesel_dart print-schema` (tables/columns only).
+- `lib/schema.dart` — **generated** by `basalt print-schema` (tables/columns only).
 - `lib/user.dart`, `lib/post.dart` — hand-written data classes. `User` carries
   `@Queryable` + `@Insertable` + `@AsChangeset`; both use `@Relation` for joins.
-- `lib/user.g.dart`, `lib/post.g.dart` — **generated** by `diesel_codegen` (`build_runner`).
+- `lib/user.g.dart`, `lib/post.g.dart` — **generated** by `basalt_codegen` (`build_runner`).
 - `bin/example.dart` — seeds via `toInsert()`, mutates via `toUpdate()`, and exercises the query surface.
 
 ## What the codegen emits
@@ -51,10 +51,10 @@ skipped by the write derives.
 
 ```sh
 # 1. Apply migrations — creates example.db (users/posts + manager_id).
-dart run diesel_cli:diesel_dart database reset   # or: migration run
+dart run basalt_cli:basalt database reset   # or: migration run
 
 # 2. (Re)generate the typed schema from the migrated database.
-dart run diesel_cli:diesel_dart print-schema -o lib/schema.dart
+dart run basalt_cli:basalt print-schema -o lib/schema.dart
 
 # 3. Generate row readers / query getters from the annotations.
 dart run build_runner build
@@ -104,11 +104,11 @@ Other CLI commands: `migration generate <name>`, `migration list`,
 ## The DevTools inspector demo
 
 This package also hosts the launcher and demo target for the
-[DevTools inspector](../packages/diesel#devtools-inspector):
+[DevTools inspector](../packages/basalt#devtools-inspector):
 
 ```sh
 # One command: starts a Dart Tooling Daemon, seeds ~100 users in an in-memory DB,
-# and opens DevTools wired to it. Then enable "diesel" in DevTools' Extensions menu.
+# and opens DevTools wired to it. Then enable "basalt" in DevTools' Extensions menu.
 dart run tool/inspect.dart
 
 # Or run just the seeded target and attach DevTools yourself:

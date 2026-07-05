@@ -1,5 +1,5 @@
 name: root
-description: Monorepo for Diesel Dart
+description: Monorepo for Basalt Dart
 version: 0.0.1
 
 environment:
@@ -9,9 +9,9 @@ dev_dependencies:
   lints: ^6.0.0
 
 workspace:
-  - packages/diesel
-  - packages/diesel_sqlite
-  - packages/diesel_cli
-  - packages/diesel_codegen
-  - packages/diesel_postgres
+  - packages/basalt
+  - packages/basalt_sqlite
+  - packages/basalt_cli
+  - packages/basalt_codegen
+  - packages/basalt_postgres
   - example

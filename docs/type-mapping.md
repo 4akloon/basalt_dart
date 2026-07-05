@@ -49,7 +49,7 @@ uniformly, so a future Postgres backend — which *does* have native `bool`/`tim
 
 ## Custom type codecs
 
-`SqlType<T>` **is** the codec extension point (the analog of diesel-rs `ToSql`/`FromSql`) — its constructor takes
+`SqlType<T>` **is** the codec extension point (the analog of basalt `ToSql`/`FromSql`) — its constructor takes
 `encode`/`decode`. Keep it `const` by using top-level tear-off codecs, so it works in `static const` columns.
 For example, an enum stored by name:
 

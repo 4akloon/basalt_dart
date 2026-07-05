@@ -1,11 +1,11 @@
-// One-command launcher for the diesel DevTools inspector — no IDE required.
+// One-command launcher for the basalt DevTools inspector — no IDE required.
 //
 // DevTools only discovers extensions for projects that a Dart Tooling Daemon
 // (DTD) knows about. A plain `dart run --observe` starts no DTD, and even
 // `--print-dtd` starts one with no workspace roots — so the Extensions menu
 // stays empty. This script starts a DTD, points it at this repo
 // (setIDEWorkspaceRoots), runs the target app, and opens DevTools wired to
-// both, so the "diesel" tab is discoverable.
+// both, so the "basalt" tab is discoverable.
 //
 // Usage (from the repo root):
 //   dart run example/tool/inspect.dart [app.dart]
@@ -13,7 +13,7 @@
 //   dart run example/tool/inspect.dart --check
 //     just verify the DTD sees this project's packages, then exit
 //
-// After DevTools opens, enable "Diesel" from the Extensions menu (top-right).
+// After DevTools opens, enable "basalt" from the Extensions menu (top-right).
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
@@ -69,7 +69,7 @@ Future<void> main(List<String> args) async {
   final vm = await vmUri.future.timeout(const Duration(seconds: 30));
 
   // 3. Open DevTools connected to the app + our DTD.
-  stdout.writeln('\nOpening DevTools (enable "diesel" in the Extensions menu)…');
+  stdout.writeln('\nOpening DevTools (enable "basalt" in the Extensions menu)…');
   final devtools = await Process.start(
     'dart',
     ['devtools', '--dtd-uri=$dtdUri', vm],

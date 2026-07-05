@@ -1,4 +1,4 @@
-import 'package:diesel/diesel.dart';
+import 'package:basalt/basalt.dart';
 
 import 'schema.dart';
 

@@ -6,6 +6,6 @@ pubspec.lock
 devtools_options.yaml
 
 # Compiled DevTools extension web app — regenerate with:
-#   cd packages/diesel_devtools_extension && dart run devtools_extensions \
+#   cd packages/basalt_devtools_extension && dart run devtools_extensions \
 #     build_and_copy --source=. --dest=../diesel/extension/devtools
-packages/diesel/extension/devtools/build/
+packages/basalt/extension/devtools/build/

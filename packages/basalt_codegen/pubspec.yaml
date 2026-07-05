@@ -1,0 +1,19 @@
+name: basalt_codegen
+description: build_runner code generator for the Basalt Dart ORM (@Queryable derive).
+version: 0.0.1
+
+environment:
+  sdk: ">=3.5.0 <4.0.0"
+
+resolution: workspace
+
+dependencies:
+  basalt: ^0.0.1
+  analyzer: ">=8.0.0 <14.0.0"
+  build: ^4.0.0
+  source_gen: ^4.2.0
+
+dev_dependencies:
+  build_runner: ^2.15.0
+  build_test: ^3.5.0
+  test: ^1.26.3

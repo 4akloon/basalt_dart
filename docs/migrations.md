@@ -1,19 +1,18 @@
 # Migrations
 
-The `diesel_dart` CLI (package `diesel_cli`) manages a migration-first workflow modeled on the Rust `diesel`
-CLI. Run it from a directory containing `diesel.yaml` (e.g. [`example/`](../example)):
+The `basalt` CLI (package `basalt_cli`) manages a migration-first workflow. Run it from a directory containing `basalt.yaml` (e.g. [`example/`](../example)):
 
 ```sh
-dart run diesel_cli:diesel_dart <command>
+dart run basalt_cli:basalt <command>
 ```
 
 ## Configuration
 
-`DieselConfig` resolves the database from `DATABASE_URL` (environment, takes precedence) with `diesel.yaml`
-as a fallback, and the migrations directory from `diesel.yaml` (default `migrations`):
+`BasaltConfig` resolves the database from `DATABASE_URL` (environment, takes precedence) with `basalt.yaml`
+as a fallback, and the migrations directory from `basalt.yaml` (default `migrations`):
 
 ```yaml
-# diesel.yaml
+# basalt.yaml
 database_url: app.db        # SQLite path; sqlite:/sqlite://file: schemes are stripped; ':memory:' passes through
 migrations_dir: migrations
 ```
@@ -49,33 +48,29 @@ lexicographically by version (zero-padded timestamps sort correctly).
 
 ## Tracking table
 
-Applied versions are recorded in `__diesel_schema_migrations`:
+Applied versions are recorded in `__basalt_schema_migrations`:
 
 ```sql
-CREATE TABLE IF NOT EXISTS __diesel_schema_migrations
+CREATE TABLE IF NOT EXISTS __basalt_schema_migrations
   (version VARCHAR(50) PRIMARY KEY NOT NULL, run_on TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP);
 ```
 
 The `SELECT`/`INSERT`/`DELETE` against this table are built with the query builder itself (the CLI dogfoods
 the ORM), and each migration's apply/revert is wrapped in a transaction.
 
-## diesel-rs compatibility
+## Migration conventions
 
-On SQLite the migrations directory and `__diesel_schema_migrations` table are **interchangeable** with the
-Rust `diesel` CLI:
+basalt_dart uses a consistent migration layout:
 
-- **Directory layout** — `<version>_<name>/{up,down}.sql` matches, and `discover()` reads diesel's dashed
-  version prefix.
-- **Version format** — the scaffolder emits diesel's `%Y-%m-%d-%H%M%S` (e.g. `2024-01-15-123456`).
+- **Directory layout** — `<version>_<name>/{up,down}.sql`; `discover()` reads the dashed version prefix.
+- **Version format** — the scaffolder emits `%Y-%m-%d-%H%M%S` (e.g. `2024-01-15-123456`).
 - **Tracker DDL** — `version VARCHAR(50) PRIMARY KEY NOT NULL`,
-  `run_on TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP`, matching diesel.
-- **`run_on`** — written as `YYYY-MM-DD HH:MM:SS`, like diesel's `CURRENT_TIMESTAMP`.
-
-So either CLI can apply or revert the other's migrations against the same database.
+  `run_on TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP`.
+- **`run_on`** — written as `YYYY-MM-DD HH:MM:SS`.
 
 ## Embedding the runner
 
-The migration engine is exposed for tests/embedding via `package:diesel_cli` (`MigrationRunner`), which works
+The migration engine is exposed for tests/embedding via `package:basalt_cli` (`MigrationRunner`), which works
 against any `Connection`:
 
 ```dart
