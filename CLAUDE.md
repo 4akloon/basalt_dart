@@ -116,6 +116,10 @@ Generate HTML locally: `cd packages/<pkg> && dart doc .` (output in `doc/api/`, 
   from that package's `dartdoc_options.yaml`. Don't leave new public API untagged. Prefer an existing
   category; only add a new one (+ a new `doc/<name>.md`) for a genuinely new topic area.
 - Guides are example-driven: short runnable snippets, not prose-only.
+- **`displayName` must produce a filename distinct from the category slug** (e.g. slug
+  `schema` + displayName `Schema & Columns`, not `Schema`). On macOS's case-insensitive
+  filesystem, `Schema-topic.html` and `schema-topic.html` collide — dartdoc overwrites the
+  real page with a self-redirect stub and the topic appears blank.
 - After doc changes, run `dart doc .` from the package directory and fix any warnings. Never commit
   generated `doc/api/`.
 

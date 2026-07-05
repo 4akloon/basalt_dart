@@ -5,22 +5,22 @@ dartdoc:
       displayName: Getting Started
     schema:
       markdown: doc/schema.md
-      displayName: Schema
+      displayName: Schema & Columns
     types:
       markdown: doc/types.md
-      displayName: Types
+      displayName: Types & Codecs
     expressions:
       markdown: doc/expressions.md
-      displayName: Expressions
+      displayName: Predicates & Expressions
     queries:
       markdown: doc/queries.md
       displayName: Query Builder
     writes:
       markdown: doc/writes.md
-      displayName: Writes
+      displayName: Insert, Update & Delete
     serialization:
       markdown: doc/serialization.md
-      displayName: Serialization
+      displayName: SQL Serialization
     connection:
       markdown: doc/connection.md
       displayName: Connection & Backends

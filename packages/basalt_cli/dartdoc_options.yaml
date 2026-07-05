@@ -5,7 +5,7 @@ dartdoc:
       displayName: Getting Started
     migrations:
       markdown: doc/migrations.md
-      displayName: Migrations
+      displayName: Migration Commands
   categoryOrder:
     - getting-started
     - migrations
