@@ -11,6 +11,8 @@ import 'schema/introspection.dart';
 /// returns already-completed futures, while an async driver (Postgres) fits the
 /// exact same signatures with no breaking change. `FutureOr` appears only on the
 /// transaction callback, so both sync and async bodies work.
+///
+/// {@category connection}
 abstract interface class Connection {
   /// Runs a `SELECT` (single-table or joined) and maps each row to `R`.
   Future<List<R>> fetch<R>(SelectQuery<R> statement);

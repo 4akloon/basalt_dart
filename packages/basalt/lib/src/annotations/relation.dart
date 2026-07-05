@@ -7,6 +7,8 @@ import '../schema/table.dart';
 ///
 /// [depth] bounds recursion for cyclic/self references: the relation is nested
 /// `depth` levels deep; relations below the last level are left null. Default 1.
+///
+/// {@category annotations}
 class Relation {
   const Relation(this.column, {this.depth = 1});
   final Ref column;

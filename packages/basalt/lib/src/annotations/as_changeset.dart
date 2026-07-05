@@ -7,6 +7,8 @@ import '../schema/table.dart';
 /// the primary key). `@Column(readOnly: true)` fields are skipped.
 ///
 /// Independent of `@Queryable`: a class can be `@AsChangeset` alone.
+///
+/// {@category annotations}
 class AsChangeset {
   const AsChangeset(this.table);
   final TableRef table;

@@ -1,0 +1,36 @@
+dartdoc:
+  categories:
+    getting-started:
+      markdown: doc/getting_started.md
+      displayName: Getting Started
+    schema:
+      markdown: doc/schema.md
+      displayName: Schema
+    expressions:
+      markdown: doc/expressions.md
+      displayName: Expressions
+    queries:
+      markdown: doc/queries.md
+      displayName: Query Builder
+    writes:
+      markdown: doc/writes.md
+      displayName: Writes
+    serialization:
+      markdown: doc/serialization.md
+      displayName: Serialization
+    connection:
+      markdown: doc/connection.md
+      displayName: Connection & Backends
+    annotations:
+      markdown: doc/annotations.md
+      displayName: Annotations & Codegen
+  categoryOrder:
+    - getting-started
+    - schema
+    - expressions
+    - queries
+    - writes
+    - serialization
+    - connection
+    - annotations
+  showUndocumentedCategories: true

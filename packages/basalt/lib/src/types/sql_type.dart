@@ -6,6 +6,7 @@
 /// lets columns be `static const` and therefore usable inside annotations later.
 library;
 
+/// {@category schema}
 class SqlType<T> {
   const SqlType(this.sqlName, this.encode, this.decode);
 

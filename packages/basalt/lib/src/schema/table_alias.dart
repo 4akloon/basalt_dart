@@ -3,6 +3,8 @@ part of 'table.dart';
 /// An aliased table for self-joins (the same table joined more than once).
 /// Columns are rebound to the alias, so `sender.col(Users.id)` serializes as
 /// `"sender"."id"` and is distinct from `recipient.col(Users.id)`.
+///
+/// {@category schema}
 final class TableAlias<Tbl> implements QuerySource<Tbl> {
   const TableAlias(this.alias, this.base);
   @override

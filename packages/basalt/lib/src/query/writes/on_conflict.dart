@@ -1,6 +1,8 @@
 part of '../write.dart';
 
 /// Fluent builder for an `ON CONFLICT` clause (from [InsertStatement.onConflict]).
+///
+/// {@category writes}
 final class OnConflict<Tbl> {
   OnConflict._(this._insert, this._target);
   final InsertStatement<Tbl> _insert;

@@ -10,6 +10,8 @@ typedef CompiledQuery = (String sql, List<Object?> params);
 ///
 /// Pure string/value transformation — it never touches a database driver,
 /// which keeps serialization trivially unit-testable.
+///
+/// {@category serialization}
 final class QueryBuilder {
   QueryBuilder(this.dialect);
   final SqlDialect dialect;

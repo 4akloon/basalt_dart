@@ -2,6 +2,8 @@ part of '../write.dart';
 
 /// A write statement finished with a `RETURNING` projection and a row decoder —
 /// the executable analog of `MappedQuery` for INSERT/UPDATE/DELETE.
+///
+/// {@category writes}
 final class ReturningQuery<R> {
   ReturningQuery._(
     this.statement,

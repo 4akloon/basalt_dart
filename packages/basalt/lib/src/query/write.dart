@@ -21,6 +21,8 @@ part 'writes/write_returning.dart';
 
 /// Statements that mutate rows and return an affected-row count rather than a
 /// result set. Sealed so the serializer can exhaustively switch over them.
+///
+/// {@category writes}
 sealed class WriteStatement {
   const WriteStatement();
 }

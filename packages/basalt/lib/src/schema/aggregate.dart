@@ -3,6 +3,8 @@ part of 'table.dart';
 /// An aggregate over a column (or `COUNT(*)`), usable in `select(...)` and
 /// readable from a row via its [readKey]. Build with [TableColumn.count],
 /// [countAll], or the numeric aggregates ([IntColumnAggregates]).
+///
+/// {@category schema}
 final class Aggregate<T> implements Selection<T> {
   const Aggregate(this.function, this._argument, this._alias, this.type);
   final String function;

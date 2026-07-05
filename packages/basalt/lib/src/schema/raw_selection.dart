@@ -2,6 +2,8 @@ part of 'table.dart';
 
 /// A raw, typed SQL selection (escape hatch): emitted verbatim in the projection
 /// and read back by its [readKey] (the [raw] `as` alias). Uses `?` placeholders.
+///
+/// {@category schema}
 final class RawSelection<T> implements Selection<T> {
   const RawSelection(this._sql, this._params, this._alias, this.type);
   final String _sql;

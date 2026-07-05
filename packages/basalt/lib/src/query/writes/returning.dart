@@ -2,6 +2,8 @@ part of '../write.dart';
 
 /// Intermediate builder from [WriteReturning.returning]; call [map] / [mapWith]
 /// to attach a row decoder and produce an executable [ReturningQuery].
+///
+/// {@category writes}
 final class Returning {
   const Returning(this._statement, this._columns);
   final WriteStatement _statement;

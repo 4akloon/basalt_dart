@@ -2,6 +2,8 @@
 /// an interface is the seam that lets each backend (SQLite, Postgres, ...) plug
 /// in its own quoting and placeholder style without touching the query builder.
 /// Concrete implementations live in the backend packages (e.g. `basalt_sqlite`).
+///
+/// {@category serialization}
 abstract interface class SqlDialect {
   /// Quote an identifier (table/column name).
   String quoteIdentifier(String name);

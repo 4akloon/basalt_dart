@@ -10,6 +10,8 @@ library;
 enum ColumnType { integer, text, real, boolean, blob, dateTime }
 
 /// A foreign-key target discovered during introspection.
+///
+/// {@category connection}
 final class ForeignKey {
   const ForeignKey(this.table, this.column);
   final String table;
@@ -18,6 +20,7 @@ final class ForeignKey {
   final String column;
 }
 
+/// {@category connection}
 final class IntrospectedColumn {
   const IntrospectedColumn({
     required this.name,
@@ -40,6 +43,7 @@ final class IntrospectedColumn {
   final ForeignKey? foreignKey;
 }
 
+/// {@category connection}
 final class IntrospectedTable {
   const IntrospectedTable(this.name, this.columns);
   final String name;

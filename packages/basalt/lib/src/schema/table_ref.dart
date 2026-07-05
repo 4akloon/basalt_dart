@@ -3,6 +3,8 @@ part of 'table.dart';
 /// Table descriptor: its name and full column list (the default projection for
 /// `from`/joins). Cycle-safe even with foreign keys because [Ref] points at a
 /// [PrimaryKey] leaf, not back at a `TableRef`.
+///
+/// {@category schema}
 final class TableRef<Tbl> implements QuerySource<Tbl> {
   const TableRef(this.name, this.columns);
   final String name;

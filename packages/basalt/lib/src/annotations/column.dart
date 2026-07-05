@@ -13,6 +13,8 @@ import '../schema/table.dart';
 ///
 /// Setting both flags is a generation error: a field that is neither read nor
 /// written is not a column — use a getter for computed values.
+///
+/// {@category annotations}
 class Column {
   const Column(this.column, {this.readOnly = false, this.writeOnly = false});
   final TableColumn column;

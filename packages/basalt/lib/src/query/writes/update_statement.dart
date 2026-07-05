@@ -1,6 +1,8 @@
 part of '../write.dart';
 
 /// `UPDATE table SET ... WHERE ...`.
+///
+/// {@category writes}
 final class UpdateStatement<Tbl> extends WriteStatement {
   UpdateStatement(this.table);
   final String table;

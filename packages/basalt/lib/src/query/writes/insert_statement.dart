@@ -4,6 +4,8 @@ part of '../write.dart';
 ///
 /// Build with `insertInto(Users.table).value(Users.name.set('Bob'))`. Each
 /// assignment is produced by a column, so its value type is checked statically.
+///
+/// {@category writes}
 final class InsertStatement<Tbl> extends WriteStatement {
   InsertStatement(this.table);
   final String table;

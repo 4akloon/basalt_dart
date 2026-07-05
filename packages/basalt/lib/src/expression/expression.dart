@@ -6,6 +6,8 @@ import '../ast/sql_node.dart';
 /// phantom table-scope marker. The `Tbl` parameter is what prevents mixing
 /// columns from unrelated tables in a single `WHERE` clause at compile time —
 /// the Dart analog of Basalt's `AppearsInFromClause`.
+///
+/// {@category expressions}
 class Expression<T, Tbl> {
   const Expression(this.node);
   final SqlNode node;

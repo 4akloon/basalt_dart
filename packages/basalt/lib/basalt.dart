@@ -4,6 +4,8 @@
 /// `select*`/`insertInto`/`update`/`deleteFrom` builders, SQL serialization, and
 /// the dialect-agnostic `Connection` interface. Concrete backends live in
 /// separate packages (e.g. `basalt_sqlite`).
+///
+/// {@category getting-started}
 library;
 
 export 'src/annotations.dart';

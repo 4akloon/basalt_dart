@@ -24,6 +24,8 @@ abstract interface class SelectQuery<R> {
 /// emits one of these (a single `read` built from `RowReader.get` calls). They
 /// compose freely — a `Comment` reader can call a `Post` reader on the same
 /// [RowReader] to nest objects, with no arity-specific machinery.
+///
+/// {@category queries}
 final class RowMapper<R> {
   const RowMapper(this.read);
   final R Function(RowReader reader) read;
@@ -37,6 +39,8 @@ final class RowMapper<R> {
 /// The projection defaults to every column of the involved tables; narrow it
 /// with [select] (columns and/or aggregates). Call [map] to finish with a typed
 /// row decoder.
+///
+/// {@category queries}
 final class Query<Scope> {
   const Query({
     required this.fromTable,
@@ -196,6 +200,8 @@ Query<Tbl> from<Tbl>(QuerySource<Tbl> source) => Query<Tbl>(
     );
 
 /// A [Query] finished with a decoder — the executable [SelectQuery].
+///
+/// {@category queries}
 final class MappedQuery<R> implements SelectQuery<R> {
   MappedQuery._(Query<dynamic> query, this._decode)
       : _query = query,

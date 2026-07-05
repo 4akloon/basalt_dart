@@ -1,6 +1,8 @@
 part of '../table.dart';
 
 /// A primary-key column.
+///
+/// {@category schema}
 final class PrimaryKey<T, Tbl> extends TableColumn<T, Tbl> {
   const PrimaryKey(this.table, this.name, this.type);
   @override

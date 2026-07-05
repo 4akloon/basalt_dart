@@ -36,6 +36,8 @@ part 'table_ref.dart';
 /// object serves the query builder (`Users.age.gt(18)`) and derive annotations
 /// (`@Column(Users.name)`) — annotation arguments must be constants. A column is
 /// also a [Selection], so it can be read straight out of a row.
+///
+/// {@category schema}
 sealed class TableColumn<T, Tbl> implements Selection<T> {
   const TableColumn();
 

@@ -6,6 +6,8 @@ import '../schema/table.dart';
 /// `String` regardless of where `name` sits in the projection, joins stay
 /// unambiguous (each column is keyed by `table.name`), and aggregates are keyed
 /// by their alias.
+///
+/// {@category queries}
 final class RowReader {
   const RowReader(this._columnIndex, this._row);
 

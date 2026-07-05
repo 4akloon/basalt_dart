@@ -1,6 +1,8 @@
 part of '../write.dart';
 
 /// `DELETE FROM table WHERE ...`.
+///
+/// {@category writes}
 final class DeleteStatement<Tbl> extends WriteStatement {
   DeleteStatement(this.table);
   final String table;

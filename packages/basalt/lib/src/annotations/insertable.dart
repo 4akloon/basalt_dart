@@ -6,6 +6,8 @@ import '../schema/table.dart';
 /// (everything except `@Column(readOnly: true)`) through `TableColumn.set`.
 ///
 /// Independent of `@Queryable`: a write-only DTO can be `@Insertable` alone.
+///
+/// {@category annotations}
 class Insertable {
   const Insertable(this.table);
   final TableRef table;
