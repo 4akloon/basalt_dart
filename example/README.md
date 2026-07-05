@@ -1,8 +1,19 @@
 # diesel_example
 
-End-to-end tour of diesel_dart: apply SQL migrations with the `diesel_dart`
-CLI, generate typed readers/queries from annotations, then run the full query
-surface through the ORM.
+![Dart](https://img.shields.io/badge/Dart-%3E%3D3.5-0175C2?logo=dart&logoColor=white)
+![Runnable](https://img.shields.io/badge/runnable-end--to--end-brightgreen)
+![Part of](https://img.shields.io/badge/part_of-diesel__dart-informational)
+
+**An end-to-end tour of [diesel_dart](../README.md):** apply SQL migrations with the `diesel_dart` CLI,
+generate typed readers/queries from annotations, then exercise the full query surface through the ORM —
+single-table predicates, manual + generated joins, relations, transactions, writes, and raw SQL.
+
+## Contents
+
+- [Layout](#layout)
+- [What the codegen emits](#what-the-codegen-emits)
+- [Run (from this directory)](#run-from-this-directory)
+- [The DevTools inspector demo](#the-devtools-inspector-demo)
 
 ## Layout
 
@@ -89,3 +100,18 @@ After raw birthday bump: User(#1 Bob, age 31)
 
 Other CLI commands: `migration generate <name>`, `migration list`,
 `migration revert`, `migration redo`, `database reset`.
+
+## The DevTools inspector demo
+
+This package also hosts the launcher and demo target for the
+[DevTools inspector](../packages/diesel#devtools-inspector):
+
+```sh
+# One command: starts a Dart Tooling Daemon, seeds ~100 users in an in-memory DB,
+# and opens DevTools wired to it. Then enable "diesel" in DevTools' Extensions menu.
+dart run tool/inspect.dart
+
+# Or run just the seeded target and attach DevTools yourself:
+dart run --observe tool/inspector_demo.dart
+```
+

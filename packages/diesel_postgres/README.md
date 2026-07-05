@@ -1,34 +1,85 @@
 # diesel_postgres
 
-The **Postgres backend** for [diesel_dart](../../README.md), on
-[`package:postgres`](https://pub.dev/packages/postgres) (v3).
+![Dart](https://img.shields.io/badge/Dart-%3E%3D3.5-0175C2?logo=dart&logoColor=white)
+![Driver](https://img.shields.io/badge/driver-postgres_v3-336791?logo=postgresql&logoColor=white)
+![Part of](https://img.shields.io/badge/part_of-diesel__dart-informational)
+
+**The Postgres backend for [diesel_dart](../../README.md)** — a concrete `SqlDialect` and a
+[`package:postgres`](https://pub.dev/packages/postgres) (v3)-backed `Connection`. The *same* typed query
+DSL, schema, and migrations run on Postgres and [`diesel_sqlite`](../diesel_sqlite) unchanged; verified
+end-to-end against **Postgres 16**.
+
+## Contents
+
+- [Status](#status)
+- [Install](#install)
+- [Opening a connection](#opening-a-connection)
+- [Dialect](#dialect)
+- [Introspection & the CLI](#introspection--the-cli)
+- [Running the tests](#running-the-tests)
 
 ## Status
 
-- ✅ `PostgresDialect` — numbered `$N` placeholders (1-based) and double-quoted identifiers.
-- ✅ `PostgresConnection` — the full `Connection` interface (`fetch`, `execute`, `executeReturning`,
-  `executeSql`, `queryRaw`, `transaction` with savepoints, `introspect`, `close`). The same typed query DSL runs
-  on SQLite and Postgres unchanged. Verified end-to-end against Postgres 16.
-- ✅ Introspection via `information_schema` (tables, columns, nullability, primary keys, foreign keys) for
-  `print-schema`.
-- ✅ CLI `postgres://` wiring (`ConnectionFactory`) and cross-backend codecs, so `int`/`text`/`real`/`bool`/
-  `DateTime` columns all work (the `diesel_dart` CLI runs migrations + `print-schema` against Postgres).
-- ⬜ Advanced PG types (`uuid`, `json`/`jsonb`, `numeric`, arrays).
+| | Feature |
+|---|---|
+| ✅ | `PostgresDialect` — numbered `$N` placeholders (1-based), double-quoted identifiers |
+| ✅ | `PostgresConnection` — the full `Connection` interface (`fetch`, `execute`, `executeReturning`, `executeSql`, `queryRaw`, `transaction` with savepoints, `introspect`, `close`) |
+| ✅ | Introspection via `information_schema` (tables, columns, nullability, primary & foreign keys) for `print-schema` |
+| ✅ | CLI `postgres://` wiring + cross-backend codecs (`int`/`text`/`real`/`bool`/`DateTime`) |
+| ⬜ | Advanced PG types (`uuid`, `json`/`jsonb`, `numeric`, arrays) — [roadmap](../../docs/ROADMAP.md) |
 
-## Usage
+## Install
+
+```yaml
+dependencies:
+  diesel:
+  diesel_postgres:
+```
+
+## Opening a connection
+
+`PostgresConnection.open` is an async factory (it negotiates the connection up front):
 
 ```dart
+import 'package:diesel/diesel.dart';
+import 'package:diesel_postgres/diesel_postgres.dart';
+
 final db = await PostgresConnection.open(
   host: 'localhost', port: 5432, database: 'app',
-  username: 'postgres', password: 'postgres', ssl: false);
+  username: 'postgres', password: 'postgres', ssl: false,
+);
 
-final rows = await from(Users.table).where(Users.age > 18).map(userMapper.read).load(db);
+final adults = await from(Users.table)
+    .where(Users.age > 18)
+    .map(userMapper.read)
+    .load(db);           // diesel-style terminal; same as db.fetch(...)
+
 await db.close();
+```
+
+Everything else — the query DSL, `@Queryable`/`@Insertable` codegen, migrations — is identical to the
+SQLite examples in the [root README](../../README.md) and [docs](../../docs/query-dsl.md).
+
+## Dialect
+
+`PostgresDialect` quotes identifiers with double quotes and emits numbered placeholders (`$1`, `$2`, …).
+Values are passed natively (no `bool → int` / `DateTime → epoch` adaptation — Postgres has real `boolean`
+and `timestamp`), while decoders stay lenient so the same Dart types round-trip on both backends.
+
+## Introspection & the CLI
+
+`introspect()` reads `information_schema` into the dialect-neutral `List<IntrospectedTable>` model. The
+`diesel_dart` CLI selects this backend from a `postgres://` / `postgresql://` `database_url`, so
+`migration run` and `print-schema` work against Postgres:
+
+```yaml
+# diesel.yaml
+database_url: postgres://postgres:postgres@localhost:5432/app?sslmode=disable
 ```
 
 ## Running the tests
 
-The connection tests need a Postgres server; the suite **skips gracefully** if none is reachable:
+The connection tests need a Postgres server; the suite **skips gracefully** if none is reachable.
 
 ```sh
 docker run -d --name diesel_pg \
