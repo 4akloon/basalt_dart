@@ -1,7 +1,7 @@
 # diesel_dart vs diesel-rs
 
 How diesel_dart maps to [diesel-rs](https://github.com/diesel-rs/diesel), feature by feature, and where the
-gaps are. This is the basis for the [roadmap](ROADMAP.md).
+gaps are.
 
 Status legend: ✅ parity · ◑ partial · ✗ gap.
 
@@ -18,7 +18,7 @@ Dart generics + phantom types + `build_runner`/`source_gen` codegen. The goal is
 | Table/column declaration | `table! { users { id -> Integer, .. } }` | generated `abstract final class Users { static const id = PrimaryKey<…>(…); … static const table = TableRef(…); }` | ◑ | Both generated from the DB by `print-schema`; different shape. |
 | Foreign keys | `joinable!(posts -> users (user_id))` | `Ref<T, Tbl, Target>` column references the target `PrimaryKey` | ✅ | FK is first-class on the column; powers `onFk:` joins. |
 | Cross-table query allow-list | `allow_tables_to_appear_in_same_query!` | runtime FROM/JOIN scope validation in the serializer | ◑ | diesel checks at compile time; we check at build/serialize time (`StateError`). |
-| Column type override / docs in print-schema | `[print_schema]` patches, `#[sql_name]` | not yet | ✗ | See ROADMAP. |
+| Column type override / docs in print-schema | `[print_schema]` patches, `#[sql_name]` | not yet | ✗ | Not yet. |
 
 ## Query DSL
 
@@ -56,7 +56,7 @@ Dart generics + phantom types + `build_runner`/`source_gen` codegen. The goal is
 | Transactions | `conn.transaction(\|\| …)` | `db.transaction((tx) async { … })` | ✅ |
 | Nested tx (savepoints) | yes | yes | ✅ |
 | Raw SQL | `sql_query` | `executeSql` / `queryRaw` | ✅ |
-| Connection pooling | r2d2 / deadpool | — | ✗ (ROADMAP M6) |
+| Connection pooling | r2d2 / deadpool | — | ✗ |
 
 ## Derives
 
@@ -78,7 +78,7 @@ Dart generics + phantom types + `build_runner`/`source_gen` codegen. The goal is
 | Timestamp | `Timestamp`/`Timestamptz` | `SqlType.dateTime` (canonical `DateTime`; SQLite epoch-ms, PG native) | ✅ |
 | Nullable | `Nullable<T>` | `SqlType.*OrNull` (`T?`) | ✅ |
 | Custom / enum codecs | `#[derive(...)]` + `ToSql`/`FromSql` | custom `const SqlType<T>(sqlName, encode, decode)` | ✅ |
-| Postgres numeric/json/uuid/array | native | — | ✗ (ROADMAP M5) |
+| Postgres numeric/json/uuid/array | native | — | ✗ |
 
 ## CLI & configuration
 
@@ -97,7 +97,7 @@ Dart generics + phantom types + `build_runner`/`source_gen` codegen. The goal is
 |---|---|---|---|
 | SQLite | ✅ | ✅ | ✅ |
 | Postgres | ✅ (primary) | `PostgresConnection` + introspection + CLI `postgres://` wiring, verified vs PG 16 | ✅ (advanced PG types pending) |
-| MySQL | ✅ | — | ✗ (ROADMAP M6) |
+| MySQL | ✅ | — | ✗ |
 
 ## Database compatibility (sharing one DB with the Rust CLI)
 
@@ -110,6 +110,6 @@ Dart generics + phantom types + `build_runner`/`source_gen` codegen. The goal is
 | Reading diesel's dashed version | n/a | `discover()` splits on first `_` → reads it | ✅ |
 | `run_on` value | `YYYY-MM-DD HH:MM:SS` | identical | ✅ |
 
-**Bottom line:** on SQLite the two tools now produce an interchangeable migrations directory and
-`__diesel_schema_migrations` table — DDL, version format, and `run_on` all match ([ROADMAP M1](ROADMAP.md)
-done). The same database and `migrations/` directory can be driven by either CLI.
+**Bottom line:** on SQLite the two tools produce an interchangeable migrations directory and
+`__diesel_schema_migrations` table — DDL, version format, and `run_on` all match. The same database and
+`migrations/` directory can be driven by either CLI.

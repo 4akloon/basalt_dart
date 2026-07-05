@@ -44,8 +44,7 @@ Future<void> main() async {
 ```
 
 > **Status: early / experimental.** APIs may change; not yet published to pub.dev. Inspired by diesel-rs —
-> not affiliated and not a 1:1 port. The diesel-rs alignment roadmap **M1–M5 is complete** (see
-> [Roadmap](#roadmap)).
+> not affiliated and not a 1:1 port. SQLite and Postgres run the same DSL, schema, and migrations.
 
 ---
 
@@ -62,7 +61,6 @@ Future<void> main() async {
 - [DevTools inspector](#devtools-inspector)
 - [diesel-rs alignment](#diesel-rs-alignment)
 - [Documentation](#documentation)
-- [Roadmap](#roadmap)
 - [Contributing](#contributing)
 - [License](#license)
 
@@ -257,15 +255,8 @@ while reading like idiomatic Dart. The feature-by-feature matrix is in
 
 - [Getting started](docs/getting-started.md) · [Query DSL](docs/query-dsl.md) · [Migrations](docs/migrations.md)
 - [Derives (codegen)](docs/derives.md) · [Type mapping](docs/type-mapping.md)
-- [diesel-rs comparison](docs/diesel-rs-comparison.md) · [Roadmap](docs/ROADMAP.md)
+- [diesel-rs comparison](docs/diesel-rs-comparison.md)
 - [CLAUDE.md](CLAUDE.md) — repo guide for contributors and AI agents
-
-## Roadmap
-
-The alignment roadmap **M1–M5 is complete**: SQLite migration compatibility with the Rust `diesel` CLI,
-diesel-style API aliases, SQLite query parity, derive parity, and a full Postgres backend. Remaining /
-optional work (MySQL, connection pooling, advanced Postgres types, schema-first) lives in
-[docs/ROADMAP.md](docs/ROADMAP.md).
 
 ## Contributing
 

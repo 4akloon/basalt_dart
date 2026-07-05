@@ -26,7 +26,7 @@ end-to-end against **Postgres 16**.
 | ✅ | `PostgresConnection` — the full `Connection` interface (`fetch`, `execute`, `executeReturning`, `executeSql`, `queryRaw`, `transaction` with savepoints, `introspect`, `close`) |
 | ✅ | Introspection via `information_schema` (tables, columns, nullability, primary & foreign keys) for `print-schema` |
 | ✅ | CLI `postgres://` wiring + cross-backend codecs (`int`/`text`/`real`/`bool`/`DateTime`) |
-| ⬜ | Advanced PG types (`uuid`, `json`/`jsonb`, `numeric`, arrays) — [roadmap](../../docs/ROADMAP.md) |
+| ⬜ | Advanced PG types (`uuid`, `json`/`jsonb`, `numeric`, arrays) |
 
 ## Install
 

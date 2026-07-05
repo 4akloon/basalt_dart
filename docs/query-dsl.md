@@ -239,7 +239,7 @@ final kinds = await from(Users.table)
 ```
 
 > Aggregate result types: `count`/`countAll` → `int`; `sum`/`min`/`max` → `int?`; `avg` → `double?`
-> (SQLite returns NULL over an empty set). Non-int numeric columns are on the roadmap.
+> (SQLite returns NULL over an empty set). Non-int numeric columns are not yet supported.
 
 ## diesel-style aliases
 
@@ -270,8 +270,7 @@ final bob = await from(Users.table)
 ```
 
 diesel's bare `find(1)` auto-detects the primary key; `findBy(Users.id, 1)` is the type-safe equivalent (the
-value is checked against the column's type). An auto-PK bare `find` is a codegen follow-up — see the
-[roadmap](ROADMAP.md).
+value is checked against the column's type). An auto-PK bare `find` is a possible codegen follow-up.
 
 ## Associations (grouped child loads)
 

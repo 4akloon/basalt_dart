@@ -76,7 +76,7 @@ versions use diesel-rs's `%Y-%m-%d-%H%M%S` format and order the run. Full guide:
 Applied versions live in `__diesel_schema_migrations` (`version VARCHAR(50)` primary key,
 `run_on TIMESTAMP DEFAULT CURRENT_TIMESTAMP`) — matching the Rust `diesel` CLI exactly. On SQLite the
 migrations directory and tracker table are **interchangeable with the Rust `diesel` CLI**: migrations
-authored by one tool apply cleanly under the other. See [ROADMAP M1](../../docs/ROADMAP.md).
+authored by one tool apply cleanly under the other.
 
 ## Library use
 

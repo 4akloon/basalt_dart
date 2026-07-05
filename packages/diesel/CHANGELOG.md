@@ -16,5 +16,3 @@ Initial development release of the diesel_dart core.
 - Async-first `Connection` interface with transactions (nested → SAVEPOINT) and `introspect()`.
 - Annotations for codegen: `@Queryable`, `@Insertable`, `@AsChangeset`, `@Column` (`readOnly`/`writeOnly`),
   `@Relation`.
-
-See the [roadmap](../../docs/ROADMAP.md) for what's next.

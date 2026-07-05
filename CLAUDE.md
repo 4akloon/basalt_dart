@@ -100,8 +100,7 @@ Dart SDK constraint: `>=3.5.0 <4.0.0`.
 
 ## diesel-rs alignment
 
-This project deliberately mirrors diesel-rs concepts. The alignment roadmap **M1–M5 is complete**: SQLite
-migration compatibility with the Rust `diesel` CLI, diesel-style API aliases, SQLite query parity, derive parity,
-and a full Postgres backend — SQLite and Postgres run the same DSL/schema/migrations unchanged. See
-[`docs/diesel-rs-comparison.md`](docs/diesel-rs-comparison.md) for the parity matrix and
-[`docs/ROADMAP.md`](docs/ROADMAP.md) for remaining/optional work.
+This project deliberately mirrors diesel-rs concepts: SQLite migration compatibility with the Rust `diesel`
+CLI, diesel-style API aliases, SQLite query parity, derive parity, and a full Postgres backend — SQLite and
+Postgres run the same DSL/schema/migrations unchanged. See
+[`docs/diesel-rs-comparison.md`](docs/diesel-rs-comparison.md) for the parity matrix.

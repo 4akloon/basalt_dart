@@ -62,7 +62,7 @@ the ORM), and each migration's apply/revert is wrapped in a transaction.
 ## diesel-rs compatibility
 
 On SQLite the migrations directory and `__diesel_schema_migrations` table are **interchangeable** with the
-Rust `diesel` CLI ([ROADMAP M1](ROADMAP.md) done):
+Rust `diesel` CLI:
 
 - **Directory layout** — `<version>_<name>/{up,down}.sql` matches, and `discover()` reads diesel's dashed
   version prefix.
