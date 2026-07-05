@@ -90,6 +90,35 @@ Dart SDK constraint: `>=3.5.0 <4.0.0`.
 - **New CLI command:** add a `Command` under `basalt_cli/lib/src/commands/` (extend `DbCommand` for
   DB-connected commands) and register it in `CliRunner.build()`.
 
+## Documentation
+
+No root `docs/` folder. Each package owns its documentation:
+`packages/<pkg>/dartdoc_options.yaml` (categories) + `packages/<pkg>/doc/*.md` (one markdown guide
+per category) + `///` doc comments in `lib/`.
+
+| Package | Guides (`doc/`) |
+|---|---|
+| `basalt` | getting_started, schema, types, expressions, queries, writes, serialization, connection, annotations |
+| `basalt_cli` | getting_started, migrations |
+| `basalt_codegen` | getting_started |
+| `basalt_sqlite` | getting_started, type_mapping |
+| `basalt_postgres` | getting_started |
+
+Generate HTML locally: `cd packages/<pkg> && dart doc .` (output in `doc/api/`, gitignored).
+
+- Every public class/top-level function/member gets a `///` doc comment: first line is a one-sentence
+  summary, further paragraphs add detail.
+- Cite other symbols with `[Symbol]` only when linking within the **same** package/library scope
+  (dartdoc resolves these). In `doc/*.md` guide files, and whenever referencing another package's types,
+  use plain `` `Symbol` `` code spans instead — bracket refs in category markdown don't resolve across
+  packages/files and emit `unresolved doc reference` warnings.
+- When adding a new public class/top-level declaration, tag it with the matching `{@category some-category}`
+  from that package's `dartdoc_options.yaml`. Don't leave new public API untagged. Prefer an existing
+  category; only add a new one (+ a new `doc/<name>.md`) for a genuinely new topic area.
+- Guides are example-driven: short runnable snippets, not prose-only.
+- After doc changes, run `dart doc .` from the package directory and fix any warnings. Never commit
+  generated `doc/api/`.
+
 ## Test map
 
 - Serializer (SQL/params, scope validation, joins): `packages/basalt/test/serializer_test.dart`
@@ -101,5 +130,6 @@ Dart SDK constraint: `>=3.5.0 <4.0.0`.
 ## Design goals
 
 basalt_dart provides a type-safe query builder, CLI, codegen derives, and pluggable
-backends — SQLite and Postgres run the same DSL, schema, and migrations unchanged. See
-[`docs/basalt-comparison.md`](docs/basalt-comparison.md) for the feature overview.
+backends — SQLite and Postgres run the same DSL, schema, and migrations unchanged.
+Per-package guides live under `packages/<pkg>/doc/`; run `dart doc .` in a package to
+browse the generated API docs locally.

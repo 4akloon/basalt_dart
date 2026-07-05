@@ -5,11 +5,13 @@ import 'package:sqlite3/sqlite3.dart';
 
 import 'sqlite_dialect.dart';
 
-/// [Connection] backed by `package:sqlite3` (synchronous, FFI).
+/// `Connection` backed by `package:sqlite3` (synchronous, FFI).
 ///
 /// The driver is synchronous, so these methods complete their work eagerly and
 /// return already-resolved futures — the async signatures exist so an async
-/// backend (Postgres) can implement the same [Connection] interface unchanged.
+/// backend (Postgres) can implement the same `Connection` interface unchanged.
+///
+/// {@category getting-started}
 final class SqliteConnection implements Connection {
   SqliteConnection._(this._db, this._dialect);
 

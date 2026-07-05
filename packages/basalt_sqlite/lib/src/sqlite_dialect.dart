@@ -1,6 +1,8 @@
 import 'package:basalt/basalt.dart';
 
 /// SQLite: double-quoted identifiers and positional `?` placeholders.
+///
+/// {@category getting-started}
 final class SqliteDialect implements SqlDialect {
   const SqliteDialect();
 

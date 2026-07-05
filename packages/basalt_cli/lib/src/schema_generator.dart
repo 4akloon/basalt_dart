@@ -3,6 +3,8 @@ import 'package:basalt/basalt.dart';
 /// Emits a Dart `schema.dart` from an introspected schema — **tables and
 /// columns only** (the `generate-schema` analog). Data classes are intentionally
 /// not generated; users define those themselves (and, later, with `@Queryable`).
+///
+/// {@category migrations}
 final class SchemaGenerator {
   const SchemaGenerator();
 

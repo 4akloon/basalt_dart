@@ -1,0 +1,12 @@
+dartdoc:
+  categories:
+    getting-started:
+      markdown: doc/getting_started.md
+      displayName: Getting Started
+    type-mapping:
+      markdown: doc/type_mapping.md
+      displayName: Type Mapping
+  categoryOrder:
+    - getting-started
+    - type-mapping
+  showUndocumentedCategories: true

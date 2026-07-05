@@ -9,6 +9,8 @@ import 'config.dart';
 /// This is the one place that knows about concrete backends — commands work
 /// against the abstract [Connection]. `postgres://` / `postgresql://` URLs open a
 /// [PostgresConnection]; anything else is treated as a SQLite path.
+///
+/// {@category getting-started}
 final class ConnectionFactory {
   const ConnectionFactory();
 

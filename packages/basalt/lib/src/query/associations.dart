@@ -15,6 +15,8 @@ import 'row_reader.dart';
 ///
 /// Lives here (not in the core builder) because it needs a [Connection]; it's
 /// re-exported from `package:basalt/basalt.dart`.
+///
+/// {@category queries}
 Future<Map<K, List<C>>> loadGroupedByFk<Tbl, K, C>(
   Connection db,
   QuerySource<Tbl> childSource,

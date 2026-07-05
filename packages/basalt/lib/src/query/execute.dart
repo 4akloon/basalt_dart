@@ -7,6 +7,8 @@ import 'query.dart';
 /// These live in their own library (an extension on [MappedQuery]) so the core
 /// query builder stays free of any [Connection] dependency — preserving the
 /// build-vs-execute separation. They're re-exported from `package:basalt/basalt.dart`.
+///
+/// {@category queries}
 extension MappedQueryExecute<R> on MappedQuery<R> {
   /// Runs the query and returns every row (basalt's `load`).
   Future<List<R>> load(Connection db) => db.fetch(this);

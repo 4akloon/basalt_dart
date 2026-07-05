@@ -70,7 +70,7 @@ dart run basalt_cli:basalt generate-schema
 
 A migration is a directory `migrations/<version>_<name>/` with `up.sql` (apply) and `down.sql` (revert);
 versions use basalt's `%Y-%m-%d-%H%M%S` format and order the run. Full guide:
-[docs/migrations.md](../../docs/migrations.md).
+[packages/basalt_cli/doc/migrations.md](doc/migrations.md).
 
 ## Migration tracking & basalt compatibility
 

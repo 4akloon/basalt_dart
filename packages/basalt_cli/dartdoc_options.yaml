@@ -1,0 +1,12 @@
+dartdoc:
+  categories:
+    getting-started:
+      markdown: doc/getting_started.md
+      displayName: Getting Started
+    migrations:
+      markdown: doc/migrations.md
+      displayName: Migrations
+  categoryOrder:
+    - getting-started
+    - migrations
+  showUndocumentedCategories: true

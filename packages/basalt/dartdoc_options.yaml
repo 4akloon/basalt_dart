@@ -6,6 +6,9 @@ dartdoc:
     schema:
       markdown: doc/schema.md
       displayName: Schema
+    types:
+      markdown: doc/types.md
+      displayName: Types
     expressions:
       markdown: doc/expressions.md
       displayName: Expressions
@@ -27,6 +30,7 @@ dartdoc:
   categoryOrder:
     - getting-started
     - schema
+    - types
     - expressions
     - queries
     - writes

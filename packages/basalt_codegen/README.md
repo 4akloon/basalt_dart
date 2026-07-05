@@ -64,7 +64,8 @@ aliases, and nested decoding for you and is still a chainable `MappedQuery`. For
 - Setting both is a generation error — a field that's neither read nor written isn't a column; use a getter.
 - `@Relation` fields must be **nullable, optional, and named**; the write derives skip them.
 
-Full details and edge cases: the [derives guide](../../docs/derives.md).
+Full details and edge cases:
+[packages/basalt/doc/annotations.md](../basalt/doc/annotations.md).
 
 ## A worked example
 

@@ -4,6 +4,8 @@ import 'package:yaml/yaml.dart';
 
 /// CLI configuration, resolved from `DATABASE_URL` (env) with `basalt.yaml` as
 /// a fallback / for the migrations directory.
+///
+/// {@category getting-started}
 final class BasaltConfig {
   const BasaltConfig({
     required this.databaseUrl,

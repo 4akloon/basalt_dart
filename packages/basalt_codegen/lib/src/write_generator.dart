@@ -9,6 +9,8 @@ import 'queryable/insert_emitter.dart';
 
 /// Emits a `toInsert()` extension for each `@Insertable` data class. Independent
 /// of `@Queryable`, so a write-only DTO works on its own.
+///
+/// {@category getting-started}
 class InsertableGenerator extends GeneratorForAnnotation<Insertable> {
   const InsertableGenerator();
 
@@ -43,6 +45,8 @@ class InsertableGenerator extends GeneratorForAnnotation<Insertable> {
 }
 
 /// Emits a `toUpdate()` extension for each `@AsChangeset` data class.
+///
+/// {@category getting-started}
 class AsChangesetGenerator extends GeneratorForAnnotation<AsChangeset> {
   const AsChangesetGenerator();
 

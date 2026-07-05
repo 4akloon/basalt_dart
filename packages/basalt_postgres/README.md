@@ -58,7 +58,8 @@ await db.close();
 ```
 
 Everything else — the query DSL, `@Queryable`/`@Insertable` codegen, migrations — is identical to the
-SQLite examples in the [root README](../../README.md) and [docs](../../docs/query-dsl.md).
+SQLite examples in the [root README](../../README.md) and
+[packages/basalt/doc/queries.md](../basalt/doc/queries.md).
 
 ## Dialect
 

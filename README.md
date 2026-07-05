@@ -134,12 +134,15 @@ dart run basalt_cli:basalt generate-schema
 dart run build_runner build
 ```
 
-The full walkthrough is in **[docs/getting-started.md](docs/getting-started.md)**.
+The full walkthrough is in **[packages/basalt_cli/doc/getting_started.md](packages/basalt_cli/doc/getting_started.md)**.
 
 ## The query DSL
 
 Everything below builds a typed `MappedQuery` you run with `db.fetch(...)` (or the basalt-style
-`.load(db)` / `.first(db)` / `.optional(db)` terminals). Full reference: **[docs/query-dsl.md](docs/query-dsl.md)**.
+`.load(db)` / `.first(db)` / `.optional(db)` terminals). Full reference:
+**[packages/basalt/doc/queries.md](packages/basalt/doc/queries.md)** (also
+[expressions](packages/basalt/doc/expressions.md),
+[writes](packages/basalt/doc/writes.md)).
 
 ```dart
 // Predicates: eq/ne/gt/ge/lt/le, isIn/eqAny, between, like, isNull/isNotNull,
@@ -171,7 +174,7 @@ deleteFrom(Posts.table).where(Posts.views.lt(10));
 ## Codegen (derives)
 
 Annotate a data class over your generated schema; `build_runner` emits the boilerplate into `<file>.g.dart`.
-Full guide: **[docs/derives.md](docs/derives.md)**.
+Full guide: **[packages/basalt/doc/annotations.md](packages/basalt/doc/annotations.md)**.
 
 ```dart
 @Queryable(Users.table)   // -> $UserFromRow reader, userMapper, userQuery, findUser(pk)
@@ -201,7 +204,8 @@ class User {
 
 ## Migrations CLI
 
-Run from a directory with a `basalt.yaml` (or `DATABASE_URL` set). Details: **[docs/migrations.md](docs/migrations.md)**.
+Run from a directory with a `basalt.yaml` (or `DATABASE_URL` set). Details:
+**[packages/basalt_cli/doc/migrations.md](packages/basalt_cli/doc/migrations.md)**.
 
 | Command | Effect |
 |---|---|
@@ -247,14 +251,21 @@ Opening the tab needs a Dart Tooling Daemon, so use the launcher:
 ## basalt alignment
 
 basalt_dart deliberately mirrors basalt concepts (schema-first, migration compatibility, derive parity)
-while reading like idiomatic Dart. The feature-by-feature matrix is in
-**[docs/basalt-comparison.md](docs/basalt-comparison.md)**.
+while reading like idiomatic Dart.
 
 ## Documentation
 
-- [Getting started](docs/getting-started.md) · [Query DSL](docs/query-dsl.md) · [Migrations](docs/migrations.md)
-- [Derives (codegen)](docs/derives.md) · [Type mapping](docs/type-mapping.md)
-- [basalt comparison](docs/basalt-comparison.md)
+Per-package markdown guides (source for `dart doc`):
+
+- [Getting started](packages/basalt_cli/doc/getting_started.md) ·
+  [Migrations](packages/basalt_cli/doc/migrations.md)
+- [Query builder](packages/basalt/doc/queries.md) ·
+  [Expressions](packages/basalt/doc/expressions.md) ·
+  [Writes](packages/basalt/doc/writes.md)
+- [Annotations & codegen](packages/basalt/doc/annotations.md) ·
+  [Types](packages/basalt/doc/types.md) ·
+  [SQLite type mapping](packages/basalt_sqlite/doc/type_mapping.md)
+- Generate browsable HTML: `cd packages/<pkg> && dart doc .`
 - [CLAUDE.md](CLAUDE.md) — repo guide for contributors and AI agents
 
 ## Contributing

@@ -1,6 +1,8 @@
 /// CLI library for the Basalt Dart ORM. The `basalt` executable is a thin
 /// wrapper over [CliRunner]; the migration engine ([MigrationRunner]) is
 /// exposed for embedding and testing.
+///
+/// {@category getting-started}
 library;
 
 export 'src/cli_runner.dart';

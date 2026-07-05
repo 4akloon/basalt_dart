@@ -96,7 +96,8 @@ SQLite has no native boolean or timestamp, so:
 
 Because `bool`/`DateTime` are indistinguishable from `int` at the storage level, `introspect()` (and thus
 `generate-schema`) reports them as `int`. Full details and the cross-backend story:
-[type mapping](../../docs/type-mapping.md).
+[types](../basalt/doc/types.md) (core) ·
+[type mapping](doc/type_mapping.md) (SQLite caveats).
 
 ## Introspection
 

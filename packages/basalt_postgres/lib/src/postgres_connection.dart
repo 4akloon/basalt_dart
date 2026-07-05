@@ -8,6 +8,8 @@ import 'postgres_dialect.dart';
 /// [Connection] backed by `package:postgres` (v3, async). Pairs the
 /// [PostgresDialect] (`$N` placeholders) with the dialect-agnostic
 /// [QueryBuilder]; it implements the exact same interface as the SQLite backend.
+///
+/// {@category getting-started}
 final class PostgresConnection implements Connection {
 
   PostgresConnection._(this._conn, this._dialect);

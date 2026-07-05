@@ -156,5 +156,5 @@ serializer).
 - Branch off `main`; don't commit directly to it.
 - Run `dart analyze packages example` and the relevant `dart test` suites before pushing.
 - Keep commits focused; write a clear subject + a body explaining the *why*.
-- Update docs/READMEs when you change user-facing behaviour, and add a `CHANGELOG.md` entry for the affected
+- Update package `doc/*.md` and READMEs when you change user-facing behaviour, and add a `CHANGELOG.md` entry for the affected
   package.

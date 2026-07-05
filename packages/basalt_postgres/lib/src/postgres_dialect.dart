@@ -6,6 +6,8 @@ import 'package:basalt/basalt.dart';
 /// This is the only dialect-level difference the query serializer needs — proof
 /// that the core `QueryBuilder` is truly backend-agnostic. The driver-backed
 /// `Connection` will pair this dialect with `package:postgres`.
+///
+/// {@category getting-started}
 final class PostgresDialect implements SqlDialect {
   const PostgresDialect();
 

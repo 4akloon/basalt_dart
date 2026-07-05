@@ -1,32 +1,147 @@
 # Query Builder
 
-`Query` is the entry point for reads: `from(Table)` starts a query, and
-`.where(...)`, `.join(...)`, `.orderBy(...)`, `.limit(...)` refine it
-immutably (each call returns a new `Query`).
+`Query` is the entry point for reads: `from(source)` starts a query, refine it
+with `.where(...)`, `.join(...)`, `.orderBy(...)`, `.limit(...)`, then finish
+with `.map(decoder)`.
 
 ```dart
-final query = from(Users)
-    .where(Users.age.gt(18))
-    .join(Posts, on: Posts.authorId.eqColumn(Users.id))
-    .select((u, p) => (u.name, p.title));
+final q = from(Users.table)
+    .where(Users.age > 18)
+    .orderBy(Users.name.asc())
+    .limit(20)
+    .map((r) => User(r.get(Users.id), r.get(Users.name), r.get(Users.age), r.get(Users.active)));
+// q is a MappedQuery<User> — pass it to db.fetch, or use .load(db).
 ```
+
+- **`from(QuerySource)`** — a `TableRef` or a `TableAlias`. Single-table
+  queries are `Query<Tbl>`, which keeps `where` compile-time scoped.
+- **Projection is automatic** (all columns of the involved tables). Narrow it
+  with `.select([Users.name, Users.age])`.
+- **`.map((RowReader r) => …)`** decides the result shape — scalar, record,
+  data class, nested objects. **`.mapWith(rowMapper)`** is sugar for
+  `.map(rowMapper.read)`.
 
 ## Two-tier join safety
 
-- Single-table `from(t)` is `Query<Tbl>` — `where` is compile-time-scoped to
-  that table's columns.
-- After a join the scope relaxes to `Query<Object?>`; `QueryBuilder` validates
-  at build time (via `_validateScope`) that every referenced table is in the
-  `FROM`/`JOIN` clause, throwing `StateError` otherwise.
+- **Single-table** queries are fully compile-time scoped:
+  `from(Users.table).where(Posts.id.eq(1))` does not compile.
+- **Joined** queries relax to `Query<Object?>`; `QueryBuilder` validates at
+  build time that every referenced table/alias is in the FROM/JOIN clause,
+  throwing `StateError` otherwise.
+
+## Joins
+
+```dart
+// FK-driven: ON is derived from the Ref (posts.author_id = users.id).
+from(Posts.table)
+    .leftJoin(Users.table, onFk: Posts.authorId)
+    .map((r) => '${r.get(Posts.title)} <- ${r.get(Users.name)}');
+
+// Explicit ON with eqColumn (required for self-joins).
+final mgr = Users.table.aliased('mgr');
+from(Users.table)
+    .innerJoin(mgr, on: Users.managerId.eqColumn(mgr.col(Users.id)))
+    .map((r) => '${r.get(Users.name)} -> ${r.get(mgr.col(Users.name))}');
+```
+
+- `innerJoin` / `leftJoin` take either `on:` (an `Expression<bool>`) or
+  `onFk:` (a `Ref` column).
+- Joins **chain** freely; the projection auto-expands with the joined table's
+  columns.
+- **Self-joins** use aliases: `Users.table.aliased('mgr')`, then
+  `mgr.col(Users.id)`. `RowReader` keys by the alias, so `mgr.id` ≠ `users.id`.
+- Generated relation queries (`@Relation`) do all of this for you — see
+  **Annotations & Codegen**.
 
 ## Reading rows
 
-`RowReader` reads a result row by **selection key** — columns by
-`table.name` (alias-aware), aggregates by alias — never by positional index.
-This keeps mapping order-independent and join-safe. The projection itself is a
-`List<Selection>` (columns or `Aggregate`s); the serializer only ever consumes
-AST-level `Projection`s, so it stays completely schema-free.
+`RowReader` reads a result row by **selection key** — columns by `table.name`
+(alias-aware), aggregates by alias — never by positional index. Reading a
+column that isn't in the projection throws `StateError`.
 
-`MappedQuery` and `RowMapper` wrap a `Query` with a row-shape mapping
-function, produced by `.select(...)`; `MappedQueryExecute` (an extension) adds
-the `Connection`-bound `.fetch()` convenience.
+```dart
+.map((r) => '${r.get(Posts.title)} (${r.get(Posts.views)})')
+```
+
+`MappedQuery` and `RowMapper` wrap a `Query` with a row-shape mapping function.
+`MappedQueryExecute` adds basalt-style terminals:
+
+| Method | Effect |
+|---|---|
+| `.load(db)` | all rows |
+| `.first(db)` | first row, throws if empty |
+| `.optional(db)` | first row or `null` |
+
+## Aggregates & grouping
+
+Aggregate helpers are *selections* — pass them to `.select([...])` and read
+them back with the same handle:
+
+```dart
+final total = countAll();
+final n = await from(Users.table).select([total]).map((r) => r.get(total)).first(db);
+
+final sumAge = Users.age.sum();
+final avgAge = Users.age.avg();
+final (s, a) = await from(Users.table)
+    .select([sumAge, avgAge])
+    .map((r) => (r.get(sumAge), r.get(avgAge)))
+    .first(db);
+```
+
+`GROUP BY` + `HAVING`:
+
+```dart
+final perAuthor = Posts.views.sum();
+final rows = await from(Posts.table)
+    .select([Posts.authorId, perAuthor])
+    .groupBy([Posts.authorId])
+    .having(perAuthor.gt(100))
+    .map((r) => (r.get(Posts.authorId), r.get(perAuthor)))
+    .load(db);
+```
+
+`SELECT DISTINCT` via `.distinct()`:
+
+```dart
+final kinds = await from(Users.table)
+    .select([Users.active])
+    .distinct()
+    .map((r) => r.get(Users.active))
+    .load(db);
+```
+
+> Aggregate result types: `count`/`countAll` → `int`; `sum`/`min`/`max` →
+> `int?`; `avg` → `double?`. Non-int numeric columns are not yet supported.
+
+## Associations (grouped child loads)
+
+`loadGroupedByFk` loads the children of many parents in one query and groups
+them by foreign key — avoids N+1:
+
+```dart
+final users = await from(Users.table).map(userMapper.read).load(db);
+final postsByAuthor = await loadGroupedByFk(
+  db, Posts.table, Posts.authorId, users.map((u) => u.id).toList(), readPost);
+// Map<int, List<Post>>; every author id is present (empty list if no posts).
+```
+
+## basalt-style aliases
+
+| basalt | basalt_dart |
+|---|---|
+| `users.filter(p)` | `from(Users.table).filter(p)` — ANDs repeated calls |
+| `.order(col.asc())` | `.order(Users.col.asc())` — alias for `orderBy` |
+| `col.eq_any([...])` | `Users.col.eqAny([...])` — alias for `isIn` |
+| `query.load(conn)` | `query.load(db)` |
+| `query.first(conn)` | `query.first(db)` — throws if no rows |
+| `query.first(conn).optional()` | `query.optional(db)` — `null` if no rows |
+| `users.find(1)` | `from(Users.table).findBy(Users.id, 1)` |
+
+```dart
+final adults = await from(Users.table)
+    .filter(Users.age.ge(18))
+    .order(Users.name.asc())
+    .map(userMapper.read)
+    .load(db);
+```

@@ -1,6 +1,8 @@
 import 'dart:io';
 
 /// One on-disk migration: `<dir>/<version>_<name>/{up,down}.sql`.
+///
+/// {@category migrations}
 final class Migration {
   Migration(this.version, this.name, this.upFile, this.downFile);
   final String version;

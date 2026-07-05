@@ -4,6 +4,8 @@
 /// numbered `$N` placeholders. The driver-backed `Connection` and Postgres
 /// introspection are WIP (they require `package:postgres` and a live database);
 /// they'll implement the same `Connection` interface the SQLite backend does.
+///
+/// {@category getting-started}
 library;
 
 export 'src/postgres_connection.dart';

@@ -1,0 +1,8 @@
+dartdoc:
+  categories:
+    getting-started:
+      markdown: doc/getting_started.md
+      displayName: Getting Started
+  categoryOrder:
+    - getting-started
+  showUndocumentedCategories: true

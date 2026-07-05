@@ -10,6 +10,8 @@ import 'schema_migrations_table.dart';
 /// Driver-agnostic migration engine: runs SQL files against any [Connection]
 /// and tracks applied versions. The actual filesystem layout is discovered from
 /// [migrationsDir].
+///
+/// {@category migrations}
 final class MigrationRunner {
   MigrationRunner(this.connection, this.migrationsDir);
   final Connection connection;

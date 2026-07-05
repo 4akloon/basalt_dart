@@ -6,6 +6,8 @@ import 'commands/migration_command.dart';
 import 'commands/setup_command.dart';
 
 /// Builds the `basalt` command tree.
+///
+/// {@category getting-started}
 final class CliRunner {
   const CliRunner();
 

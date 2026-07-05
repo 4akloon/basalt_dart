@@ -10,7 +10,7 @@ dependency**; concrete backends ([`basalt_sqlite`](../basalt_sqlite), [`basalt_p
 plug into it.
 
 > Part of the basalt_dart workspace. New here? Start with the [root README](../../README.md) and the
-> [getting-started guide](../../docs/getting-started.md).
+> [getting-started guide](../basalt_cli/doc/getting_started.md).
 
 ## Contents
 
@@ -88,7 +88,8 @@ final q = from(Users.table)
 
 Predicates: `eq` `ne` `gt` `ge` `lt` `le` (and `>` `<` `>=` `<=` sugar), `isIn`/`eqAny`, `between`, `like`
 (text columns), `isNull`/`isNotNull`, `eqColumn` (for joins). Aggregates (`count`/`sum`/`avg`/`min`/`max`,
-`countAll()`) plug into `select` + `groupBy` + `having`. See the [Query DSL](../../docs/query-dsl.md).
+`countAll()`) plug into `select` + `groupBy` + `having`. See
+[packages/basalt/doc/queries.md](../basalt/doc/queries.md).
 
 > **Gotcha:** chained `.where().where()` *replaces* the predicate (last wins). Combine with `&`/`|`, or use
 > `.filter()` — the basalt-style method that ANDs repeated calls.
@@ -112,7 +113,7 @@ update(Users.table).set(Users.age.set(31)).where(Users.id.eq(1)); // UPDATE ... 
 deleteFrom(Posts.table).where(Posts.views.lt(10));                // DELETE
 
 // RETURNING, batch VALUES, and upsert (ON CONFLICT ... DO UPDATE / DO NOTHING) are supported —
-// see docs/query-dsl.md.
+// see packages/basalt/doc/queries.md.
 ```
 
 `TableColumn.set(value)` is type-checked: `TableColumn<int>.set('x')` is a compile error.
@@ -176,7 +177,8 @@ dart run example/tool/inspect.dart   # starts a DTD + app + DevTools; then enabl
 
 ## Reference
 
-- [Query DSL](../../docs/query-dsl.md) · [Type mapping](../../docs/type-mapping.md) ·
-  [Derives](../../docs/derives.md) · [basalt comparison](../../docs/basalt-comparison.md)
+- [Query builder](../basalt/doc/queries.md) · [Types](../basalt/doc/types.md) ·
+  [Annotations & codegen](../basalt/doc/annotations.md)
+- Generate API docs: `cd packages/basalt && dart doc .`
 - Working on the core itself? See [CONTRIBUTING.md](../../CONTRIBUTING.md) (architecture, conventions,
   the build-vs-execute design, sealed-`part` layout).

@@ -5,6 +5,8 @@ import 'package:path/path.dart' as p;
 /// Scaffolds `<migrationsDir>/<version>_<name>/{up,down}.sql`, where `<version>`
 /// is a basalt-compatible UTC timestamp (`%Y-%m-%d-%H%M%S`, e.g.
 /// `2024-01-15-123456`) using basalt_dart's standard layout.
+///
+/// {@category migrations}
 final class MigrationScaffolder {
   const MigrationScaffolder();
 
