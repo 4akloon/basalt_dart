@@ -2,12 +2,11 @@ part of '../write.dart';
 
 /// `UPDATE table SET ... WHERE ...`.
 final class UpdateStatement<Tbl> extends WriteStatement {
+  UpdateStatement(this.table);
   final String table;
   final List<String> assignColumns = [];
   final List<Object?> assignValues = [];
   SqlNode? whereNode;
-
-  UpdateStatement(this.table);
 
   UpdateStatement<Tbl> value(ColumnValue<Tbl> assignment) {
     assignColumns.add(assignment.column);

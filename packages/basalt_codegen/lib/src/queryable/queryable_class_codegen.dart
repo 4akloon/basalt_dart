@@ -6,23 +6,24 @@ import 'queryable_model.dart';
 
 /// Bridges analyzer metadata to [ModelCodeGenerator].
 final class QueryableClassCodegen {
-  final EdgeAnalyzer edgeAnalyzer;
-  final ModelCodeGenerator modelGenerator;
-
   const QueryableClassCodegen({
     this.edgeAnalyzer = const EdgeAnalyzer(),
     this.modelGenerator = const ModelCodeGenerator(),
   });
+  final EdgeAnalyzer edgeAnalyzer;
+  final ModelCodeGenerator modelGenerator;
 
   Iterable<String> generate(ClassElement element) {
     // Resolve the whole relation closure (across libraries) so the emitted code
     // never depends on generated symbols from another file.
     final classInfos = edgeAnalyzer.reachableFrom(element);
     final root = classInfos[element.name]!;
-    return modelGenerator.generate(QueryableModel(
-      root: root,
-      classInfos: classInfos,
-    ));
+    return modelGenerator.generate(
+      QueryableModel(
+        root: root,
+        classInfos: classInfos,
+      ),
+    );
   }
 }
 

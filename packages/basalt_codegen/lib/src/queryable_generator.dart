@@ -1,6 +1,6 @@
 import 'package:analyzer/dart/element/element.dart';
-import 'package:build/build.dart';
 import 'package:basalt/basalt.dart';
+import 'package:build/build.dart';
 import 'package:source_gen/source_gen.dart';
 
 import 'queryable/queryable.dart';
@@ -15,11 +15,15 @@ class QueryableGenerator extends GeneratorForAnnotation<Queryable> {
 
   @override
   Iterable<String> generateForAnnotatedElement(
-      Element element, ConstantReader annotation, BuildStep buildStep) {
+    Element element,
+    ConstantReader annotation,
+    BuildStep buildStep,
+  ) {
     if (element is! ClassElement) {
       throw InvalidGenerationSourceError(
-          '@Queryable can only be applied to classes.',
-          element: element);
+        '@Queryable can only be applied to classes.',
+        element: element,
+      );
     }
     return generateQueryableClass(element);
   }

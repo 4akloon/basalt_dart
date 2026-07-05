@@ -51,11 +51,10 @@ final class BasaltDevTools {
 }
 
 final class _Entry {
+  _Entry(this.id, this.name, this.conn);
   final String id;
   final String name;
   final Connection conn;
-
-  _Entry(this.id, this.name, this.conn);
 
   RegisteredInstance get info =>
       RegisteredInstance(id: id, name: name, backend: _backendOf(conn));

@@ -4,12 +4,12 @@ part of 'table.dart';
 /// readable from a row via its [readKey]. Build with [TableColumn.count],
 /// [countAll], or the numeric aggregates ([IntColumnAggregates]).
 final class Aggregate<T> implements Selection<T> {
+  const Aggregate(this.function, this._argument, this._alias, this.type);
   final String function;
   final SqlNode? _argument;
   final String _alias;
   @override
   final SqlType<T> type;
-  const Aggregate(this.function, this._argument, this._alias, this.type);
 
   @override
   SqlNode get selectExpression => FunctionNode(function, _argument);
@@ -27,8 +27,8 @@ final class Aggregate<T> implements Selection<T> {
   Expression<bool, Object?> lt(T value) => _cmp('<', value);
   Expression<bool, Object?> le(T value) => _cmp('<=', value);
 
-  Expression<bool, Object?> _cmp(String op, T value) =>
-      Expression(BinaryNode(selectExpression, op, ParamNode(type.encode(value))));
+  Expression<bool, Object?> _cmp(String op, T value) => Expression(
+      BinaryNode(selectExpression, op, ParamNode(type.encode(value))),);
 }
 
 /// `COUNT(*)` — total row count.

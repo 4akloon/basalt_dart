@@ -22,7 +22,8 @@ final class GenerateSchemaCommand extends DbCommand {
         out.parent.createSync(recursive: true);
         out.writeAsStringSync(source);
         stdout.writeln(
-            'Wrote ${tables.length} table(s) to ${config.schemaOutput}');
+          'Wrote ${tables.length} table(s) to ${config.schemaOutput}',
+        );
         return 0;
       });
 }

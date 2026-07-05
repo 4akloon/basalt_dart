@@ -12,17 +12,19 @@ void main() {
   // id: readOnly (autoincrement-style), token: writeOnly (insert but never read).
   const columns = [
     ColumnArg(
-        paramName: 'id',
-        isNamed: false,
-        columnExpr: 'Users.id',
-        readOnly: true),
+      paramName: 'id',
+      isNamed: false,
+      columnExpr: 'Users.id',
+      readOnly: true,
+    ),
     ColumnArg(paramName: 'name', isNamed: false, columnExpr: 'Users.name'),
     ColumnArg(paramName: 'age', isNamed: false, columnExpr: 'Users.age'),
     ColumnArg(
-        paramName: 'token',
-        isNamed: true,
-        columnExpr: 'Users.token',
-        writeOnly: true),
+      paramName: 'token',
+      isNamed: true,
+      columnExpr: 'Users.token',
+      writeOnly: true,
+    ),
   ];
 
   group('InsertEmitter', () {
@@ -35,12 +37,15 @@ void main() {
     test('emits a toInsert() extension returning an InsertStatement', () {
       expect(code, contains('extension UserInsert on User {'));
       expect(
-          code,
-          contains(
-              'InsertStatement<Users> toInsert() => insertInto(Users.table)'));
+        code,
+        contains(
+          'InsertStatement<Users> toInsert() => insertInto(Users.table)',
+        ),
+      );
     });
 
-    test('sets every writable column (incl. writeOnly) via TableColumn.set', () {
+    test('sets every writable column (incl. writeOnly) via TableColumn.set',
+        () {
       expect(code, contains('.value(Users.name.set(name))'));
       expect(code, contains('.value(Users.age.set(age))'));
       expect(code, contains('.value(Users.token.set(token))'));
@@ -60,8 +65,10 @@ void main() {
 
     test('emits a toUpdate() extension returning an UpdateStatement', () {
       expect(code, contains('extension UserChangeset on User {'));
-      expect(code,
-          contains('UpdateStatement<Users> toUpdate() => update(Users.table)'));
+      expect(
+        code,
+        contains('UpdateStatement<Users> toUpdate() => update(Users.table)'),
+      );
     });
 
     test('SETs writable columns and omits readOnly (PK stays in WHERE)', () {
@@ -80,7 +87,8 @@ void main() {
         columnArgs: columns,
         relationArgs: const [],
       );
-      expect(code, contains('r.get(src.col(Users.id))')); // readOnly -> still read
+      expect(
+          code, contains('r.get(src.col(Users.id))'),); // readOnly -> still read
       expect(code, contains('r.get(src.col(Users.name))'));
       expect(code, isNot(contains('Users.token'))); // writeOnly -> not read
     });

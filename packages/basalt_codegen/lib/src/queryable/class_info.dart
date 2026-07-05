@@ -6,6 +6,14 @@ import 'relation_edge.dart';
 /// reachable from a generated class so each `.g.dart` is self-contained — it
 /// never references generated symbols from another library.
 final class ClassInfo {
+  const ClassInfo({
+    required this.className,
+    required this.tableMarker,
+    required this.columnArgs,
+    this.ownEdges = const [],
+    this.pkColumnExpr,
+    this.pkType,
+  });
   final String className;
   final String tableMarker;
   final List<ColumnArg> columnArgs;
@@ -18,13 +26,4 @@ final class ClassInfo {
   /// generated bare `findX(value)`. Both null when the class has no PK field.
   final String? pkColumnExpr;
   final String? pkType;
-
-  const ClassInfo({
-    required this.className,
-    required this.tableMarker,
-    required this.columnArgs,
-    this.ownEdges = const [],
-    this.pkColumnExpr,
-    this.pkType,
-  });
 }

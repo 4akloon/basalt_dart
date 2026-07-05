@@ -7,6 +7,6 @@ import '../schema/table.dart';
 ///
 /// Independent of `@Queryable`: a write-only DTO can be `@Insertable` alone.
 class Insertable {
-  final TableRef table;
   const Insertable(this.table);
+  final TableRef table;
 }

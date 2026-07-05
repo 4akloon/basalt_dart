@@ -7,8 +7,8 @@ import '../ast/sql_node.dart';
 /// columns from unrelated tables in a single `WHERE` clause at compile time —
 /// the Dart analog of Basalt's `AppearsInFromClause`.
 class Expression<T, Tbl> {
-  final SqlNode node;
   const Expression(this.node);
+  final SqlNode node;
 }
 
 /// Boolean combinators are only meaningful on predicates, so they live on an

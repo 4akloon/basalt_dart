@@ -4,10 +4,10 @@ part of 'table.dart';
 /// Columns are rebound to the alias, so `sender.col(Users.id)` serializes as
 /// `"sender"."id"` and is distinct from `recipient.col(Users.id)`.
 final class TableAlias<Tbl> implements QuerySource<Tbl> {
+  const TableAlias(this.alias, this.base);
   @override
   final String alias;
   final TableRef<Tbl> base;
-  const TableAlias(this.alias, this.base);
 
   @override
   String get table => base.name;
@@ -15,7 +15,7 @@ final class TableAlias<Tbl> implements QuerySource<Tbl> {
   @override
   List<TableColumn<Object?, Object?>> get columns => [
         for (final c in base.columns)
-          ValueColumn<Object?, Tbl>(alias, c.name, c.type)
+          ValueColumn<Object?, Tbl>(alias, c.name, c.type),
       ];
 
   /// An alias-bound version of one of the base table's columns.

@@ -25,8 +25,8 @@ abstract interface class SelectQuery<R> {
 /// compose freely — a `Comment` reader can call a `Post` reader on the same
 /// [RowReader] to nest objects, with no arity-specific machinery.
 final class RowMapper<R> {
-  final R Function(RowReader reader) read;
   const RowMapper(this.read);
+  final R Function(RowReader reader) read;
 }
 
 /// Immutable SELECT builder.
@@ -38,18 +38,6 @@ final class RowMapper<R> {
 /// with [select] (columns and/or aggregates). Call [map] to finish with a typed
 /// row decoder.
 final class Query<Scope> {
-  final String fromTable;
-  final String? fromAlias;
-  final List<Join> joins;
-  final List<Selection<Object?>> projection;
-  final bool isDistinct;
-  final SqlNode? whereNode;
-  final List<TableColumn<Object?, Object?>> groupByColumns;
-  final SqlNode? havingNode;
-  final List<Ordering> orderings;
-  final int? limitCount;
-  final int? offsetCount;
-
   const Query({
     required this.fromTable,
     this.fromAlias,
@@ -63,6 +51,17 @@ final class Query<Scope> {
     this.limitCount,
     this.offsetCount,
   });
+  final String fromTable;
+  final String? fromAlias;
+  final List<Join> joins;
+  final List<Selection<Object?>> projection;
+  final bool isDistinct;
+  final SqlNode? whereNode;
+  final List<TableColumn<Object?, Object?>> groupByColumns;
+  final SqlNode? havingNode;
+  final List<Ordering> orderings;
+  final int? limitCount;
+  final int? offsetCount;
 
   Query<Scope> where(Expression<bool, Scope> predicate) =>
       _copy(whereNode: predicate.node);
@@ -112,18 +111,26 @@ final class Query<Scope> {
   /// INNER JOIN [other] (a [TableRef] or an aliased [TableAlias]). Provide the
   /// condition either explicitly (`on:`) or by a foreign key (`onFk:` — its
   /// `column = referenced-pk` becomes the `ON`). Use `on:` for self-joins.
-  Query<Object?> innerJoin<Other>(QuerySource<Other> other,
-          {Expression<bool, Object?>? on,
-          Ref<Object?, Object?, Object?>? onFk}) =>
+  Query<Object?> innerJoin<Other>(
+    QuerySource<Other> other, {
+    Expression<bool, Object?>? on,
+    Ref<Object?, Object?, Object?>? onFk,
+  }) =>
       _join(JoinKind.inner, other, on, onFk);
 
-  Query<Object?> leftJoin<Other>(QuerySource<Other> other,
-          {Expression<bool, Object?>? on,
-          Ref<Object?, Object?, Object?>? onFk}) =>
+  Query<Object?> leftJoin<Other>(
+    QuerySource<Other> other, {
+    Expression<bool, Object?>? on,
+    Ref<Object?, Object?, Object?>? onFk,
+  }) =>
       _join(JoinKind.left, other, on, onFk);
 
-  Query<Object?> _join<Other>(JoinKind kind, QuerySource<Other> other,
-      Expression<bool, Object?>? on, Ref<Object?, Object?, Object?>? onFk) {
+  Query<Object?> _join<Other>(
+    JoinKind kind,
+    QuerySource<Other> other,
+    Expression<bool, Object?>? on,
+    Ref<Object?, Object?, Object?>? onFk,
+  ) {
     final SqlNode onNode;
     if (onFk case final fk?) {
       onNode = BinaryNode(fk.node, '=', fk.references.node);
@@ -190,16 +197,15 @@ Query<Tbl> from<Tbl>(QuerySource<Tbl> source) => Query<Tbl>(
 
 /// A [Query] finished with a decoder — the executable [SelectQuery].
 final class MappedQuery<R> implements SelectQuery<R> {
-  final Query<dynamic> _query;
-  final R Function(RowReader reader) _decode;
-  final Map<String, int> _columnIndex;
-
   MappedQuery._(Query<dynamic> query, this._decode)
       : _query = query,
         _columnIndex = {
           for (var i = 0; i < query.projection.length; i++)
             query.projection[i].readKey: i,
         };
+  final Query<dynamic> _query;
+  final R Function(RowReader reader) _decode;
+  final Map<String, int> _columnIndex;
 
   @override
   String get fromTable => _query.fromTable;

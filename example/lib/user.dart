@@ -13,6 +13,14 @@ part 'user.g.dart';
 @Insertable(Users.table)
 @AsChangeset(Users.table)
 class User {
+  const User(
+    this.id,
+    this.name,
+    this.age,
+    this.active, {
+    this.managerId,
+    this.manager,
+  });
   final int id;
   final String name;
   final int age;
@@ -29,9 +37,6 @@ class User {
   /// `userQuery`). Not a column — the write derives skip it.
   @Relation(Users.managerId)
   final User? manager;
-
-  const User(this.id, this.name, this.age, this.active,
-      {this.managerId, this.manager});
 
   @override
   String toString() {

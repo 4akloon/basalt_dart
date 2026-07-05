@@ -12,7 +12,8 @@ final class RevertCommand extends DbCommand {
   Future<int> run() => withRunner((config, runner) async {
         final reverted = await runner.revertLast();
         stdout.writeln(
-            reverted == null ? 'Nothing to revert.' : 'Reverted $reverted');
+          reverted == null ? 'Nothing to revert.' : 'Reverted $reverted',
+        );
         return 0;
       });
 }

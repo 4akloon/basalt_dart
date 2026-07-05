@@ -27,7 +27,7 @@ void main() {
     expect(params, [18, 'A%']);
   });
 
-  test(r'INSERT numbers placeholders in order', () {
+  test('INSERT numbers placeholders in order', () {
     final (sql, params) = QueryBuilder(const PostgresDialect()).buildWrite(
       insertInto(Users.table).value(Users.id.set(1)).value(Users.name.set('Bob')),
     );

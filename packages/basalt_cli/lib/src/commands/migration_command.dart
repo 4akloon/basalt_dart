@@ -7,11 +7,6 @@ import 'revert_command.dart';
 import 'run_command.dart';
 
 final class MigrationCommand extends Command<int> {
-  @override
-  final name = 'migration';
-  @override
-  final description = 'Generate, run, and revert migrations.';
-
   MigrationCommand() {
     addSubcommand(GenerateCommand());
     addSubcommand(RunCommand());
@@ -19,4 +14,8 @@ final class MigrationCommand extends Command<int> {
     addSubcommand(RedoCommand());
     addSubcommand(ListCommand());
   }
+  @override
+  final name = 'migration';
+  @override
+  final description = 'Generate, run, and revert migrations.';
 }

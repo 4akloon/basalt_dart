@@ -1,12 +1,6 @@
 /// Result of `InspectorService.runSql`: a `read` (columns+rows), a `write`
 /// (executed, optional affected count), or an `error`.
 final class SqlResultDto {
-  final List<String>? columns;
-  final List<List<Object?>>? rows;
-  final int? affected;
-  final bool truncated;
-  final String? error;
-
   const SqlResultDto.read({
     required this.columns,
     required this.rows,
@@ -25,6 +19,11 @@ final class SqlResultDto {
         rows = null,
         affected = null,
         truncated = false;
+  final List<String>? columns;
+  final List<List<Object?>>? rows;
+  final int? affected;
+  final bool truncated;
+  final String? error;
 
   bool get isError => error != null;
   bool get isRead => columns != null;

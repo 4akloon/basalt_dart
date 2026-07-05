@@ -9,8 +9,11 @@ import 'src/write_generator.dart';
 /// `<file>.g.dart` alongside the user's classes. A class can carry several of
 /// `@Queryable`/`@Insertable`/`@AsChangeset`; each generator contributes its
 /// own (non-overlapping) units to the same part.
-Builder queryableBuilder(BuilderOptions options) => SharedPartBuilder([
-      const QueryableGenerator(),
-      const InsertableGenerator(),
-      const AsChangesetGenerator(),
-    ], 'basalt');
+Builder queryableBuilder(BuilderOptions options) => SharedPartBuilder(
+      [
+        const QueryableGenerator(),
+        const InsertableGenerator(),
+        const AsChangesetGenerator(),
+      ],
+      'basalt',
+    );

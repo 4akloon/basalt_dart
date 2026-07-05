@@ -32,7 +32,8 @@ final class QueryGetterEmitter {
           '${varOf(node.aliasPath)}.col(${node.edge.targetMarker}.${node.edge.pkAccessor})';
       final join = node.edge.fkNullable ? 'leftJoin' : 'innerJoin';
       joinLines.add(
-          '.$join(${varOf(node.aliasPath)}, on: $onLeft.eqColumn($onRight))');
+        '.$join(${varOf(node.aliasPath)}, on: $onLeft.eqColumn($onRight),)',
+      );
     }
 
     final decls = aliasDecls.map((d) => '  $d').join('\n');

@@ -24,7 +24,7 @@ void main() {
       'title TEXT NOT NULL)',
     );
     await conn.executeSql(
-      "INSERT INTO users (name, email, created_at) VALUES "
+      'INSERT INTO users (name, email, created_at) VALUES '
       "('Alice', 'alice@example.com', 100), "
       "('Bob', NULL, 200), "
       "('Cara', 'cara@example.com', 300)",
@@ -127,13 +127,19 @@ void main() {
 
   test('getTableData rejects unknown filter column and operator', () async {
     expect(
-      () => service.getTableData(id,
-          table: 'users', filters: const [ColumnFilter('nope', 'eq', 1)]),
+      () => service.getTableData(
+        id,
+        table: 'users',
+        filters: const [ColumnFilter('nope', 'eq', 1)],
+      ),
       throwsA(isA<InspectorException>()),
     );
     expect(
-      () => service.getTableData(id,
-          table: 'users', filters: const [ColumnFilter('id', 'bogus', 1)]),
+      () => service.getTableData(
+        id,
+        table: 'users',
+        filters: const [ColumnFilter('id', 'bogus', 1)],
+      ),
       throwsA(isA<InspectorException>()),
     );
   });
@@ -156,8 +162,12 @@ void main() {
 
   test('updateRow rejects an empty key', () async {
     expect(
-      () => service.updateRow(id,
-          table: 'users', key: const {}, changes: const {'name': 'x'}),
+      () => service.updateRow(
+        id,
+        table: 'users',
+        key: const {},
+        changes: const {'name': 'x'},
+      ),
       throwsA(isA<InspectorException>()),
     );
   });
@@ -194,8 +204,8 @@ void main() {
   });
 
   test('runSql with bound params', () async {
-    final result =
-        await service.runSql(id, 'SELECT id FROM users WHERE name = ?', ['Bob']);
+    final result = await service
+        .runSql(id, 'SELECT id FROM users WHERE name = ?', ['Bob']);
     expect(result.rows, hasLength(1));
   });
 

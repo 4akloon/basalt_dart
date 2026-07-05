@@ -13,7 +13,11 @@ const _service = InspectorService();
 void installServiceExtensions() {
   _register('ext.basalt.listInstances', (_) async {
     final instances = await _service.listInstances();
-    return {'instances': [for (final i in instances) i.toJson()]};
+    return {
+      'instances': [
+        for (final i in instances) i.toJson(),
+      ],
+    };
   });
 
   _register('ext.basalt.getSchema', (p) async {
@@ -49,13 +53,15 @@ void installServiceExtensions() {
     final params = rawParams == null || rawParams.isEmpty
         ? const <Object?>[]
         : (jsonDecode(rawParams) as List).cast<Object?>();
-    final result = await _service.runSql(_require(p, 'id'), _require(p, 'sql'), params);
+    final result =
+        await _service.runSql(_require(p, 'id'), _require(p, 'sql'), params);
     return result.toJson();
   });
 }
 
 typedef _Handler = Future<Map<String, Object?>> Function(
-    Map<String, String> params);
+  Map<String, String> params,
+);
 
 void _register(String name, _Handler handler) {
   developer.registerExtension(name, (method, params) async {

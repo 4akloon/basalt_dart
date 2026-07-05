@@ -1,11 +1,5 @@
 /// One page of table rows.
 final class TablePageDto {
-  final List<String> columns;
-  final List<List<Object?>> rows;
-  final int total;
-  final int limit;
-  final int offset;
-
   const TablePageDto({
     required this.columns,
     required this.rows,
@@ -13,6 +7,11 @@ final class TablePageDto {
     required this.limit,
     required this.offset,
   });
+  final List<String> columns;
+  final List<List<Object?>> rows;
+  final int total;
+  final int limit;
+  final int offset;
 
   Map<String, Object?> toJson() => {
         'columns': columns,

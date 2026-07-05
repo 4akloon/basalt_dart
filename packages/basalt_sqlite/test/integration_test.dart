@@ -13,15 +13,18 @@ Role _decodeRole(Object? v) => Role.values.byName(v as String);
 const roleType = SqlType<Role>('TEXT', _encodeRole, _decodeRole);
 
 abstract final class Accounts {
-  static const id = PrimaryKey<int, Accounts>('accounts', 'id', SqlType.integer);
+  static const id =
+      PrimaryKey<int, Accounts>('accounts', 'id', SqlType.integer);
   static const role = ValueColumn<Role, Accounts>('accounts', 'role', roleType);
   static const table = TableRef<Accounts>('accounts', [id, role]);
 }
 
 abstract final class Events {
   static const id = PrimaryKey<int, Events>('events', 'id', SqlType.integer);
-  static const done = ValueColumn<bool, Events>('events', 'done', SqlType.boolean);
-  static const at = ValueColumn<DateTime, Events>('events', 'at', SqlType.dateTime);
+  static const done =
+      ValueColumn<bool, Events>('events', 'done', SqlType.boolean);
+  static const at =
+      ValueColumn<DateTime, Events>('events', 'at', SqlType.dateTime);
   static const table = TableRef<Events>('events', [id, done, at]);
 }
 
@@ -46,9 +49,21 @@ void main() {
   tearDown(() => db.close());
 
   Future<void> seed() async {
-    await db.execute(insertInto(Users.table).value(Users.id.set(1)).value(Users.name.set('Bob')).value(Users.age.set(30)).value(Users.active.set(true)));
-    await db.execute(insertInto(Users.table).value(Users.id.set(2)).value(Users.name.set('Alice')).value(Users.age.set(17)).value(Users.active.set(false)));
-    await db.execute(insertInto(Users.table).value(Users.id.set(3)).value(Users.name.set('Carol')).value(Users.age.set(42)).value(Users.active.set(true)));
+    await db.execute(insertInto(Users.table)
+        .value(Users.id.set(1))
+        .value(Users.name.set('Bob'))
+        .value(Users.age.set(30))
+        .value(Users.active.set(true)),);
+    await db.execute(insertInto(Users.table)
+        .value(Users.id.set(2))
+        .value(Users.name.set('Alice'))
+        .value(Users.age.set(17))
+        .value(Users.active.set(false)),);
+    await db.execute(insertInto(Users.table)
+        .value(Users.id.set(3))
+        .value(Users.name.set('Carol'))
+        .value(Users.age.set(42))
+        .value(Users.active.set(true)),);
   }
 
   test('round-trip: insert then typed select (record via map)', () async {
@@ -79,10 +94,14 @@ void main() {
 
   test('update returns affected rows and persists', () async {
     await seed();
-    final n = await db.execute(update(Users.table).value(Users.age.set(31)).where(Users.name.eq('Bob')));
+    final n = await db.execute(update(Users.table)
+        .value(Users.age.set(31))
+        .where(Users.name.eq('Bob')),);
     expect(n, 1);
     expect(
-      await db.fetch(from(Users.table).where(Users.name.eq('Bob')).map((r) => r.get(Users.age))),
+      await db.fetch(from(Users.table)
+          .where(Users.name.eq('Bob'))
+          .map((r) => r.get(Users.age)),),
       [31],
     );
   });
@@ -91,13 +110,18 @@ void main() {
     await seed();
     final n = await db.execute(deleteFrom(Users.table).where(Users.age.lt(18)));
     expect(n, 1);
-    expect((await db.fetch(from(Users.table).map((r) => r.get(Users.id)))).length, 2);
+    expect(
+        (await db.fetch(from(Users.table).map((r) => r.get(Users.id)))).length,
+        2,);
   });
 
   test('selectModel returns data class instances (mapWith)', () async {
     await seed();
     final users = await db.fetch(
-      from(Users.table).where(Users.age.ge(18)).orderBy(Users.name.asc()).mapWith(userQueryable),
+      from(Users.table)
+          .where(Users.age.ge(18))
+          .orderBy(Users.name.asc())
+          .mapWith(userQueryable),
     );
     expect(users.map((u) => u.name), ['Bob', 'Carol']);
     expect(users.first, isA<User>());
@@ -106,8 +130,16 @@ void main() {
 
   test('join nests the author User inside Post', () async {
     await seed();
-    await db.execute(insertInto(Posts.table).value(Posts.id.set(1)).value(Posts.authorId.set(1)).value(Posts.title.set('Hello')).value(Posts.views.set(150)));
-    await db.execute(insertInto(Posts.table).value(Posts.id.set(2)).value(Posts.authorId.set(3)).value(Posts.title.set('World')).value(Posts.views.set(50)));
+    await db.execute(insertInto(Posts.table)
+        .value(Posts.id.set(1))
+        .value(Posts.authorId.set(1))
+        .value(Posts.title.set('Hello'))
+        .value(Posts.views.set(150)),);
+    await db.execute(insertInto(Posts.table)
+        .value(Posts.id.set(2))
+        .value(Posts.authorId.set(3))
+        .value(Posts.title.set('World'))
+        .value(Posts.views.set(50)),);
 
     final List<Post> posts = await db.fetch(
       from(Posts.table)
@@ -126,17 +158,32 @@ void main() {
 
   test('chained joins (two joins) nest Comment -> Post -> User', () async {
     await seed();
-    await db.execute(insertInto(Posts.table).value(Posts.id.set(1)).value(Posts.authorId.set(1)).value(Posts.title.set('Hello')).value(Posts.views.set(150)));
-    await db.execute(insertInto(Posts.table).value(Posts.id.set(2)).value(Posts.authorId.set(3)).value(Posts.title.set('World')).value(Posts.views.set(50)));
-    await db.execute(insertInto(Comments.table).value(Comments.id.set(1)).value(Comments.postId.set(1)).value(Comments.body.set('Nice')));
-    await db.execute(insertInto(Comments.table).value(Comments.id.set(2)).value(Comments.postId.set(2)).value(Comments.body.set('Meh')));
+    await db.execute(insertInto(Posts.table)
+        .value(Posts.id.set(1))
+        .value(Posts.authorId.set(1))
+        .value(Posts.title.set('Hello'))
+        .value(Posts.views.set(150)),);
+    await db.execute(insertInto(Posts.table)
+        .value(Posts.id.set(2))
+        .value(Posts.authorId.set(3))
+        .value(Posts.title.set('World'))
+        .value(Posts.views.set(50)),);
+    await db.execute(insertInto(Comments.table)
+        .value(Comments.id.set(1))
+        .value(Comments.postId.set(1))
+        .value(Comments.body.set('Nice')),);
+    await db.execute(insertInto(Comments.table)
+        .value(Comments.id.set(2))
+        .value(Comments.postId.set(2))
+        .value(Comments.body.set('Meh')),);
 
     final List<Comment> comments = await db.fetch(
       from(Comments.table)
           .innerJoin(Posts.table, onFk: Comments.postId) // comments -> posts
           .innerJoin(Users.table, onFk: Posts.authorId) // posts -> users
           .orderBy(Comments.id.asc())
-          .map((r) => readComment(r).withPost(readPost(r).withAuthor(readUser(r)))),
+          .map((r) =>
+              readComment(r).withPost(readPost(r).withAuthor(readUser(r))),),
     );
 
     expect(comments.length, 2);
@@ -149,21 +196,29 @@ void main() {
 
   test('self-join: two FKs to the same table via aliases', () async {
     await seed(); // Bob=1, Alice=2, Carol=3
-    await db.execute(insertInto(Messages.table).value(Messages.id.set(1)).value(Messages.senderId.set(1)).value(Messages.recipientId.set(3)).value(Messages.body.set('Hi Carol')));
+    await db.execute(insertInto(Messages.table)
+        .value(Messages.id.set(1))
+        .value(Messages.senderId.set(1))
+        .value(Messages.recipientId.set(3))
+        .value(Messages.body.set('Hi Carol')),);
 
     final sender = Users.table.aliased('sender');
     final recipient = Users.table.aliased('recipient');
 
     final List<Message> messages = await db.fetch(
       from(Messages.table)
-          .innerJoin(sender, on: Messages.senderId.eqColumn(sender.col(Users.id)))
-          .innerJoin(recipient, on: Messages.recipientId.eqColumn(recipient.col(Users.id)))
-          .map((r) => Message(
-                r.get(Messages.id),
-                r.get(Messages.body),
-                sender: readUserFrom(sender, r),
-                recipient: readUserFrom(recipient, r),
-              )),
+          .innerJoin(sender,
+              on: Messages.senderId.eqColumn(sender.col(Users.id)),)
+          .innerJoin(recipient,
+              on: Messages.recipientId.eqColumn(recipient.col(Users.id)),)
+          .map(
+            (r) => Message(
+              r.get(Messages.id),
+              r.get(Messages.body),
+              sender: readUserFrom(sender, r),
+              recipient: readUserFrom(recipient, r),
+            ),
+          ),
     );
 
     expect(messages.length, 1);
@@ -174,22 +229,33 @@ void main() {
   });
 
   test('nullable column round-trips null and non-null', () async {
-    await db.executeSql('CREATE TABLE profiles (id INTEGER PRIMARY KEY, bio TEXT)');
-    await db.execute(insertInto(Profiles.table).value(Profiles.id.set(1)).value(Profiles.bio.set('hello')));
-    await db.execute(insertInto(Profiles.table).value(Profiles.id.set(2)).value(Profiles.bio.set(null)));
+    await db
+        .executeSql('CREATE TABLE profiles (id INTEGER PRIMARY KEY, bio TEXT)');
+    await db.execute(insertInto(Profiles.table)
+        .value(Profiles.id.set(1))
+        .value(Profiles.bio.set('hello')),);
+    await db.execute(insertInto(Profiles.table)
+        .value(Profiles.id.set(2))
+        .value(Profiles.bio.set(null)),);
 
     final List<String?> bios = await db.fetch(
-      from(Profiles.table).orderBy(Profiles.id.asc()).map((r) => r.get(Profiles.bio)),
+      from(Profiles.table)
+          .orderBy(Profiles.id.asc())
+          .map((r) => r.get(Profiles.bio)),
     );
     expect(bios, ['hello', null]);
 
     final withBio = await db.fetch(
-      from(Profiles.table).where(Profiles.bio.isNotNull()).map((r) => r.get(Profiles.id)),
+      from(Profiles.table)
+          .where(Profiles.bio.isNotNull())
+          .map((r) => r.get(Profiles.id)),
     );
     expect(withBio, [1]);
 
     final withoutBio = await db.fetch(
-      from(Profiles.table).where(Profiles.bio.isNull()).map((r) => r.get(Profiles.id)),
+      from(Profiles.table)
+          .where(Profiles.bio.isNull())
+          .map((r) => r.get(Profiles.id)),
     );
     expect(withoutBio, [2]);
   });
@@ -198,13 +264,18 @@ void main() {
     await seed();
     await expectLater(
       db.transaction((tx) async {
-        await tx.execute(insertInto(Users.table).value(Users.id.set(99)).value(Users.name.set('Temp')).value(Users.age.set(1)).value(Users.active.set(false)));
+        await tx.execute(insertInto(Users.table)
+            .value(Users.id.set(99))
+            .value(Users.name.set('Temp'))
+            .value(Users.age.set(1))
+            .value(Users.active.set(false)),);
         throw StateError('boom');
       }),
       throwsStateError,
     );
     expect(
-      await db.fetch(from(Users.table).where(Users.id.eq(99)).map((r) => r.get(Users.id))),
+      await db.fetch(
+          from(Users.table).where(Users.id.eq(99)).map((r) => r.get(Users.id)),),
       isEmpty,
     );
   });
@@ -212,22 +283,33 @@ void main() {
   test('nested transaction (savepoint) rolls back inner only', () async {
     await seed();
     await db.transaction((tx) async {
-      await tx.execute(insertInto(Users.table).value(Users.id.set(10)).value(Users.name.set('Outer')).value(Users.age.set(50)).value(Users.active.set(true)));
+      await tx.execute(insertInto(Users.table)
+          .value(Users.id.set(10))
+          .value(Users.name.set('Outer'))
+          .value(Users.age.set(50))
+          .value(Users.active.set(true)),);
       try {
         await tx.transaction((inner) async {
-          await inner.execute(insertInto(Users.table).value(Users.id.set(11)).value(Users.name.set('Inner')).value(Users.age.set(60)).value(Users.active.set(true)));
-          throw StateError('inner boom');
+          await inner.execute(insertInto(Users.table)
+              .value(Users.id.set(11))
+              .value(Users.name.set('Inner'))
+              .value(Users.age.set(60))
+              .value(Users.active.set(true)),);
+          throw Exception('inner boom');
         });
-      } on StateError {
+      } on Exception {
         // swallow: outer continues
       }
     });
     expect(
-      await db.fetch(from(Users.table).where(Users.id.eq(10)).map((r) => r.get(Users.name))),
+      await db.fetch(from(Users.table)
+          .where(Users.id.eq(10))
+          .map((r) => r.get(Users.name)),),
       ['Outer'],
     );
     expect(
-      await db.fetch(from(Users.table).where(Users.id.eq(11)).map((r) => r.get(Users.id))),
+      await db.fetch(
+          from(Users.table).where(Users.id.eq(11)).map((r) => r.get(Users.id)),),
       isEmpty,
     );
   });
@@ -277,8 +359,10 @@ void main() {
     await seed(); // Bob 30 active, Alice 17 inactive, Carol 42 active
 
     final count = countAll();
-    final total =
-        await from(Users.table).select([count]).map((r) => r.get(count)).first(db);
+    final total = await from(Users.table)
+        .select([count])
+        .map((r) => r.get(count))
+        .first(db);
     expect(total, 3);
 
     final sumAge = Users.age.sum();
@@ -311,8 +395,18 @@ void main() {
   test('batch insert writes multiple rows (+ RETURNING)', () async {
     final n = await db.execute(
       insertInto(Users.table).values([
-        [Users.id.set(1), Users.name.set('A'), Users.age.set(20), Users.active.set(true)],
-        [Users.id.set(2), Users.name.set('B'), Users.age.set(21), Users.active.set(false)],
+        [
+          Users.id.set(1),
+          Users.name.set('A'),
+          Users.age.set(20),
+          Users.active.set(true),
+        ],
+        [
+          Users.id.set(2),
+          Users.name.set('B'),
+          Users.age.set(21),
+          Users.active.set(false),
+        ],
       ]),
     );
     expect(n, 2);
@@ -334,19 +428,23 @@ void main() {
   });
 
   test('upsert: ON CONFLICT DO NOTHING / DO UPDATE', () async {
-    await db.execute(insertInto(Users.table)
-        .value(Users.id.set(1))
-        .value(Users.name.set('Bob'))
-        .value(Users.age.set(30))
-        .value(Users.active.set(true)));
+    await db.execute(
+      insertInto(Users.table)
+          .value(Users.id.set(1))
+          .value(Users.name.set('Bob'))
+          .value(Users.age.set(30))
+          .value(Users.active.set(true)),
+    );
 
     // DO NOTHING: the conflicting insert is ignored.
-    await db.execute(insertInto(Users.table)
-        .value(Users.id.set(1))
-        .value(Users.name.set('NOPE'))
-        .value(Users.age.set(0))
-        .value(Users.active.set(false))
-        .onConflict([Users.id]).doNothing());
+    await db.execute(
+      insertInto(Users.table)
+          .value(Users.id.set(1))
+          .value(Users.name.set('NOPE'))
+          .value(Users.age.set(0))
+          .value(Users.active.set(false))
+          .onConflict([Users.id]).doNothing(),
+    );
     expect(
       await from(Users.table)
           .where(Users.id.eq(1))
@@ -356,13 +454,16 @@ void main() {
     );
 
     // DO UPDATE: name from excluded (proposed) value, age from a literal.
-    await db.execute(insertInto(Users.table)
-        .value(Users.id.set(1))
-        .value(Users.name.set('Bobby'))
-        .value(Users.age.set(31))
-        .value(Users.active.set(true))
-        .onConflict([Users.id]).doUpdate(
-            [Users.name.setToExcluded(), Users.age.set(40)]));
+    await db.execute(
+      insertInto(Users.table)
+          .value(Users.id.set(1))
+          .value(Users.name.set('Bobby'))
+          .value(Users.age.set(31))
+          .value(Users.active.set(true))
+          .onConflict([Users.id]).doUpdate(
+        [Users.name.setToExcluded(), Users.age.set(40)],
+      ),
+    );
     final (name, age) = await from(Users.table)
         .where(Users.id.eq(1))
         .map((r) => (r.get(Users.name), r.get(Users.age)))
@@ -384,26 +485,42 @@ void main() {
 
   test('loadGroupedByFk groups children by parent (belongs_to)', () async {
     await seed(); // Bob=1, Alice=2, Carol=3
-    await db.execute(insertInto(Posts.table).value(Posts.id.set(1)).value(Posts.authorId.set(1)).value(Posts.title.set('a')).value(Posts.views.set(1)));
-    await db.execute(insertInto(Posts.table).value(Posts.id.set(2)).value(Posts.authorId.set(1)).value(Posts.title.set('b')).value(Posts.views.set(2)));
-    await db.execute(insertInto(Posts.table).value(Posts.id.set(3)).value(Posts.authorId.set(3)).value(Posts.title.set('c')).value(Posts.views.set(3)));
+    await db.execute(insertInto(Posts.table)
+        .value(Posts.id.set(1))
+        .value(Posts.authorId.set(1))
+        .value(Posts.title.set('a'))
+        .value(Posts.views.set(1)),);
+    await db.execute(insertInto(Posts.table)
+        .value(Posts.id.set(2))
+        .value(Posts.authorId.set(1))
+        .value(Posts.title.set('b'))
+        .value(Posts.views.set(2)),);
+    await db.execute(insertInto(Posts.table)
+        .value(Posts.id.set(3))
+        .value(Posts.authorId.set(3))
+        .value(Posts.title.set('c'))
+        .value(Posts.views.set(3)),);
 
-    final byAuthor =
-        await loadGroupedByFk(db, Posts.table, Posts.authorId, [1, 2, 3], readPost);
+    final byAuthor = await loadGroupedByFk(
+        db, Posts.table, Posts.authorId, [1, 2, 3], readPost,);
     expect(byAuthor[1]!.map((p) => p.title), ['a', 'b']);
     expect(byAuthor[2], isEmpty); // Alice has no posts, but the key is present
     expect(byAuthor[3]!.map((p) => p.title), ['c']);
   });
 
-  test('bool + DateTime round-trip (canonical encode; SQLite stores int/epoch-ms)',
+  test(
+      'bool + DateTime round-trip (canonical encode; SQLite stores int/epoch-ms)',
       () async {
     await db.executeSql(
-        'CREATE TABLE events (id INTEGER PRIMARY KEY, done INTEGER NOT NULL, at INTEGER NOT NULL)');
+      'CREATE TABLE events (id INTEGER PRIMARY KEY, done INTEGER NOT NULL, at INTEGER NOT NULL)',
+    );
     final ts = DateTime.utc(2024, 3, 1, 8, 0, 0);
-    await db.execute(insertInto(Events.table)
-        .value(Events.id.set(1))
-        .value(Events.done.set(true))
-        .value(Events.at.set(ts)));
+    await db.execute(
+      insertInto(Events.table)
+          .value(Events.id.set(1))
+          .value(Events.done.set(true))
+          .value(Events.at.set(ts)),
+    );
 
     final (done, at) = await from(Events.table)
         .findBy(Events.id, 1)
@@ -415,13 +532,18 @@ void main() {
 
   test('custom SqlType codec (enum) round-trips', () async {
     await db.executeSql(
-        'CREATE TABLE accounts (id INTEGER PRIMARY KEY, role TEXT NOT NULL)');
-    await db.execute(insertInto(Accounts.table)
-        .value(Accounts.id.set(1))
-        .value(Accounts.role.set(Role.admin)));
-    await db.execute(insertInto(Accounts.table)
-        .value(Accounts.id.set(2))
-        .value(Accounts.role.set(Role.guest)));
+      'CREATE TABLE accounts (id INTEGER PRIMARY KEY, role TEXT NOT NULL)',
+    );
+    await db.execute(
+      insertInto(Accounts.table)
+          .value(Accounts.id.set(1))
+          .value(Accounts.role.set(Role.admin)),
+    );
+    await db.execute(
+      insertInto(Accounts.table)
+          .value(Accounts.id.set(2))
+          .value(Accounts.role.set(Role.guest)),
+    );
 
     final roles = await from(Accounts.table)
         .order(Accounts.id.asc())
@@ -454,7 +576,8 @@ void main() {
           .value(Users.age.set(21))
           .where(Users.id.eq(1))
           .returning([Users.id, Users.age]).map(
-              (r) => (r.get(Users.id), r.get(Users.age))),
+        (r) => (r.get(Users.id), r.get(Users.age)),
+      ),
     );
     expect(updated, [(1, 21)]);
   });

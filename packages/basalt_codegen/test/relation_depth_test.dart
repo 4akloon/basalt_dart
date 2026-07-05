@@ -70,20 +70,22 @@ void main() {
       pkAccessor: 'id',
     );
 
-    final post = ClassInfo(
+    const post = ClassInfo(
       className: 'Post',
       tableMarker: 'Posts',
       columnArgs: postColumns,
       ownEdges: [authorEdge, editorEdge],
     );
 
-    final code = generator.generateSource(QueryableModel(
-      root: post,
-      classInfos: {
-        'Post': post,
-        'User': userWithRelations,
-      },
-    ));
+    final code = generator.generateSource(
+      const QueryableModel(
+        root: post,
+        classInfos: {
+          'Post': post,
+          'User': userWithRelations,
+        },
+      ),
+    );
 
     // Global seed is max depth (2), but author depth=1 caps budget so nested
     // manager/mentor are not read even though User has relations.
@@ -102,7 +104,10 @@ void main() {
     expect(code, contains(r".map((r) => $PostFromRow(r, Posts.table, '', 2))"));
     expect(code, contains("final author = Users.table.aliased('author');"));
     expect(code, isNot(contains('author_manager')));
-    expect(code, contains("final editorManager = Users.table.aliased('editor_manager');"));
+    expect(
+        code,
+        contains(
+            "final editorManager = Users.table.aliased('editor_manager');",),);
   });
 
   test('nullable FK fan-out at depth > 1 uses leftJoin', () {
@@ -116,35 +121,40 @@ void main() {
       pkAccessor: 'id',
     );
 
-    final post = ClassInfo(
+    const post = ClassInfo(
       className: 'Post',
       tableMarker: 'Posts',
       columnArgs: postColumns,
       ownEdges: [authorEdge],
     );
 
-    final code = generator.generateSource(QueryableModel(
-      root: post,
-      classInfos: {
-        'Post': post,
-        'User': userWithRelations,
-      },
-    ));
+    final code = generator.generateSource(
+      const QueryableModel(
+        root: post,
+        classInfos: {
+          'Post': post,
+          'User': userWithRelations,
+        },
+      ),
+    );
 
     expect(
       code,
       contains(
-          '.innerJoin(author, on: Posts.authorId.eqColumn(author.col(Users.id)))'),
+        '.innerJoin(author, on: Posts.authorId.eqColumn(author.col(Users.id)))',
+      ),
     );
     expect(
       code,
       contains(
-          '.leftJoin(authorManager, on: author.col(Users.managerId).eqColumn(authorManager.col(Users.id)))'),
+        '.leftJoin(authorManager, on: author.col(Users.managerId).eqColumn(authorManager.col(Users.id)))',
+      ),
     );
     expect(
       code,
       contains(
-          '.leftJoin(authorMentor, on: author.col(Users.mentorId).eqColumn(authorMentor.col(Users.id)))'),
+        '.leftJoin(authorMentor, on: author.col(Users.mentorId).eqColumn(authorMentor.col(Users.id)))',
+      ),
     );
   });
 
@@ -168,7 +178,7 @@ void main() {
         readerName: r'$UserFromRow',
         seedBudget: 1,
         treeNodes: [
-          TreeNode(
+          const TreeNode(
             edge: edge,
             aliasPath: 'manager',
             parentAliasPath: null,
@@ -179,7 +189,8 @@ void main() {
       expect(
         code,
         contains(
-            '.leftJoin(manager, on: Users.managerId.eqColumn(manager.col(Users.id)))'),
+          '.leftJoin(manager, on: Users.managerId.eqColumn(manager.col(Users.id)))',
+        ),
       );
     });
 
@@ -191,8 +202,8 @@ void main() {
         readerName: r'$PostFromRow',
         seedBudget: 1,
         treeNodes: [
-          TreeNode(
-            edge: const RelationEdge(
+          const TreeNode(
+            edge: RelationEdge(
               fieldName: 'author',
               depth: 1,
               parentMarker: 'Posts',
@@ -210,7 +221,8 @@ void main() {
       expect(
         code,
         contains(
-            '.innerJoin(author, on: Posts.authorId.eqColumn(author.col(Users.id)))'),
+          '.innerJoin(author, on: Posts.authorId.eqColumn(author.col(Users.id)))',
+        ),
       );
     });
   });

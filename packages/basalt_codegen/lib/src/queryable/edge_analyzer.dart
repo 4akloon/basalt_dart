@@ -13,8 +13,10 @@ import 'relation_edge.dart';
 // types regardless of whether they are referenced via the `basalt.dart` barrel
 // or their defining library (`fromUrl` only matches the defining library).
 const queryableChecker = TypeChecker.typeNamed(Queryable, inPackage: 'basalt');
-const insertableChecker = TypeChecker.typeNamed(Insertable, inPackage: 'basalt');
-const asChangesetChecker = TypeChecker.typeNamed(AsChangeset, inPackage: 'basalt');
+const insertableChecker =
+    TypeChecker.typeNamed(Insertable, inPackage: 'basalt');
+const asChangesetChecker =
+    TypeChecker.typeNamed(AsChangeset, inPackage: 'basalt');
 const columnChecker = TypeChecker.typeNamed(Column, inPackage: 'basalt');
 const relationChecker = TypeChecker.typeNamed(Relation, inPackage: 'basalt');
 
@@ -22,8 +24,9 @@ const relationChecker = TypeChecker.typeNamed(Relation, inPackage: 'basalt');
 int validateRelationDepth(int depth, Element element) {
   if (depth < 1) {
     throw InvalidGenerationSourceError(
-        '@Relation depth must be at least 1 (got $depth).',
-        element: element);
+      '@Relation depth must be at least 1 (got $depth).',
+      element: element,
+    );
   }
   return depth;
 }
@@ -33,41 +36,50 @@ final class EdgeAnalyzer {
   const EdgeAnalyzer();
 
   RelationEdge parseRelationEdge(
-      FieldElement field, FormalParameterElement param) {
+    FieldElement field,
+    FormalParameterElement param,
+  ) {
     if (param.type.nullabilitySuffix != NullabilitySuffix.question) {
       throw InvalidGenerationSourceError(
-          '@Relation field "${param.name}" must be nullable.',
-          element: field);
+        '@Relation field "${param.name}" must be nullable.',
+        element: field,
+      );
     }
 
     final paramType = param.type;
     if (paramType is! InterfaceType) {
       throw InvalidGenerationSourceError(
-          '@Relation field "${param.name}" must reference a @Queryable class.',
-          element: field);
+        '@Relation field "${param.name}" must reference a @Queryable class.',
+        element: field,
+      );
     }
     final targetClass = paramType.element;
     if (!queryableChecker.hasAnnotationOfExact(targetClass)) {
       throw InvalidGenerationSourceError(
-          '@Relation target ${targetClass.name} must be @Queryable.',
-          element: field);
+        '@Relation target ${targetClass.name} must be @Queryable.',
+        element: field,
+      );
     }
 
     final relAnn = relationChecker.firstAnnotationOfExact(field)!;
     final depth = validateRelationDepth(
-        relAnn.getField('depth')?.toIntValue() ?? 1, field);
+      relAnn.getField('depth')?.toIntValue() ?? 1,
+      field,
+    );
     final colObj = relAnn.getField('column');
     if (colObj == null) {
       throw InvalidGenerationSourceError(
-          '@Relation(column) must reference a schema FK (e.g. Posts.authorId).',
-          element: field);
+        '@Relation(column) must reference a schema FK (e.g. Posts.authorId).',
+        element: field,
+      );
     }
 
     final colType = colObj.type;
     if (colType is! InterfaceType || colType.typeArguments.length < 3) {
       throw InvalidGenerationSourceError(
-          '@Relation(column) must reference a schema FK (e.g. Posts.authorId).',
-          element: field);
+        '@Relation(column) must reference a schema FK (e.g. Posts.authorId).',
+        element: field,
+      );
     }
 
     final parentMarker = colType.typeArguments[1].element?.name;
@@ -81,13 +93,13 @@ final class EdgeAnalyzer {
         sqlName == null ||
         pkSqlName == null) {
       throw InvalidGenerationSourceError(
-          '@Relation(column) must reference a schema FK (e.g. Posts.authorId).',
-          element: field);
+        '@Relation(column) must reference a schema FK (e.g. Posts.authorId).',
+        element: field,
+      );
     }
 
     final fkType = colType.typeArguments[0];
-    final fkNullable =
-        fkType.nullabilitySuffix == NullabilitySuffix.question;
+    final fkNullable = fkType.nullabilitySuffix == NullabilitySuffix.question;
 
     return RelationEdge(
       fieldName: param.name!,
@@ -112,9 +124,10 @@ final class EdgeAnalyzer {
     final writeOnly = ann?.getField('writeOnly')?.toBoolValue() ?? false;
     if (readOnly && writeOnly) {
       throw InvalidGenerationSourceError(
-          '@Column on "${param.name}" cannot be both readOnly and writeOnly — '
-          'a field that is neither read nor written is not a column; use a getter.',
-          element: field);
+        '@Column on "${param.name}" cannot be both readOnly and writeOnly — '
+        'a field that is neither read nor written is not a column; use a getter.',
+        element: field,
+      );
     }
 
     final colObj = ann?.getField('column');
@@ -122,17 +135,19 @@ final class EdgeAnalyzer {
       final colType = colObj.type;
       if (colType is! InterfaceType || colType.typeArguments.length < 2) {
         throw InvalidGenerationSourceError(
-            '@Column(column) must reference a schema column '
-            '(e.g. Posts.authorId).',
-            element: field);
+          '@Column(column) must reference a schema column '
+          '(e.g. Posts.authorId).',
+          element: field,
+        );
       }
       final marker = colType.typeArguments[1].element?.name;
       final sqlName = colObj.getField('name')?.toStringValue();
       if (marker == null || sqlName == null) {
         throw InvalidGenerationSourceError(
-            '@Column(column) must reference a schema column '
-            '(e.g. Posts.authorId).',
-            element: field);
+          '@Column(column) must reference a schema column '
+          '(e.g. Posts.authorId).',
+          element: field,
+        );
       }
       return ColumnArg(
         paramName: param.name!,
@@ -154,8 +169,10 @@ final class EdgeAnalyzer {
 
   /// The table marker (e.g. `Users`) from a class-level table annotation
   /// (`@Queryable`/`@Insertable`/`@AsChangeset`), selected by [checker].
-  String? tableMarkerOf(ClassElement element,
-      [TypeChecker checker = queryableChecker]) {
+  String? tableMarkerOf(
+    ClassElement element, [
+    TypeChecker checker = queryableChecker,
+  ]) {
     final ann = checker.firstAnnotationOfExact(element);
     if (ann == null) return null;
     final tableType = ConstantReader(ann).read('table').objectValue.type;
@@ -170,8 +187,9 @@ final class EdgeAnalyzer {
     final constructor = element.unnamedConstructor;
     if (constructor == null) {
       throw InvalidGenerationSourceError(
-          '${element.name} needs an unnamed constructor for write generation.',
-          element: element);
+        '${element.name} needs an unnamed constructor for write generation.',
+        element: element,
+      );
     }
     final args = <ColumnArg>[];
     for (final param in constructor.formalParameters) {
@@ -181,7 +199,8 @@ final class EdgeAnalyzer {
         continue;
       }
       args.add(
-          parseColumnArg(param: param, field: field, tableMarker: tableMarker));
+        parseColumnArg(param: param, field: field, tableMarker: tableMarker),
+      );
     }
     return args;
   }
@@ -192,14 +211,16 @@ final class EdgeAnalyzer {
     final tableMarker = tableMarkerOf(element);
     if (tableMarker == null) {
       throw InvalidGenerationSourceError(
-          '@Queryable(table) must reference a TableRef (e.g. Posts.table).',
-          element: element);
+        '@Queryable(table) must reference a TableRef (e.g. Posts.table).',
+        element: element,
+      );
     }
     final constructor = element.unnamedConstructor;
     if (constructor == null) {
       throw InvalidGenerationSourceError(
-          '${element.name} needs an unnamed constructor to be @Queryable.',
-          element: element);
+        '${element.name} needs an unnamed constructor to be @Queryable.',
+        element: element,
+      );
     }
 
     final markerElement = _markerElement(element);
@@ -256,10 +277,14 @@ final class EdgeAnalyzer {
 
   /// If [param]'s mapped column is a `PrimaryKey`, returns its Dart value type
   /// (e.g. `int`); otherwise null. Handles `@Column`-mapped and name-matched.
-  String? _primaryKeyType(FormalParameterElement param, FieldElement? field,
-      InterfaceElement? marker) {
-    final colObj =
-        field == null ? null : columnChecker.firstAnnotationOfExact(field)?.getField('column');
+  String? _primaryKeyType(
+    FormalParameterElement param,
+    FieldElement? field,
+    InterfaceElement? marker,
+  ) {
+    final colObj = field == null
+        ? null
+        : columnChecker.firstAnnotationOfExact(field)?.getField('column');
     final DartType? colType;
     if (colObj != null) {
       colType = colObj.type;
@@ -308,12 +333,16 @@ final class EdgeAnalyzer {
   }
 
   void _requireOptional(
-      FormalParameterElement param, FieldElement field, String kind) {
+    FormalParameterElement param,
+    FieldElement field,
+    String kind,
+  ) {
     if (param.isRequiredPositional || param.isRequiredNamed) {
       throw InvalidGenerationSourceError(
-          '$kind field "${param.name}" must be optional so its default '
-          'can be used.',
-          element: field);
+        '$kind field "${param.name}" must be optional so its default '
+        'can be used.',
+        element: field,
+      );
     }
   }
 
@@ -322,9 +351,10 @@ final class EdgeAnalyzer {
   void _requireNamedOptional(FormalParameterElement param, FieldElement field) {
     if (!param.isNamed) {
       throw InvalidGenerationSourceError(
-          'Relation field "${param.name}" must be a named constructor '
-          'parameter (e.g. `{this.author}`).',
-          element: field);
+        'Relation field "${param.name}" must be a named constructor '
+        'parameter (e.g. `{this.author}`).',
+        element: field,
+      );
     }
     _requireOptional(param, field, 'Relation');
   }

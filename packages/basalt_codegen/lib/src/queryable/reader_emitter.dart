@@ -25,7 +25,7 @@ final class ReaderEmitter {
       if (hasRelations) "String prefix = ''",
       if (hasRelations) 'int budget = 0',
     ];
-    final params = 'RowReader r, [${optionals.join(', ')}]';
+    final params = 'RowReader r, [${optionals.join(', ')},]';
 
     final args = <String>[
       for (final col in columnArgs)

@@ -5,6 +5,7 @@ part of '../write.dart';
 /// Build with `insertInto(Users.table).value(Users.name.set('Bob'))`. Each
 /// assignment is produced by a column, so its value type is checked statically.
 final class InsertStatement<Tbl> extends WriteStatement {
+  InsertStatement(this.table);
   final String table;
   final List<String> columns = [];
 
@@ -20,8 +21,6 @@ final class InsertStatement<Tbl> extends WriteStatement {
   /// Assignments for `DO UPDATE SET` (a literal via `set`, or `excluded.col` via
   /// `setToExcluded`).
   final List<ColumnValue<Object?>> conflictSet = [];
-
-  InsertStatement(this.table);
 
   /// Sets one column of a single-row insert; repeated calls build that row.
   InsertStatement<Tbl> value(ColumnValue<Tbl> assignment) {
@@ -49,8 +48,9 @@ final class InsertStatement<Tbl> extends WriteStatement {
 
   /// Begin an upsert: `ON CONFLICT (target)`. An empty [target] emits a bare
   /// `ON CONFLICT`. Finish with [OnConflict.doNothing] or [OnConflict.doUpdate].
-  OnConflict<Tbl> onConflict(
-          [List<TableColumn<Object?, Object?>> target = const []]) =>
+  OnConflict<Tbl> onConflict([
+    List<TableColumn<Object?, Object?>> target = const [],
+  ]) =>
       OnConflict._(this, [for (final c in target) c.name]);
 }
 

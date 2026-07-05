@@ -11,10 +11,6 @@ import 'sqlite_dialect.dart';
 /// return already-resolved futures — the async signatures exist so an async
 /// backend (Postgres) can implement the same [Connection] interface unchanged.
 final class SqliteConnection implements Connection {
-  final Database _db;
-  final SqlDialect _dialect;
-  int _txDepth = 0;
-
   SqliteConnection._(this._db, this._dialect);
 
   /// Opens an in-memory database — ideal for tests.
@@ -24,6 +20,9 @@ final class SqliteConnection implements Connection {
   /// Opens (or creates) a database file at [path].
   factory SqliteConnection.open(String path) =>
       SqliteConnection._(sqlite3.open(path), const SqliteDialect());
+  final Database _db;
+  final SqlDialect _dialect;
+  int _txDepth = 0;
 
   @override
   Future<List<R>> fetch<R>(SelectQuery<R> statement) async {
@@ -53,8 +52,10 @@ final class SqliteConnection implements Connection {
   }
 
   @override
-  Future<List<Map<String, Object?>>> queryRaw(String sql,
-      [List<Object?> params = const []]) async {
+  Future<List<Map<String, Object?>>> queryRaw(
+    String sql, [
+    List<Object?> params = const [],
+  ]) async {
     final result = params.isEmpty ? _db.select(sql) : _db.select(sql, params);
     final names = result.columnNames;
     return [
@@ -121,17 +122,19 @@ final class SqliteConnection implements Connection {
               ForeignKey(fk['table'] as String, (fk['to'] as String?) ?? ''),
       };
 
-      tables.add(IntrospectedTable(tableName, [
-        for (final c in columnRows)
-          IntrospectedColumn(
-            name: c['name'] as String,
-            rawType: (c['type'] as String?) ?? '',
-            type: _affinity((c['type'] as String?) ?? ''),
-            isNullable: (c['notnull'] as int) == 0,
-            isPrimaryKey: (c['pk'] as int) != 0,
-            foreignKey: fkByColumn[c['name'] as String],
-          ),
-      ]));
+      tables.add(
+        IntrospectedTable(tableName, [
+          for (final c in columnRows)
+            IntrospectedColumn(
+              name: c['name'] as String,
+              rawType: (c['type'] as String?) ?? '',
+              type: _affinity((c['type'] as String?) ?? ''),
+              isNullable: (c['notnull'] as int) == 0,
+              isPrimaryKey: (c['pk'] as int) != 0,
+              foreignKey: fkByColumn[c['name'] as String],
+            ),
+        ]),
+      );
     }
     return tables;
   }

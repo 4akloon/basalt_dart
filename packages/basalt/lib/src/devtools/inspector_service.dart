@@ -1,7 +1,7 @@
 import 'package:basalt/basalt.dart';
 
-import 'column_filter.dart';
 import 'basalt_dev_tools.dart';
+import 'column_filter.dart';
 import 'dto/column_dto.dart';
 import 'dto/foreign_key_dto.dart';
 import 'dto/schema_dto.dart';
@@ -69,7 +69,9 @@ final class InspectorService {
 
     final rawRows = await conn.queryRaw(data.toString(), binds.params);
     final countRows = await conn.queryRaw(
-        'SELECT count(*) AS c FROM ${_quote(table)}$where', binds.params);
+      'SELECT count(*) AS c FROM ${_quote(table)}$where',
+      binds.params,
+    );
     final total = (countRows.first['c'] as num?)?.toInt() ?? 0;
 
     // Project in schema-column order so the grid is deterministic regardless of
@@ -164,7 +166,10 @@ final class InspectorService {
       _readLead.hasMatch(sql) || _returning.hasMatch(sql);
 
   String _buildWhere(
-      IntrospectedTable table, List<ColumnFilter> filters, _Binds binds) {
+    IntrospectedTable table,
+    List<ColumnFilter> filters,
+    _Binds binds,
+  ) {
     if (filters.isEmpty) return '';
     final terms = <String>[];
     for (final f in filters) {
@@ -252,11 +257,10 @@ final class InspectorService {
 /// (`?` for SQLite, `$N` for Postgres). A Dart `bool` is adapted to `0/1` for
 /// SQLite, whose driver (via the raw query path) takes integers, not booleans.
 final class _Binds {
+  _Binds(this.backend);
   final String backend;
   final List<Object?> params = [];
   int _n = 0;
-
-  _Binds(this.backend);
 
   String bind(Object? value) {
     params.add(backend == 'postgres' ? value : _forSqlite(value));

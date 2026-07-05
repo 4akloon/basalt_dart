@@ -4,6 +4,6 @@ import '../schema/table.dart';
 /// (e.g. `@Queryable(Posts.table)`). The generator emits a `RowMapper<ThisClass>`
 /// plus a `fromRow` reader that calls `RowReader.get` for each mapped field.
 class Queryable {
-  final TableRef table;
   const Queryable(this.table);
+  final TableRef table;
 }

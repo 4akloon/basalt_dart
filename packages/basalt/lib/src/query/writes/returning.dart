@@ -3,9 +3,9 @@ part of '../write.dart';
 /// Intermediate builder from [WriteReturning.returning]; call [map] / [mapWith]
 /// to attach a row decoder and produce an executable [ReturningQuery].
 final class Returning {
+  const Returning(this._statement, this._columns);
   final WriteStatement _statement;
   final List<TableColumn<Object?, Object?>> _columns;
-  const Returning(this._statement, this._columns);
 
   ReturningQuery<R> map<R>(R Function(RowReader reader) decode) =>
       ReturningQuery._(

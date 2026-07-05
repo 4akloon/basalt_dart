@@ -13,8 +13,9 @@ abstract final class Users {
 abstract final class Posts {
   static const _t = 'posts';
   static const id = PrimaryKey<int, Posts>(_t, 'id', SqlType.integer);
-  static const authorId =
-      Ref<int, Posts, Users>(_t, 'author_id', SqlType.integer, references: Users.id);
+  static const authorId = Ref<int, Posts, Users>(
+      _t, 'author_id', SqlType.integer,
+      references: Users.id,);
   static const title = ValueColumn<String, Posts>(_t, 'title', SqlType.text);
   static const views = ValueColumn<int, Posts>(_t, 'views', SqlType.integer);
   static const table = TableRef<Posts>(_t, [id, authorId, title, views]);
@@ -23,8 +24,9 @@ abstract final class Posts {
 abstract final class Comments {
   static const _t = 'comments';
   static const id = PrimaryKey<int, Comments>(_t, 'id', SqlType.integer);
-  static const postId =
-      Ref<int, Comments, Posts>(_t, 'post_id', SqlType.integer, references: Posts.id);
+  static const postId = Ref<int, Comments, Posts>(
+      _t, 'post_id', SqlType.integer,
+      references: Posts.id,);
   static const body = ValueColumn<String, Comments>(_t, 'body', SqlType.text);
   static const table = TableRef<Comments>(_t, [id, postId, body]);
 }
@@ -33,10 +35,12 @@ abstract final class Comments {
 abstract final class Messages {
   static const _t = 'messages';
   static const id = PrimaryKey<int, Messages>(_t, 'id', SqlType.integer);
-  static const senderId =
-      Ref<int, Messages, Users>(_t, 'sender_id', SqlType.integer, references: Users.id);
-  static const recipientId =
-      Ref<int, Messages, Users>(_t, 'recipient_id', SqlType.integer, references: Users.id);
+  static const senderId = Ref<int, Messages, Users>(
+      _t, 'sender_id', SqlType.integer,
+      references: Users.id,);
+  static const recipientId = Ref<int, Messages, Users>(
+      _t, 'recipient_id', SqlType.integer,
+      references: Users.id,);
   static const body = ValueColumn<String, Messages>(_t, 'body', SqlType.text);
   static const table =
       TableRef<Messages>(_t, [id, senderId, recipientId, body]);
@@ -46,18 +50,20 @@ abstract final class Messages {
 abstract final class Profiles {
   static const _t = 'profiles';
   static const id = PrimaryKey<int, Profiles>(_t, 'id', SqlType.integer);
-  static const bio = ValueColumn<String?, Profiles>(_t, 'bio', SqlType.textOrNull);
+  static const bio =
+      ValueColumn<String?, Profiles>(_t, 'bio', SqlType.textOrNull);
   static const table = TableRef<Profiles>(_t, [id, bio]);
 }
 
 /// A message with both participants resolved (each from a different alias of
 /// the users table).
 class Message {
+  const Message(this.id, this.body,
+      {required this.sender, required this.recipient,});
   final int id;
   final String body;
   final User sender;
   final User recipient;
-  const Message(this.id, this.body, {required this.sender, required this.recipient});
 }
 
 /// Reads a [User] from a specific alias of the users table.
@@ -70,38 +76,42 @@ User readUserFrom(TableAlias<Users> a, RowReader r) => User(
 
 // Data classes + reusable RowReader-based decoders — what codegen would emit.
 class User {
+  const User(this.id, this.name, this.age, this.active);
   final int id;
   final String name;
   final int age;
   final bool active;
-  const User(this.id, this.name, this.age, this.active);
 }
 
-User readUser(RowReader r) =>
-    User(r.get(Users.id), r.get(Users.name), r.get(Users.age), r.get(Users.active));
+User readUser(RowReader r) => User(
+    r.get(Users.id), r.get(Users.name), r.get(Users.age), r.get(Users.active),);
 const userQueryable = RowMapper<User>(readUser);
 
 class Post {
+  const Post(this.id, this.authorId, this.title, this.views, {this.author});
   final int id;
   final int authorId;
   final String title;
   final int views;
   final User? author;
-  const Post(this.id, this.authorId, this.title, this.views, {this.author});
   Post withAuthor(User author) =>
       Post(id, authorId, title, views, author: author);
 }
 
 Post readPost(RowReader r) => Post(
-    r.get(Posts.id), r.get(Posts.authorId), r.get(Posts.title), r.get(Posts.views));
+      r.get(Posts.id),
+      r.get(Posts.authorId),
+      r.get(Posts.title),
+      r.get(Posts.views),
+    );
 const postQueryable = RowMapper<Post>(readPost);
 
 class Comment {
+  const Comment(this.id, this.postId, this.body, {this.post});
   final int id;
   final int postId;
   final String body;
   final Post? post;
-  const Comment(this.id, this.postId, this.body, {this.post});
   Comment withPost(Post post) => Comment(id, postId, body, post: post);
 }
 

@@ -7,11 +7,11 @@ import '../schema/table.dart';
 /// unambiguous (each column is keyed by `table.name`), and aggregates are keyed
 /// by their alias.
 final class RowReader {
+  const RowReader(this._columnIndex, this._row);
+
   /// `readKey -> index in the row`, precomputed once per query.
   final Map<String, int> _columnIndex;
   final List<Object?> _row;
-
-  const RowReader(this._columnIndex, this._row);
 
   T get<T>(Selection<T> selection) {
     final index = _columnIndex[selection.readKey];

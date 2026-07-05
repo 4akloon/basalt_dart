@@ -2,9 +2,9 @@ part of '../write.dart';
 
 /// Fluent builder for an `ON CONFLICT` clause (from [InsertStatement.onConflict]).
 final class OnConflict<Tbl> {
+  OnConflict._(this._insert, this._target);
   final InsertStatement<Tbl> _insert;
   final List<String> _target;
-  OnConflict._(this._insert, this._target);
 
   /// `ON CONFLICT [(target)] DO NOTHING`.
   InsertStatement<Tbl> doNothing() {

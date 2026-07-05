@@ -5,8 +5,7 @@ import 'class_info.dart';
 /// The closure makes generation self-contained across files: the emitted
 /// `.g.dart` defines every nested reader it needs locally.
 final class QueryableModel {
+  const QueryableModel({required this.root, required this.classInfos});
   final ClassInfo root;
   final Map<String, ClassInfo> classInfos;
-
-  const QueryableModel({required this.root, required this.classInfos});
 }

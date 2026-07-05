@@ -1,6 +1,13 @@
 /// One constructor column mapped to a schema accessor expression, plus its
 /// read/write direction from `@Column(readOnly:)` / `@Column(writeOnly:)`.
 final class ColumnArg {
+  const ColumnArg({
+    required this.paramName,
+    required this.isNamed,
+    required this.columnExpr,
+    this.readOnly = false,
+    this.writeOnly = false,
+  });
   final String paramName;
   final bool isNamed;
   final String columnExpr;
@@ -11,12 +18,4 @@ final class ColumnArg {
   /// Excluded from the generated SELECT row reader (the parameter must be
   /// optional so its default is used).
   final bool writeOnly;
-
-  const ColumnArg({
-    required this.paramName,
-    required this.isNamed,
-    required this.columnExpr,
-    this.readOnly = false,
-    this.writeOnly = false,
-  });
 }

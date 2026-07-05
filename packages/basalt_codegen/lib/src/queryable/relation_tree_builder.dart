@@ -4,9 +4,8 @@ import 'tree_node.dart';
 
 /// Unrolls join trees for relation queries with path-based table aliases.
 final class RelationTreeBuilder {
-  final RelationEdgesLookup edgesOf;
-
   const RelationTreeBuilder(this.edgesOf);
+  final RelationEdgesLookup edgesOf;
 
   /// Parent alias path for `author_manager` -> `author`; root edges have `null`.
   static String? parentAliasPath(String aliasPath) {
@@ -39,11 +38,13 @@ final class RelationTreeBuilder {
     if (budget <= 1) return nodes;
 
     for (final childEdge in edgesOf(edge.targetClass)) {
-      nodes.addAll(unroll(
-        edge: childEdge,
-        budget: budget - 1,
-        aliasPath: '${aliasPath}_${childEdge.fieldName}',
-      ));
+      nodes.addAll(
+        unroll(
+          edge: childEdge,
+          budget: budget - 1,
+          aliasPath: '${aliasPath}_${childEdge.fieldName}',
+        ),
+      );
     }
     return nodes;
   }
@@ -52,11 +53,13 @@ final class RelationTreeBuilder {
   List<TreeNode> unrollRoots(List<RelationEdge> rootEdges) {
     final nodes = <TreeNode>[];
     for (final edge in rootEdges) {
-      nodes.addAll(unroll(
-        edge: edge,
-        budget: edge.depth,
-        aliasPath: edge.fieldName,
-      ));
+      nodes.addAll(
+        unroll(
+          edge: edge,
+          budget: edge.depth,
+          aliasPath: edge.fieldName,
+        ),
+      );
     }
     return nodes;
   }

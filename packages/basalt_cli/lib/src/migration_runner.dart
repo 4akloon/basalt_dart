@@ -11,10 +11,9 @@ import 'schema_migrations_table.dart';
 /// and tracks applied versions. The actual filesystem layout is discovered from
 /// [migrationsDir].
 final class MigrationRunner {
+  MigrationRunner(this.connection, this.migrationsDir);
   final Connection connection;
   final String migrationsDir;
-
-  MigrationRunner(this.connection, this.migrationsDir);
 
   Future<void> ensureTrackerTable() => connection.executeSql(
         'CREATE TABLE IF NOT EXISTS __basalt_schema_migrations '
@@ -40,12 +39,14 @@ final class MigrationRunner {
       if (sep <= 0) continue;
       final upFile = File(p.join(entry.path, 'up.sql'));
       if (!upFile.existsSync()) continue;
-      migrations.add(Migration(
-        dirName.substring(0, sep),
-        dirName.substring(sep + 1),
-        upFile,
-        File(p.join(entry.path, 'down.sql')),
-      ));
+      migrations.add(
+        Migration(
+          dirName.substring(0, sep),
+          dirName.substring(sep + 1),
+          upFile,
+          File(p.join(entry.path, 'down.sql')),
+        ),
+      );
     }
     migrations.sort((a, b) => a.version.compareTo(b.version));
     return migrations;
@@ -70,9 +71,11 @@ final class MigrationRunner {
       if (applied.contains(migration.version)) continue;
       await connection.transaction((tx) async {
         await tx.executeSql(migration.up);
-        await tx.execute(insertInto(SchemaMigrationsTable.table)
-            .value(SchemaMigrationsTable.version.set(migration.version))
-            .value(SchemaMigrationsTable.runOn.set(_runOn())));
+        await tx.execute(
+          insertInto(SchemaMigrationsTable.table)
+              .value(SchemaMigrationsTable.version.set(migration.version))
+              .value(SchemaMigrationsTable.runOn.set(_runOn())),
+        );
       });
       ran.add(migration.version);
     }
@@ -99,8 +102,10 @@ final class MigrationRunner {
       if (down case final sql? when sql.trim().isNotEmpty) {
         await tx.executeSql(sql);
       }
-      await tx.execute(deleteFrom(SchemaMigrationsTable.table)
-          .where(SchemaMigrationsTable.version.eq(version)));
+      await tx.execute(
+        deleteFrom(SchemaMigrationsTable.table)
+            .where(SchemaMigrationsTable.version.eq(version)),
+      );
     });
     return version;
   }

@@ -7,12 +7,12 @@
 library;
 
 class SqlType<T> {
+  const SqlType(this.sqlName, this.encode, this.decode);
+
   /// SQLite storage class / column type keyword (`INTEGER`, `TEXT`, ...).
   final String sqlName;
   final Object? Function(T value) encode;
   final T Function(Object? raw) decode;
-
-  const SqlType(this.sqlName, this.encode, this.decode);
 
   static const SqlType<int> integer = SqlType('INTEGER', _encInt, _decInt);
   static const SqlType<String> text = SqlType('TEXT', _encString, _decString);
@@ -80,4 +80,6 @@ List<int>? _decBlobOrNull(Object? r) => r as List<int>?;
 Object? _encDateTimeOrNull(DateTime? v) => v;
 DateTime? _decDateTimeOrNull(Object? r) => r == null
     ? null
-    : (r is DateTime ? r : DateTime.fromMillisecondsSinceEpoch((r as num).toInt()));
+    : (r is DateTime
+        ? r
+        : DateTime.fromMillisecondsSinceEpoch((r as num).toInt()));

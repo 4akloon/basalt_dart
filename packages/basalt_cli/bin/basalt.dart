@@ -10,8 +10,11 @@ Future<void> main(List<String> args) async {
   } on UsageException catch (e) {
     stderr.writeln(e);
     exit(64);
-  } on StateError catch (e) {
-    stderr.writeln('Error: ${e.message}');
-    exit(1);
+  } catch (e) {
+    if (e is StateError) {
+      stderr.writeln('Error: ${e.message}');
+      exit(1);
+    }
+    rethrow;
   }
 }

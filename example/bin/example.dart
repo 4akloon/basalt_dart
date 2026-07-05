@@ -35,7 +35,8 @@ Future<void> _seed(Connection db) async {
 
     // A nested transaction becomes a SAVEPOINT under the hood.
     await tx.transaction((inner) async {
-      await inner.execute(const User(3, 'Dave', 25, 0, managerId: 1).toInsert());
+      await inner
+          .execute(const User(3, 'Dave', 25, 0, managerId: 1).toInsert());
     });
 
     for (final (id, author, title, views) in const [
@@ -43,11 +44,13 @@ Future<void> _seed(Connection db) async {
       (2, 3, 'World', 90), // by Dave (mgr Bob)
       (3, 2, 'Untitled', 5), // by Carol (no manager)
     ]) {
-      await tx.execute(insertInto(Posts.table)
-          .value(Posts.id.set(id))
-          .value(Posts.authorId.set(author))
-          .value(Posts.title.set(title))
-          .value(Posts.views.set(views)));
+      await tx.execute(
+        insertInto(Posts.table)
+            .value(Posts.id.set(id))
+            .value(Posts.authorId.set(author))
+            .value(Posts.title.set(title))
+            .value(Posts.views.set(views)),
+      );
     }
   });
 }
@@ -137,7 +140,8 @@ Future<void> _manualJoins(Connection db) async {
         .leftJoin(Users.table, onFk: Posts.authorId)
         .orderBy(Posts.id.asc())
         .map(
-            (r) => '${postMapper.read(r).title} <- ${userMapper.read(r).name}'),
+          (r) => '${postMapper.read(r).title} <- ${userMapper.read(r).name}',
+        ),
   );
   print('Every post with its author (leftJoin): $joined');
 

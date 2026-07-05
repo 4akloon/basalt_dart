@@ -2,10 +2,9 @@ part of '../write.dart';
 
 /// `DELETE FROM table WHERE ...`.
 final class DeleteStatement<Tbl> extends WriteStatement {
+  DeleteStatement(this.table);
   final String table;
   SqlNode? whereNode;
-
-  DeleteStatement(this.table);
 
   DeleteStatement<Tbl> where(Expression<bool, Tbl> predicate) {
     whereNode = predicate.node;

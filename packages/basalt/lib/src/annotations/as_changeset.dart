@@ -8,6 +8,6 @@ import '../schema/table.dart';
 ///
 /// Independent of `@Queryable`: a class can be `@AsChangeset` alone.
 class AsChangeset {
-  final TableRef table;
   const AsChangeset(this.table);
+  final TableRef table;
 }

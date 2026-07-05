@@ -1,11 +1,11 @@
 import 'package:basalt_codegen/src/queryable/column_arg.dart';
-import 'package:basalt_codegen/src/queryable/query_getter_emitter.dart';
 import 'package:basalt_codegen/src/queryable/find_emitter.dart';
+import 'package:basalt_codegen/src/queryable/query_getter_emitter.dart';
 import 'package:basalt_codegen/src/queryable/reader_emitter.dart';
 import 'package:basalt_codegen/src/queryable/relation_arg.dart';
-import 'package:basalt_codegen/src/queryable/select_query_emitter.dart';
 import 'package:basalt_codegen/src/queryable/relation_call_emitter.dart';
 import 'package:basalt_codegen/src/queryable/relation_edge.dart';
+import 'package:basalt_codegen/src/queryable/select_query_emitter.dart';
 import 'package:basalt_codegen/src/queryable/tree_node.dart';
 import 'package:test/test.dart';
 
@@ -45,9 +45,11 @@ void main() {
         relationArgs: const [],
       );
       expect(
-          code,
-          contains(
-              r'$UserFromRow(RowReader r, [QuerySource<Users> src = Users.table])'));
+        code,
+        contains(
+          r'$UserFromRow(RowReader r, [QuerySource<Users> src = Users.table])',
+        ),
+      );
       expect(code, contains('r.get(src.col(Users.id))'));
       expect(code, isNot(contains('budget')));
     });
@@ -63,9 +65,11 @@ void main() {
         ],
       );
       expect(
-          code,
-          contains(
-              r"$PostFromRow(RowReader r, [QuerySource<Posts> src = Posts.table, String prefix = '', int budget = 0])"));
+        code,
+        contains(
+          r"$PostFromRow(RowReader r, [QuerySource<Posts> src = Posts.table, String prefix = '', int budget = 0])",
+        ),
+      );
       expect(code, contains('author: AUTHOR_CALL'));
     });
   });
@@ -111,14 +115,18 @@ void main() {
         readerName: r'$UserSummaryFromRow',
         columnArgs: const [
           ColumnArg(paramName: 'id', isNamed: false, columnExpr: 'Users.id'),
-          ColumnArg(paramName: 'name', isNamed: false, columnExpr: 'Users.name'),
+          ColumnArg(
+              paramName: 'name', isNamed: false, columnExpr: 'Users.name',),
         ],
       );
-      expect(code, contains('MappedQuery<UserSummary> get userSummaryQuery =>'));
       expect(
-          code,
-          contains(
-              r'from(Users.table).select([Users.id, Users.name]).map($UserSummaryFromRow)'));
+          code, contains('MappedQuery<UserSummary> get userSummaryQuery =>'),);
+      expect(
+        code,
+        contains(
+          r'from(Users.table).select([Users.id, Users.name]).map($UserSummaryFromRow)',
+        ),
+      );
     });
 
     test('skips writeOnly columns', () {
@@ -130,10 +138,11 @@ void main() {
         columnArgs: const [
           ColumnArg(paramName: 'id', isNamed: false, columnExpr: 'Users.id'),
           ColumnArg(
-              paramName: 'secret',
-              isNamed: false,
-              columnExpr: 'Users.secret',
-              writeOnly: true),
+            paramName: 'secret',
+            isNamed: false,
+            columnExpr: 'Users.secret',
+            writeOnly: true,
+          ),
         ],
       );
       expect(code, contains('select([Users.id])'));
@@ -150,7 +159,7 @@ void main() {
         readerName: r'$PostFromRow',
         seedBudget: 2,
         treeNodes: [
-          TreeNode(
+          const TreeNode(
             edge: authorEdge,
             aliasPath: 'author',
             parentAliasPath: null,
@@ -163,9 +172,11 @@ void main() {
       expect(
         code,
         contains(
-            '.innerJoin(author, on: Posts.authorId.eqColumn(author.col(Users.id)))'),
+          '.innerJoin(author, on: Posts.authorId.eqColumn(author.col(Users.id)))',
+        ),
       );
-      expect(code, contains(r".map((r) => $PostFromRow(r, Posts.table, '', 2))"));
+      expect(
+          code, contains(r".map((r) => $PostFromRow(r, Posts.table, '', 2))"),);
     });
   });
 }

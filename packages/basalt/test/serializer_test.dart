@@ -68,10 +68,15 @@ void main() {
 
     test('IN, BETWEEN, IS NULL, bool encoding', () {
       final (sql, params) = compileSelect(
-        from(Users.table).select([Users.id]).where(Users.id
-            .isIn([1, 2, 3])
-            .and(Users.age.between(18, 65))
-            .and(Users.active.eq(true))).map(_ignore),
+        from(Users.table)
+            .select([Users.id])
+            .where(
+              Users.id
+                  .isIn([1, 2, 3])
+                  .and(Users.age.between(18, 65))
+                  .and(Users.active.eq(true)),
+            )
+            .map(_ignore),
       );
       expect(
         sql,
@@ -98,7 +103,9 @@ void main() {
   group('write serialization', () {
     test('INSERT', () {
       final (sql, params) = compileWrite(
-        insertInto(Users.table).value(Users.id.set(1)).value(Users.name.set('Bob')),
+        insertInto(Users.table)
+            .value(Users.id.set(1))
+            .value(Users.name.set('Bob')),
       );
       expect(sql, 'INSERT INTO "users" ("id", "name") VALUES (?, ?)');
       expect(params, [1, 'Bob']);
@@ -106,7 +113,9 @@ void main() {
 
     test('UPDATE with where', () {
       final (sql, params) = compileWrite(
-        update(Users.table).value(Users.age.set(31)).where(Users.name.eq('Bob')),
+        update(Users.table)
+            .value(Users.age.set(31))
+            .where(Users.name.eq('Bob')),
       );
       expect(sql, 'UPDATE "users" SET "age" = ? WHERE ("users"."name" = ?)');
       expect(params, [31, 'Bob']);
@@ -121,7 +130,9 @@ void main() {
 
     test('INSERT binds a null for a nullable column', () {
       final (sql, params) = compileWrite(
-        insertInto(Profiles.table).value(Profiles.id.set(1)).value(Profiles.bio.set(null)),
+        insertInto(Profiles.table)
+            .value(Profiles.id.set(1))
+            .value(Profiles.bio.set(null)),
       );
       expect(sql, 'INSERT INTO "profiles" ("id", "bio") VALUES (?, ?)');
       expect(params, [1, null]);
@@ -148,8 +159,8 @@ void main() {
             .value(Users.id.set(1))
             .value(Users.name.set('Bob'))
             .value(Users.age.set(30))
-            .onConflict([Users.id])
-            .doUpdate([Users.name.setToExcluded(), Users.age.set(99)]),
+            .onConflict([Users.id]).doUpdate(
+                [Users.name.setToExcluded(), Users.age.set(99)],),
       );
       expect(
         sql,
@@ -206,8 +217,7 @@ void main() {
       final (sql, _) = compileSelect(
         from(Posts.table)
             .innerJoin(Users.table, onFk: Posts.authorId)
-            .select([Posts.title, Users.name])
-            .map(_ignore),
+            .select([Posts.title, Users.name]).map(_ignore),
       );
       expect(
         sql,
@@ -220,8 +230,7 @@ void main() {
       final (sql, _) = compileSelect(
         from(Users.table)
             .leftJoin(Posts.table, on: Users.id.eqColumn(Posts.authorId))
-            .select([Users.name])
-            .map(_ignore),
+            .select([Users.name]).map(_ignore),
       );
       expect(
         sql,
@@ -235,8 +244,7 @@ void main() {
         from(Comments.table)
             .innerJoin(Posts.table, onFk: Comments.postId)
             .innerJoin(Users.table, onFk: Posts.authorId)
-            .select([Comments.body, Posts.title, Users.name])
-            .map(_ignore),
+            .select([Comments.body, Posts.title, Users.name]).map(_ignore),
       );
       expect(
         sql,
@@ -252,11 +260,17 @@ void main() {
       final recipient = Users.table.aliased('recipient');
       final (sql, _) = compileSelect(
         from(Messages.table)
-            .innerJoin(sender, on: Messages.senderId.eqColumn(sender.col(Users.id)))
-            .innerJoin(recipient,
-                on: Messages.recipientId.eqColumn(recipient.col(Users.id)))
-            .select([Messages.body, sender.col(Users.name), recipient.col(Users.name)])
-            .map(_ignore),
+            .innerJoin(sender,
+                on: Messages.senderId.eqColumn(sender.col(Users.id)),)
+            .innerJoin(
+              recipient,
+              on: Messages.recipientId.eqColumn(recipient.col(Users.id)),
+            )
+            .select([
+          Messages.body,
+          sender.col(Users.name),
+          recipient.col(Users.name),
+        ]).map(_ignore),
       );
       expect(
         sql,
@@ -335,8 +349,10 @@ void main() {
       final (sql, params) = compileSelect(
         from(Users.table).findBy(Users.id, 5).select([Users.name]).map(_ignore),
       );
-      expect(sql,
-          'SELECT "users"."name" FROM "users" WHERE ("users"."id" = ?)');
+      expect(
+        sql,
+        'SELECT "users"."name" FROM "users" WHERE ("users"."id" = ?)',
+      );
       expect(params, [5]);
     });
 
@@ -345,8 +361,7 @@ void main() {
         from(Users.table)
             .filter(Users.active.eq(true))
             .findBy(Users.id, 5)
-            .select([Users.name])
-            .map(_ignore),
+            .select([Users.name]).map(_ignore),
       );
       expect(
         sql,
@@ -384,9 +399,8 @@ void main() {
 
     test('column aggregates count/sum/avg', () {
       final (sql, _) = compileSelect(
-        from(Users.table)
-            .select([Users.age.count(), Users.age.sum(), Users.age.avg()])
-            .map(_ignore),
+        from(Users.table).select(
+            [Users.age.count(), Users.age.sum(), Users.age.avg()],).map(_ignore),
       );
       expect(
         sql,
@@ -397,7 +411,8 @@ void main() {
     });
 
     test('double-column aggregates use REAL', () {
-      const rating = ValueColumn<double, Posts>('posts', 'rating', SqlType.real);
+      const rating =
+          ValueColumn<double, Posts>('posts', 'rating', SqlType.real);
       final (sql, _) = compileSelect(
         from(Posts.table).select([rating.avg(), rating.max()]).map(_ignore),
       );
@@ -409,8 +424,8 @@ void main() {
     });
 
     test('raw() selection emits verbatim SQL, params ordered before WHERE', () {
-      final next =
-          raw<int>('"users"."age" + ?', SqlType.integer, as: 'next_age', params: [1]);
+      final next = raw<int>('"users"."age" + ?', SqlType.integer,
+          as: 'next_age', params: [1],);
       final (sql, params) = compileSelect(
         from(Users.table)
             .select([Users.id, next])

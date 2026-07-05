@@ -9,6 +9,14 @@ part 'post.g.dart';
 /// the cross-file `@Relation` and emits a self-contained `post.g.dart`.
 @Queryable(Posts.table)
 class Post {
+  /// Fully named constructor — `basalt_codegen` maps columns by name, so mixing
+  /// named (and positional) parameters works either way.
+  const Post({
+    required this.id,
+    required this.title,
+    required this.views,
+    this.author,
+  });
   final int id;
   final String title;
   final int views;
@@ -19,19 +27,11 @@ class Post {
   @Relation(Posts.authorId, depth: 2)
   final User? author;
 
-  /// Fully named constructor — `basalt_codegen` maps columns by name, so mixing
-  /// named (and positional) parameters works either way.
-  const Post({
-    required this.id,
-    required this.title,
-    required this.views,
-    this.author,
-  });
-
   @override
   String toString() {
     final by = author == null ? 'unknown' : author!.name;
-    final boss = author?.manager == null ? '' : ' (mgr: ${author!.manager!.name})';
+    final boss =
+        author?.manager == null ? '' : ' (mgr: ${author!.manager!.name})';
     return 'Post("$title", $views views, by $by$boss)';
   }
 }

@@ -8,8 +8,8 @@
 /// service (debug / `--observe`) and are absent from release builds.
 library;
 
-export 'src/devtools/column_filter.dart';
 export 'src/devtools/basalt_dev_tools.dart';
+export 'src/devtools/column_filter.dart';
 export 'src/devtools/dto/column_dto.dart';
 export 'src/devtools/dto/foreign_key_dto.dart';
 export 'src/devtools/dto/schema_dto.dart';

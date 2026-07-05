@@ -17,18 +17,65 @@ import 'package:basalt_sqlite/basalt_sqlite.dart';
 const _userCount = 100;
 
 const _firstNames = [
-  'Alice', 'Bob', 'Cara', 'Dan', 'Eve', 'Frank', 'Grace', 'Heidi', 'Ivan',
-  'Judy', 'Karl', 'Liam', 'Mallory', 'Nina', 'Olivia', 'Peggy', 'Quentin',
-  'Rupert', 'Sybil', 'Trent', 'Uma', 'Victor', 'Walter', 'Xena', 'Yara', 'Zoe',
+  'Alice',
+  'Bob',
+  'Cara',
+  'Dan',
+  'Eve',
+  'Frank',
+  'Grace',
+  'Heidi',
+  'Ivan',
+  'Judy',
+  'Karl',
+  'Liam',
+  'Mallory',
+  'Nina',
+  'Olivia',
+  'Peggy',
+  'Quentin',
+  'Rupert',
+  'Sybil',
+  'Trent',
+  'Uma',
+  'Victor',
+  'Walter',
+  'Xena',
+  'Yara',
+  'Zoe',
 ];
 const _lastNames = [
-  'Adams', 'Baker', 'Clark', 'Diaz', 'Evans', 'Ford', 'Green', 'Hughes',
-  'Ives', 'Jones', 'Khan', 'Lee', 'Moore', 'Novak', 'Owens', 'Price', 'Quinn',
-  'Reed', 'Stone', 'Turner',
+  'Adams',
+  'Baker',
+  'Clark',
+  'Diaz',
+  'Evans',
+  'Ford',
+  'Green',
+  'Hughes',
+  'Ives',
+  'Jones',
+  'Khan',
+  'Lee',
+  'Moore',
+  'Novak',
+  'Owens',
+  'Price',
+  'Quinn',
+  'Reed',
+  'Stone',
+  'Turner',
 ];
 const _titles = [
-  'Hello world', 'Getting started', 'Deep dive', 'Release notes',
-  'A retrospective', 'Tips & tricks', 'Postmortem', 'Roadmap', 'Q&A',
+  'Hello world',
+  'Getting started',
+  'Deep dive',
+  'Release notes',
+  'A retrospective',
+  'Tips & tricks',
+  'Postmortem',
+  'Roadmap',
+  'Q&A',
   'Changelog',
 ];
 
@@ -38,13 +85,18 @@ Future<void> main() async {
   final id = BasaltDevTools.register(conn, name: 'demo');
 
   const service = InspectorService();
-  final pretty = const JsonEncoder.withIndent('  ');
+  const pretty = JsonEncoder.withIndent('  ');
   stdout.writeln('instances: ${pretty.convert([
-        for (final i in await service.listInstances()) i.toJson()
+        for (final i in await service.listInstances()) i.toJson(),
       ])}');
   stdout.writeln('seeded: $_userCount users, $posts posts');
-  final sample = await service.getTableData(id,
-      table: 'users', limit: 3, orderBy: 'id', filters: const []);
+  final sample = await service.getTableData(
+    id,
+    table: 'users',
+    limit: 3,
+    orderBy: 'id',
+    filters: const [],
+  );
   stdout.writeln('first 3 users: ${pretty.convert(sample.rows)}');
 
   stdout.writeln('\nRegistered instance "$id". Open DevTools on this VM '
@@ -92,7 +144,7 @@ Future<int> _seed(SqliteConnection conn) async {
           '$first $last',
           email,
           18 + rng.nextInt(50), // age 18..67
-          rng.nextBool() ? 1 : 0, // active
+          if (rng.nextBool()) 1 else 0, // active
           base + i * 3600000 + rng.nextInt(3600000),
         ],
       );
@@ -100,7 +152,11 @@ Future<int> _seed(SqliteConnection conn) async {
         postCount++;
         await tx.executeSql(
           'INSERT INTO posts (user_id, title, views) VALUES (?, ?, ?)',
-          [i, '${_titles[rng.nextInt(_titles.length)]} #$postCount', rng.nextInt(1000)],
+          [
+            i,
+            '${_titles[rng.nextInt(_titles.length)]} #$postCount',
+            rng.nextInt(1000),
+          ],
         );
       }
     }

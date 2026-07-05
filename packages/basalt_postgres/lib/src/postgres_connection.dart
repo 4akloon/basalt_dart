@@ -9,11 +9,11 @@ import 'postgres_dialect.dart';
 /// [PostgresDialect] (`$N` placeholders) with the dialect-agnostic
 /// [QueryBuilder]; it implements the exact same interface as the SQLite backend.
 final class PostgresConnection implements Connection {
+
+  PostgresConnection._(this._conn, this._dialect);
   final pg.Connection _conn;
   final SqlDialect _dialect;
   int _txDepth = 0;
-
-  PostgresConnection._(this._conn, this._dialect);
 
   /// Opens a connection. Set [ssl] false for local/dev servers.
   static Future<PostgresConnection> open({
@@ -73,7 +73,7 @@ final class PostgresConnection implements Connection {
 
   @override
   Future<List<Map<String, Object?>>> queryRaw(String sql,
-      [List<Object?> params = const []]) async {
+      [List<Object?> params = const [],]) async {
     final result = params.isEmpty
         ? await _conn.execute(sql, queryMode: pg.QueryMode.simple)
         : await _conn.execute(sql, parameters: params);
@@ -109,7 +109,7 @@ final class PostgresConnection implements Connection {
   @override
   Future<List<IntrospectedTable>> introspect() async {
     final tableRows = await _conn.execute(
-      "SELECT table_name FROM information_schema.tables "
+      'SELECT table_name FROM information_schema.tables '
       "WHERE table_schema = 'public' AND table_type = 'BASE TABLE' "
       "AND table_name <> '__basalt_schema_migrations' ORDER BY table_name",
       queryMode: pg.QueryMode.simple,
@@ -120,34 +120,34 @@ final class PostgresConnection implements Connection {
       final tableName = tableRow[0]! as String;
 
       final columnRows = await _conn.execute(
-        r'SELECT column_name, data_type, is_nullable '
-        r'FROM information_schema.columns '
+        'SELECT column_name, data_type, is_nullable '
+        'FROM information_schema.columns '
         r'WHERE table_schema = $1 AND table_name = $2 ORDER BY ordinal_position',
         parameters: ['public', tableName],
       );
 
       final pkRows = await _conn.execute(
-        r'SELECT kcu.column_name FROM information_schema.table_constraints tc '
-        r'JOIN information_schema.key_column_usage kcu '
-        r'  ON tc.constraint_name = kcu.constraint_name '
-        r'  AND tc.table_schema = kcu.table_schema '
+        'SELECT kcu.column_name FROM information_schema.table_constraints tc '
+        'JOIN information_schema.key_column_usage kcu '
+        '  ON tc.constraint_name = kcu.constraint_name '
+        '  AND tc.table_schema = kcu.table_schema '
         r'WHERE tc.table_schema = $1 AND tc.table_name = $2 '
-        r"AND tc.constraint_type = 'PRIMARY KEY'",
+        "AND tc.constraint_type = 'PRIMARY KEY'",
         parameters: ['public', tableName],
       );
       final pks = {for (final r in pkRows) r[0]! as String};
 
       final fkRows = await _conn.execute(
-        r'SELECT kcu.column_name, ccu.table_name, ccu.column_name '
-        r'FROM information_schema.table_constraints tc '
-        r'JOIN information_schema.key_column_usage kcu '
-        r'  ON tc.constraint_name = kcu.constraint_name '
-        r'  AND tc.table_schema = kcu.table_schema '
-        r'JOIN information_schema.constraint_column_usage ccu '
-        r'  ON ccu.constraint_name = tc.constraint_name '
-        r'  AND ccu.table_schema = tc.table_schema '
+        'SELECT kcu.column_name, ccu.table_name, ccu.column_name '
+        'FROM information_schema.table_constraints tc '
+        'JOIN information_schema.key_column_usage kcu '
+        '  ON tc.constraint_name = kcu.constraint_name '
+        '  AND tc.table_schema = kcu.table_schema '
+        'JOIN information_schema.constraint_column_usage ccu '
+        '  ON ccu.constraint_name = tc.constraint_name '
+        '  AND ccu.table_schema = tc.table_schema '
         r'WHERE tc.table_schema = $1 AND tc.table_name = $2 '
-        r"AND tc.constraint_type = 'FOREIGN KEY'",
+        "AND tc.constraint_type = 'FOREIGN KEY'",
         parameters: ['public', tableName],
       );
       final fkByColumn = <String, ForeignKey>{
@@ -165,7 +165,7 @@ final class PostgresConnection implements Connection {
             isPrimaryKey: pks.contains(c[0]! as String),
             foreignKey: fkByColumn[c[0]! as String],
           ),
-      ]));
+      ]),);
     }
     return tables;
   }

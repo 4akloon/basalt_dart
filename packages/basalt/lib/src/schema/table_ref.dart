@@ -4,10 +4,10 @@ part of 'table.dart';
 /// `from`/joins). Cycle-safe even with foreign keys because [Ref] points at a
 /// [PrimaryKey] leaf, not back at a `TableRef`.
 final class TableRef<Tbl> implements QuerySource<Tbl> {
+  const TableRef(this.name, this.columns);
   final String name;
   @override
   final List<TableColumn<Object?, Object?>> columns;
-  const TableRef(this.name, this.columns);
 
   @override
   String get table => name;

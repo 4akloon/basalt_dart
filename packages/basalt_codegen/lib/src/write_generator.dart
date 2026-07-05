@@ -1,6 +1,6 @@
 import 'package:analyzer/dart/element/element.dart';
-import 'package:build/build.dart';
 import 'package:basalt/basalt.dart';
+import 'package:build/build.dart';
 import 'package:source_gen/source_gen.dart';
 
 import 'queryable/changeset_emitter.dart';
@@ -14,18 +14,23 @@ class InsertableGenerator extends GeneratorForAnnotation<Insertable> {
 
   @override
   Iterable<String> generateForAnnotatedElement(
-      Element element, ConstantReader annotation, BuildStep buildStep) {
+    Element element,
+    ConstantReader annotation,
+    BuildStep buildStep,
+  ) {
     if (element is! ClassElement) {
       throw InvalidGenerationSourceError(
-          '@Insertable can only be applied to classes.',
-          element: element);
+        '@Insertable can only be applied to classes.',
+        element: element,
+      );
     }
     const analyzer = EdgeAnalyzer();
     final marker = analyzer.tableMarkerOf(element, insertableChecker);
     if (marker == null) {
       throw InvalidGenerationSourceError(
-          '@Insertable(table) must reference a TableRef (e.g. Users.table).',
-          element: element);
+        '@Insertable(table) must reference a TableRef (e.g. Users.table).',
+        element: element,
+      );
     }
     return [
       const InsertEmitter().emit(
@@ -43,18 +48,23 @@ class AsChangesetGenerator extends GeneratorForAnnotation<AsChangeset> {
 
   @override
   Iterable<String> generateForAnnotatedElement(
-      Element element, ConstantReader annotation, BuildStep buildStep) {
+    Element element,
+    ConstantReader annotation,
+    BuildStep buildStep,
+  ) {
     if (element is! ClassElement) {
       throw InvalidGenerationSourceError(
-          '@AsChangeset can only be applied to classes.',
-          element: element);
+        '@AsChangeset can only be applied to classes.',
+        element: element,
+      );
     }
     const analyzer = EdgeAnalyzer();
     final marker = analyzer.tableMarkerOf(element, asChangesetChecker);
     if (marker == null) {
       throw InvalidGenerationSourceError(
-          '@AsChangeset(table) must reference a TableRef (e.g. Users.table).',
-          element: element);
+        '@AsChangeset(table) must reference a TableRef (e.g. Users.table).',
+        element: element,
+      );
     }
     return [
       const ChangesetEmitter().emit(

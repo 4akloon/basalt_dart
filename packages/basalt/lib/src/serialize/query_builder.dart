@@ -11,11 +11,10 @@ typedef CompiledQuery = (String sql, List<Object?> params);
 /// Pure string/value transformation — it never touches a database driver,
 /// which keeps serialization trivially unit-testable.
 final class QueryBuilder {
+  QueryBuilder(this.dialect);
   final SqlDialect dialect;
   final StringBuffer _sql = StringBuffer();
   final List<Object?> _params = [];
-
-  QueryBuilder(this.dialect);
 
   CompiledQuery buildSelect(SelectQuery<dynamic> stmt) {
     _validateScope(stmt);
@@ -42,10 +41,12 @@ final class QueryBuilder {
     }
     for (final join in stmt.joins) {
       _sql
-        ..write(switch (join.kind) {
-          JoinKind.inner => ' INNER JOIN ',
-          JoinKind.left => ' LEFT JOIN ',
-        })
+        ..write(
+          switch (join.kind) {
+            JoinKind.inner => ' INNER JOIN ',
+            JoinKind.left => ' LEFT JOIN ',
+          },
+        )
         ..write(dialect.quoteIdentifier(join.table));
       if (join.alias case final alias?) {
         _sql
@@ -69,9 +70,11 @@ final class QueryBuilder {
     }
     if (stmt.orderings.isNotEmpty) {
       _sql.write(' ORDER BY ');
-      _sql.write(stmt.orderings
-          .map((o) => '${_column(o.column)} ${o.ascending ? 'ASC' : 'DESC'}')
-          .join(', '));
+      _sql.write(
+        stmt.orderings
+            .map((o) => '${_column(o.column)} ${o.ascending ? 'ASC' : 'DESC'}')
+            .join(', '),
+      );
     }
     if (stmt.limitCount case final limit?) {
       _sql
@@ -147,8 +150,10 @@ final class QueryBuilder {
 
   /// Serializes a write, optionally appending a `RETURNING` clause (its columns
   /// are referenced unqualified, as SQLite requires).
-  CompiledQuery buildWrite(WriteStatement stmt,
-      {List<Projection> returning = const []}) {
+  CompiledQuery buildWrite(
+    WriteStatement stmt, {
+    List<Projection> returning = const [],
+  }) {
     switch (stmt) {
       case InsertStatement():
         _writeInsert(stmt);
@@ -185,7 +190,8 @@ final class QueryBuilder {
       for (final row in stmt.rows) '(${row.map(_bind).join(', ')})',
     ].join(', ');
     _sql.write(
-        'INSERT INTO ${dialect.quoteIdentifier(stmt.table)} ($cols) VALUES $tuples');
+      'INSERT INTO ${dialect.quoteIdentifier(stmt.table)} ($cols) VALUES $tuples',
+    );
     if (stmt.conflictTarget case final target?) {
       _sql.write(' ON CONFLICT');
       if (target.isNotEmpty) {
@@ -217,7 +223,8 @@ final class QueryBuilder {
       for (var i = 0; i < stmt.assignColumns.length; i++)
         '${dialect.quoteIdentifier(stmt.assignColumns[i])} = ${_bind(stmt.assignValues[i])}',
     ].join(', ');
-    _sql.write('UPDATE ${dialect.quoteIdentifier(stmt.table)} SET $assignments');
+    _sql.write(
+        'UPDATE ${dialect.quoteIdentifier(stmt.table)} SET $assignments',);
     if (stmt.whereNode case final where?) {
       _sql.write(' WHERE ');
       _writeNode(where);

@@ -2,15 +2,6 @@ import 'foreign_key_dto.dart';
 
 /// A table column in the transport model.
 final class ColumnDto {
-  final String name;
-
-  /// Canonical [ColumnType] name (e.g. `integer`, `text`, `dateTime`).
-  final String type;
-  final String rawType;
-  final bool isNullable;
-  final bool isPrimaryKey;
-  final ForeignKeyDto? foreignKey;
-
   const ColumnDto({
     required this.name,
     required this.type,
@@ -19,6 +10,14 @@ final class ColumnDto {
     required this.isPrimaryKey,
     this.foreignKey,
   });
+  final String name;
+
+  /// Canonical [ColumnType] name (e.g. `integer`, `text`, `dateTime`).
+  final String type;
+  final String rawType;
+  final bool isNullable;
+  final bool isPrimaryKey;
+  final ForeignKeyDto? foreignKey;
 
   Map<String, Object?> toJson() => {
         'name': name,

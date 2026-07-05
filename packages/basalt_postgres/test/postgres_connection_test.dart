@@ -19,7 +19,7 @@ abstract final class Parts {
   static const id = PrimaryKey<int, Parts>('parts', 'id', SqlType.integer);
   static const widgetId = Ref<int, Parts, Widgets>(
       'parts', 'widget_id', SqlType.integer,
-      references: Widgets.id);
+      references: Widgets.id,);
   static const label = ValueColumn<String, Parts>('parts', 'label', SqlType.text);
   static const table = TableRef<Parts>('parts', [id, widgetId, label]);
 }
@@ -83,7 +83,7 @@ void main() {
     await db.execute(insertInto(Widgets.table).values([
       [Widgets.id.set(1), Widgets.name.set('a'), Widgets.qty.set(10)],
       [Widgets.id.set(2), Widgets.name.set('b'), Widgets.qty.set(20)],
-    ]));
+    ]),);
     final names = await from(Widgets.table)
         .where(Widgets.qty.ge(15))
         .order(Widgets.name.asc())
@@ -97,13 +97,13 @@ void main() {
     await db.execute(insertInto(Widgets.table)
         .value(Widgets.id.set(1))
         .value(Widgets.name.set('a'))
-        .value(Widgets.qty.set(1)));
+        .value(Widgets.qty.set(1)),);
     expect(
         await db.execute(
-            update(Widgets.table).value(Widgets.qty.set(5)).where(Widgets.id.eq(1))),
-        1);
+            update(Widgets.table).value(Widgets.qty.set(5)).where(Widgets.id.eq(1)),),
+        1,);
     expect(
-        await db.execute(deleteFrom(Widgets.table).where(Widgets.qty.lt(10))), 1);
+        await db.execute(deleteFrom(Widgets.table).where(Widgets.qty.lt(10))), 1,);
   });
 
   test('RETURNING surfaces columns', () async {
@@ -114,7 +114,7 @@ void main() {
           .value(Widgets.name.set('x'))
           .value(Widgets.qty.set(3))
           .returning([Widgets.id, Widgets.qty]).map(
-              (r) => (r.get(Widgets.id), r.get(Widgets.qty))),
+              (r) => (r.get(Widgets.id), r.get(Widgets.qty)),),
     );
     expect(rows, [(7, 3)]);
   });
@@ -124,16 +124,16 @@ void main() {
     await db.execute(insertInto(Widgets.table).values([
       [Widgets.id.set(1), Widgets.name.set('a'), Widgets.qty.set(10)],
       [Widgets.id.set(2), Widgets.name.set('b'), Widgets.qty.set(20)],
-    ]));
+    ]),);
     final total = Widgets.qty.sum();
     expect(
         await from(Widgets.table).select([total]).map((r) => r.get(total)).first(db),
-        30);
+        30,);
 
     await db.execute(insertInto(Parts.table)
         .value(Parts.id.set(1))
         .value(Parts.widgetId.set(1))
-        .value(Parts.label.set('p1')));
+        .value(Parts.label.set('p1')),);
     final joined = await from(Parts.table)
         .innerJoin(Widgets.table, onFk: Parts.widgetId)
         .map((r) => '${r.get(Parts.label)}@${r.get(Widgets.name)}')
@@ -148,7 +148,7 @@ void main() {
         await tx.execute(insertInto(Widgets.table)
             .value(Widgets.id.set(99))
             .value(Widgets.name.set('temp'))
-            .value(Widgets.qty.set(1)));
+            .value(Widgets.qty.set(1)),);
         throw StateError('boom');
       }),
       throwsStateError,
@@ -168,7 +168,7 @@ void main() {
     await db.execute(insertInto(Flags.table).values([
       [Flags.id.set(1), Flags.active.set(true), Flags.createdAt.set(ts)],
       [Flags.id.set(2), Flags.active.set(false), Flags.createdAt.set(ts)],
-    ]));
+    ]),);
 
     // Native boolean predicate + decode.
     final activeIds = await from(Flags.table)
@@ -192,7 +192,7 @@ void main() {
     expect(widgets.columns.map((c) => c.name), ['id', 'name', 'qty']);
     expect(widgets.columns.firstWhere((c) => c.name == 'id').isPrimaryKey, isTrue);
     expect(widgets.columns.firstWhere((c) => c.name == 'id').type,
-        ColumnType.integer);
+        ColumnType.integer,);
 
     final parts = tables.firstWhere((t) => t.name == 'parts');
     final fk = parts.columns.firstWhere((c) => c.name == 'widget_id').foreignKey;

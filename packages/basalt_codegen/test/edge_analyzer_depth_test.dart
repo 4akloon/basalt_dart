@@ -7,10 +7,14 @@ void main() {
   group('validateRelationDepth', () {
     test('rejects depth < 1', () {
       final element = _FakeElement();
-      expect(() => validateRelationDepth(0, element),
-          throwsA(isA<InvalidGenerationSourceError>()));
-      expect(() => validateRelationDepth(-1, element),
-          throwsA(isA<InvalidGenerationSourceError>()));
+      expect(
+        () => validateRelationDepth(0, element),
+        throwsA(isA<InvalidGenerationSourceError>()),
+      );
+      expect(
+        () => validateRelationDepth(-1, element),
+        throwsA(isA<InvalidGenerationSourceError>()),
+      );
     });
 
     test('accepts depth >= 1', () {

@@ -16,12 +16,6 @@ import 'select_query_emitter.dart';
 /// nothing is regenerated per consumer. That is what keeps split-file models
 /// free of duplicated reader functions.
 final class ModelCodeGenerator {
-  final ReaderEmitter readerEmitter;
-  final QueryGetterEmitter queryGetterEmitter;
-  final RelationCallEmitter relationCalls;
-  final SelectQueryEmitter selectQueryEmitter;
-  final FindEmitter findEmitter;
-
   const ModelCodeGenerator({
     this.readerEmitter = const ReaderEmitter(),
     this.queryGetterEmitter = const QueryGetterEmitter(),
@@ -29,6 +23,11 @@ final class ModelCodeGenerator {
     this.selectQueryEmitter = const SelectQueryEmitter(),
     this.findEmitter = const FindEmitter(),
   });
+  final ReaderEmitter readerEmitter;
+  final QueryGetterEmitter queryGetterEmitter;
+  final RelationCallEmitter relationCalls;
+  final SelectQueryEmitter selectQueryEmitter;
+  final FindEmitter findEmitter;
 
   List<String> generate(QueryableModel model) {
     final root = model.root;
@@ -43,15 +42,18 @@ final class ModelCodeGenerator {
 
     // The class's own public, reusable reader + mapper. Relations recurse into
     // the targets' public readers (resolved across libraries via import).
-    units.add(readerEmitter.emit(
-      className: className,
-      readerName: readerName,
-      tableMarker: root.tableMarker,
-      columnArgs: root.columnArgs,
-      relationArgs: relationCalls.forReader(root.ownEdges, hasRelations),
-    ));
     units.add(
-        'const ${lowerFirst(className)}Mapper = RowMapper<$className>($readerName);');
+      readerEmitter.emit(
+        className: className,
+        readerName: readerName,
+        tableMarker: root.tableMarker,
+        columnArgs: root.columnArgs,
+        relationArgs: relationCalls.forReader(root.ownEdges, hasRelations),
+      ),
+    );
+    units.add(
+      'const ${lowerFirst(className)}Mapper = RowMapper<$className>($readerName);',
+    );
 
     // A self-mapping join query getter for this class's relations.
     if (root.ownEdges.isNotEmpty) {
@@ -60,39 +62,44 @@ final class ModelCodeGenerator {
           infos[cls]?.ownEdges ?? const <RelationEdge>[];
       final treeNodes = RelationTreeBuilder(edgesOf).unrollRoots(root.ownEdges);
       // One runtime budget seeds the whole tree; the deepest root relation wins.
-      final seedBudget = root.ownEdges
-          .map((e) => e.depth)
-          .reduce((a, b) => a > b ? a : b);
+      final seedBudget =
+          root.ownEdges.map((e) => e.depth).reduce((a, b) => a > b ? a : b);
 
-      units.add(queryGetterEmitter.emit(
-        className: className,
-        queryName: queryName,
-        tableMarker: root.tableMarker,
-        readerName: readerName,
-        seedBudget: seedBudget,
-        treeNodes: treeNodes,
-      ));
+      units.add(
+        queryGetterEmitter.emit(
+          className: className,
+          queryName: queryName,
+          tableMarker: root.tableMarker,
+          readerName: readerName,
+          seedBudget: seedBudget,
+          treeNodes: treeNodes,
+        ),
+      );
     } else {
       // No relations: a select-narrowing getter that reads just this class's
       // columns (Selectable-style subset projection).
-      units.add(selectQueryEmitter.emit(
-        className: className,
-        queryName: '${lowerFirst(className)}Query',
-        tableMarker: root.tableMarker,
-        readerName: readerName,
-        columnArgs: root.columnArgs,
-      ));
+      units.add(
+        selectQueryEmitter.emit(
+          className: className,
+          queryName: '${lowerFirst(className)}Query',
+          tableMarker: root.tableMarker,
+          readerName: readerName,
+          columnArgs: root.columnArgs,
+        ),
+      );
     }
 
     // Bare find-by-primary-key, when the class maps a PrimaryKey column.
     if (root.pkColumnExpr case final pkExpr? when root.pkType != null) {
-      units.add(findEmitter.emit(
-        className: className,
-        findName: 'find$className',
-        queryName: '${lowerFirst(className)}Query',
-        pkColumnExpr: pkExpr,
-        pkType: root.pkType!,
-      ));
+      units.add(
+        findEmitter.emit(
+          className: className,
+          findName: 'find$className',
+          queryName: '${lowerFirst(className)}Query',
+          pkColumnExpr: pkExpr,
+          pkType: root.pkType!,
+        ),
+      );
     }
 
     return units;

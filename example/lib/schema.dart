@@ -17,4 +17,3 @@ abstract final class Users {
   static const managerId = Ref<int?, Users, Users>('users', 'manager_id', SqlType.integerOrNull, references: Users.id);
   static const table = TableRef<Users>('users', [id, name, age, active, managerId]);
 }
-
