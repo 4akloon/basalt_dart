@@ -20,6 +20,7 @@ export 'src/query/row_reader.dart';
 export 'src/query/write.dart';
 export 'src/schema/introspection.dart';
 export 'src/schema/table.dart';
+export 'src/serial_lock.dart';
 export 'src/serialize/query_builder.dart' show CompiledQuery, QueryBuilder;
 export 'src/serialize/sql_dialect.dart';
 export 'src/types/sql_type.dart';

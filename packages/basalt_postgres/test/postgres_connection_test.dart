@@ -162,6 +162,115 @@ void main() {
     );
   });
 
+  test('parallel transactions are serialized; failure does not clobber commit',
+      () async {
+    if (skip()) return;
+    // A inserts, yields, then fails -> rolls back only its own row.
+    final a = db.transaction((tx) async {
+      await tx.execute(insertInto(Widgets.table)
+          .value(Widgets.id.set(1))
+          .value(Widgets.name.set('a'))
+          .value(Widgets.qty.set(1)),);
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+      throw StateError('boom');
+    });
+    // B starts while A is pending, inserts, commits.
+    final b = db.transaction((tx) async {
+      await Future<void>.delayed(const Duration(milliseconds: 5));
+      await tx.execute(insertInto(Widgets.table)
+          .value(Widgets.id.set(2))
+          .value(Widgets.name.set('b'))
+          .value(Widgets.qty.set(2)),);
+      return 'ok';
+    });
+
+    await expectLater(a, throwsStateError);
+    expect(await b, 'ok');
+
+    final ids = await from(Widgets.table)
+        .order(Widgets.id.asc())
+        .map((r) => r.get(Widgets.id))
+        .load(db);
+    expect(ids, [2]);
+  });
+
+  test('nested savepoint rolls back inner only', () async {
+    if (skip()) return;
+    await db.transaction((tx) async {
+      await tx.execute(insertInto(Widgets.table)
+          .value(Widgets.id.set(1))
+          .value(Widgets.name.set('outer'))
+          .value(Widgets.qty.set(1)),);
+      try {
+        await tx.transaction((inner) async {
+          await inner.execute(insertInto(Widgets.table)
+              .value(Widgets.id.set(2))
+              .value(Widgets.name.set('inner'))
+              .value(Widgets.qty.set(2)),);
+          throw Exception('inner boom');
+        });
+      } on Exception {
+        // swallow: outer continues
+      }
+    });
+
+    final ids = await from(Widgets.table)
+        .order(Widgets.id.asc())
+        .map((r) => r.get(Widgets.id))
+        .load(db);
+    expect(ids, [1]);
+  });
+
+  test('parallel nested siblings: one rolls back without clobbering the other',
+      () async {
+    if (skip()) return;
+    await db.transaction((tx) async {
+      final a = () async {
+        try {
+          await tx.transaction((a) async {
+            await a.execute(insertInto(Widgets.table)
+                .value(Widgets.id.set(1))
+                .value(Widgets.name.set('a'))
+                .value(Widgets.qty.set(1)),);
+            await Future<void>.delayed(const Duration(milliseconds: 5));
+            throw Exception('a fails');
+          });
+        } on Exception {
+          // swallow: only A rolls back
+        }
+      }();
+      final b = tx.transaction((b) async {
+        await Future<void>.delayed(const Duration(milliseconds: 20));
+        await b.execute(insertInto(Widgets.table)
+            .value(Widgets.id.set(2))
+            .value(Widgets.name.set('b'))
+            .value(Widgets.qty.set(2)),);
+      });
+      await Future.wait([a, b]);
+    });
+
+    final ids = await from(Widgets.table)
+        .order(Widgets.id.asc())
+        .map((r) => r.get(Widgets.id))
+        .load(db);
+    expect(ids, [2]);
+  });
+
+  test('using a tx handle after its block throws', () async {
+    if (skip()) return;
+    late Connection escaped;
+    await db.transaction((tx) async {
+      escaped = tx;
+    });
+    await expectLater(
+      escaped.execute(insertInto(Widgets.table)
+          .value(Widgets.id.set(1))
+          .value(Widgets.name.set('leaked'))
+          .value(Widgets.qty.set(1)),),
+      throwsStateError,
+    );
+  });
+
   test('native bool + timestamp columns round-trip', () async {
     if (skip()) return;
     final ts = DateTime.utc(2024, 1, 15, 12, 30, 45);
