@@ -2,65 +2,65 @@
 import 'package:basalt/basalt.dart';
 
 abstract final class Addresses {
-  static const id = PrimaryKey<int, Addresses>('addresses', 'id', SqlType.integer);
-  static const customerId = Ref<int, Addresses, Customers>('addresses', 'customer_id', SqlType.integer, references: Customers.id);
-  static const label = ValueColumn<String, Addresses>('addresses', 'label', SqlType.text);
-  static const city = ValueColumn<String, Addresses>('addresses', 'city', SqlType.text);
-  static const street = ValueColumn<String, Addresses>('addresses', 'street', SqlType.text);
+  static const id = PrimaryKey<int, Addresses>('addresses', 'id', IntSqlType());
+  static const customerId = Ref<int, Addresses, Customers>('addresses', 'customer_id', IntSqlType(), references: Customers.id);
+  static const label = ValueColumn<String, Addresses>('addresses', 'label', StringSqlType());
+  static const city = ValueColumn<String, Addresses>('addresses', 'city', StringSqlType());
+  static const street = ValueColumn<String, Addresses>('addresses', 'street', StringSqlType());
   static const table = TableRef<Addresses>('addresses', [id, customerId, label, city, street]);
 }
 
 abstract final class Categories {
-  static const id = PrimaryKey<int, Categories>('categories', 'id', SqlType.integer);
-  static const name = ValueColumn<String, Categories>('categories', 'name', SqlType.text);
-  static const parentId = Ref<int?, Categories, Categories>('categories', 'parent_id', SqlType.integerOrNull, references: Categories.id);
+  static const id = PrimaryKey<int, Categories>('categories', 'id', IntSqlType());
+  static const name = ValueColumn<String, Categories>('categories', 'name', StringSqlType());
+  static const parentId = Ref<int?, Categories, Categories>('categories', 'parent_id', IntOrNullSqlType(), references: Categories.id);
   static const table = TableRef<Categories>('categories', [id, name, parentId]);
 }
 
 abstract final class Customers {
-  static const id = PrimaryKey<int, Customers>('customers', 'id', SqlType.integer);
-  static const name = ValueColumn<String, Customers>('customers', 'name', SqlType.text);
-  static const email = ValueColumn<String, Customers>('customers', 'email', SqlType.text);
-  static const loyaltyTier = ValueColumn<String, Customers>('customers', 'loyalty_tier', SqlType.text);
-  static const createdAt = ValueColumn<int, Customers>('customers', 'created_at', SqlType.integer);
+  static const id = PrimaryKey<int, Customers>('customers', 'id', IntSqlType());
+  static const name = ValueColumn<String, Customers>('customers', 'name', StringSqlType());
+  static const email = ValueColumn<String, Customers>('customers', 'email', StringSqlType());
+  static const loyaltyTier = ValueColumn<String, Customers>('customers', 'loyalty_tier', StringSqlType());
+  static const createdAt = ValueColumn<int, Customers>('customers', 'created_at', IntSqlType());
   static const table = TableRef<Customers>('customers', [id, name, email, loyaltyTier, createdAt]);
 }
 
 abstract final class OrderItems {
-  static const id = PrimaryKey<int, OrderItems>('order_items', 'id', SqlType.integer);
-  static const orderId = Ref<int, OrderItems, Orders>('order_items', 'order_id', SqlType.integer, references: Orders.id);
-  static const productId = Ref<int, OrderItems, Products>('order_items', 'product_id', SqlType.integer, references: Products.id);
-  static const quantity = ValueColumn<int, OrderItems>('order_items', 'quantity', SqlType.integer);
-  static const unitPrice = ValueColumn<double, OrderItems>('order_items', 'unit_price', SqlType.real);
+  static const id = PrimaryKey<int, OrderItems>('order_items', 'id', IntSqlType());
+  static const orderId = Ref<int, OrderItems, Orders>('order_items', 'order_id', IntSqlType(), references: Orders.id);
+  static const productId = Ref<int, OrderItems, Products>('order_items', 'product_id', IntSqlType(), references: Products.id);
+  static const quantity = ValueColumn<int, OrderItems>('order_items', 'quantity', IntSqlType());
+  static const unitPrice = ValueColumn<double, OrderItems>('order_items', 'unit_price', DoubleSqlType());
   static const table = TableRef<OrderItems>('order_items', [id, orderId, productId, quantity, unitPrice]);
 }
 
 abstract final class Orders {
-  static const id = PrimaryKey<int, Orders>('orders', 'id', SqlType.integer);
-  static const customerId = Ref<int, Orders, Customers>('orders', 'customer_id', SqlType.integer, references: Customers.id);
-  static const status = ValueColumn<String, Orders>('orders', 'status', SqlType.text);
-  static const shippingAddressId = Ref<int?, Orders, Addresses>('orders', 'shipping_address_id', SqlType.integerOrNull, references: Addresses.id);
-  static const createdAt = ValueColumn<int, Orders>('orders', 'created_at', SqlType.integer);
+  static const id = PrimaryKey<int, Orders>('orders', 'id', IntSqlType());
+  static const customerId = Ref<int, Orders, Customers>('orders', 'customer_id', IntSqlType(), references: Customers.id);
+  static const status = ValueColumn<String, Orders>('orders', 'status', StringSqlType());
+  static const shippingAddressId = Ref<int?, Orders, Addresses>('orders', 'shipping_address_id', IntOrNullSqlType(), references: Addresses.id);
+  static const createdAt = ValueColumn<int, Orders>('orders', 'created_at', IntSqlType());
   static const table = TableRef<Orders>('orders', [id, customerId, status, shippingAddressId, createdAt]);
 }
 
 abstract final class Products {
-  static const id = PrimaryKey<int, Products>('products', 'id', SqlType.integer);
-  static const name = ValueColumn<String, Products>('products', 'name', SqlType.text);
-  static const description = ValueColumn<String, Products>('products', 'description', SqlType.text);
-  static const price = ValueColumn<double, Products>('products', 'price', SqlType.real);
-  static const stock = ValueColumn<int, Products>('products', 'stock', SqlType.integer);
-  static const categoryId = Ref<int, Products, Categories>('products', 'category_id', SqlType.integer, references: Categories.id);
-  static const isActive = ValueColumn<int, Products>('products', 'is_active', SqlType.integer);
+  static const id = PrimaryKey<int, Products>('products', 'id', IntSqlType());
+  static const name = ValueColumn<String, Products>('products', 'name', StringSqlType());
+  static const description = ValueColumn<String, Products>('products', 'description', StringSqlType());
+  static const price = ValueColumn<double, Products>('products', 'price', DoubleSqlType());
+  static const stock = ValueColumn<int, Products>('products', 'stock', IntSqlType());
+  static const categoryId = Ref<int, Products, Categories>('products', 'category_id', IntSqlType(), references: Categories.id);
+  static const isActive = ValueColumn<int, Products>('products', 'is_active', IntSqlType());
   static const table = TableRef<Products>('products', [id, name, description, price, stock, categoryId, isActive]);
 }
 
 abstract final class Reviews {
-  static const id = PrimaryKey<int, Reviews>('reviews', 'id', SqlType.integer);
-  static const productId = Ref<int, Reviews, Products>('reviews', 'product_id', SqlType.integer, references: Products.id);
-  static const customerId = Ref<int, Reviews, Customers>('reviews', 'customer_id', SqlType.integer, references: Customers.id);
-  static const rating = ValueColumn<int, Reviews>('reviews', 'rating', SqlType.integer);
-  static const comment = ValueColumn<String?, Reviews>('reviews', 'comment', SqlType.textOrNull);
-  static const createdAt = ValueColumn<int, Reviews>('reviews', 'created_at', SqlType.integer);
+  static const id = PrimaryKey<int, Reviews>('reviews', 'id', IntSqlType());
+  static const productId = Ref<int, Reviews, Products>('reviews', 'product_id', IntSqlType(), references: Products.id);
+  static const customerId = Ref<int, Reviews, Customers>('reviews', 'customer_id', IntSqlType(), references: Customers.id);
+  static const rating = ValueColumn<int, Reviews>('reviews', 'rating', IntSqlType());
+  static const comment = ValueColumn<String?, Reviews>('reviews', 'comment', StringOrNullSqlType());
+  static const createdAt = ValueColumn<int, Reviews>('reviews', 'created_at', IntSqlType());
   static const table = TableRef<Reviews>('reviews', [id, productId, customerId, rating, comment, createdAt]);
 }

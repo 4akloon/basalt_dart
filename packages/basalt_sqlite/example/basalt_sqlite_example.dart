@@ -5,9 +5,9 @@ import 'package:basalt_sqlite/basalt_sqlite.dart';
 /// file exactly like this from the migrated database.
 abstract final class Users {
   static const _t = 'users';
-  static const id = PrimaryKey<int, Users>(_t, 'id', SqlType.integer);
-  static const name = ValueColumn<String, Users>(_t, 'name', SqlType.text);
-  static const age = ValueColumn<int, Users>(_t, 'age', SqlType.integer);
+  static const id = PrimaryKey<int, Users>(_t, 'id', IntSqlType());
+  static const name = ValueColumn<String, Users>(_t, 'name', StringSqlType());
+  static const age = ValueColumn<int, Users>(_t, 'age', IntSqlType());
   static const table = TableRef<Users>(_t, [id, name, age]);
 }
 

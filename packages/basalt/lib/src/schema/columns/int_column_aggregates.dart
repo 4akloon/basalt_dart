@@ -4,11 +4,11 @@ part of '../table.dart';
 /// set, so these decode to nullable Dart types.
 extension IntColumnAggregates<Tbl> on TableColumn<int, Tbl> {
   Aggregate<int?> sum() =>
-      Aggregate('SUM', node, 'sum_$name', SqlType.integerOrNull);
+      Aggregate('SUM', node, 'sum_$name', const IntOrNullSqlType());
   Aggregate<double?> avg() =>
-      Aggregate('AVG', node, 'avg_$name', SqlType.realOrNull);
+      Aggregate('AVG', node, 'avg_$name', const DoubleOrNullSqlType());
   Aggregate<int?> min() =>
-      Aggregate('MIN', node, 'min_$name', SqlType.integerOrNull);
+      Aggregate('MIN', node, 'min_$name', const IntOrNullSqlType());
   Aggregate<int?> max() =>
-      Aggregate('MAX', node, 'max_$name', SqlType.integerOrNull);
+      Aggregate('MAX', node, 'max_$name', const IntOrNullSqlType());
 }

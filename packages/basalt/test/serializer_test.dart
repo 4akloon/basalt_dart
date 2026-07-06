@@ -425,7 +425,7 @@ void main() {
 
     test('double-column aggregates use REAL', () {
       const rating =
-          ValueColumn<double, Posts>('posts', 'rating', SqlType.real);
+          ValueColumn<double, Posts>('posts', 'rating', DoubleSqlType());
       final (sql, _) = compileSelect(
         from(Posts.table).select([rating.avg(), rating.max()]).map(_ignore),
       );
@@ -437,7 +437,7 @@ void main() {
     });
 
     test('raw() selection emits verbatim SQL, params ordered before WHERE', () {
-      final next = raw<int>('"users"."age" + ?', SqlType.integer,
+      final next = raw<int>('"users"."age" + ?', const IntSqlType(),
           as: 'next_age', params: [1],);
       final (sql, params) = compileSelect(
         from(Users.table)
@@ -492,7 +492,7 @@ void main() {
         'SELECT MIN("posts"."views") AS "min_views", '
         'MAX("posts"."views") AS "max_views" FROM "posts"',
       );
-      expect(lowest.type, SqlType.integerOrNull);
+      expect(lowest.type, const IntOrNullSqlType());
     });
 
     test('mismatched aggregate type argument throws ArgumentError', () {
@@ -524,7 +524,7 @@ void main() {
         from(Posts.table).select([units]).map(_ignore),
       );
       expect(sql, 'SELECT SUM("posts"."views") AS "units_sold" FROM "posts"');
-      expect(units.type, SqlType.integerOrNull);
+      expect(units.type, const IntOrNullSqlType());
     });
 
     test('COUNT(DISTINCT col)', () {

@@ -1,86 +1,59 @@
 /// Mapping between a Dart type `T` and its on-the-wire SQL representation.
 ///
-/// [encode] turns a Dart value into a driver-ready parameter; [decode] turns a
-/// raw value returned by the driver back into `T`. Both are top-level function
-/// tear-offs so the built-in [SqlType] instances can be `const` — which is what
-/// lets columns be `static const` and therefore usable inside annotations later.
+/// [SqlType] is a [Codec]: [Codec.encode] turns a Dart value into a
+/// driver-ready parameter, [Codec.decode] turns a raw value returned by the
+/// driver back into `T`. Built-in types live one-per-file under `sql_types/`
+/// (e.g. [IntSqlType], [IntOrNullSqlType]) and are re-exported here. Their
+/// `const` constructors are what let columns be `static const` and therefore
+/// usable inside annotations later. Custom types are added the same way — by
+/// subclassing (see `doc/types.md`), not by passing callbacks.
 library;
 
+import 'dart:convert';
+
+export 'sql_types/blob_or_null_sql_type.dart';
+export 'sql_types/blob_sql_type.dart';
+export 'sql_types/boolean_or_null_sql_type.dart';
+export 'sql_types/boolean_sql_type.dart';
+export 'sql_types/date_time_or_null_sql_type.dart';
+export 'sql_types/date_time_sql_type.dart';
+export 'sql_types/double_or_null_sql_type.dart';
+export 'sql_types/double_sql_type.dart';
+export 'sql_types/int_or_null_sql_type.dart';
+export 'sql_types/int_sql_type.dart';
+export 'sql_types/string_or_null_sql_type.dart';
+export 'sql_types/string_sql_type.dart';
+
 /// {@category types}
-class SqlType<T> {
-  const SqlType(this.sqlName, this.encode, this.decode);
+abstract base class SqlType<T> extends Codec<T, Object?> {
+  const SqlType();
 
   /// SQLite storage class / column type keyword (`INTEGER`, `TEXT`, ...).
-  final String sqlName;
-  final Object? Function(T value) encode;
-  final T Function(Object? raw) decode;
+  String get sqlName;
 
-  static const SqlType<int> integer = SqlType('INTEGER', _encInt, _decInt);
-  static const SqlType<String> text = SqlType('TEXT', _encString, _decString);
-  static const SqlType<double> real = SqlType('REAL', _encDouble, _decDouble);
-  static const SqlType<bool> boolean = SqlType('INTEGER', _encBool, _decBool);
-  static const SqlType<List<int>> blob = SqlType('BLOB', _encBlob, _decBlob);
+  @override
+  Object? encode(T input);
 
-  /// Stored as epoch milliseconds (sortable and timezone-free).
-  static const SqlType<DateTime> dateTime =
-      SqlType('INTEGER', _encDateTime, _decDateTime);
+  @override
+  T decode(Object? encoded);
 
-  // Nullable variants — use these for columns that allow NULL. Their decoders
-  // map a NULL row value to `null` (the non-null ones throw on NULL, which
-  // correctly surfaces an unexpected NULL in a non-null column).
-  static const SqlType<int?> integerOrNull =
-      SqlType('INTEGER', _encNullable, _decIntOrNull);
-  static const SqlType<String?> textOrNull =
-      SqlType('TEXT', _encNullable, _decStringOrNull);
-  static const SqlType<double?> realOrNull =
-      SqlType('REAL', _encNullable, _decDoubleOrNull);
-  static const SqlType<bool?> booleanOrNull =
-      SqlType('INTEGER', _encBoolOrNull, _decBoolOrNull);
-  static const SqlType<List<int>?> blobOrNull =
-      SqlType('BLOB', _encNullable, _decBlobOrNull);
-  static const SqlType<DateTime?> dateTimeOrNull =
-      SqlType('INTEGER', _encDateTimeOrNull, _decDateTimeOrNull);
+  @override
+  Converter<T, Object?> get encoder => _SqlTypeEncoder(this);
+
+  @override
+  Converter<Object?, T> get decoder => _SqlTypeDecoder(this);
 }
 
-Object? _encInt(int v) => v;
-int _decInt(Object? r) => (r as num).toInt();
+final class _SqlTypeEncoder<T> extends Converter<T, Object?> {
+  const _SqlTypeEncoder(this._type);
+  final SqlType<T> _type;
+  @override
+  Object? convert(T input) => _type.encode(input);
+}
 
-Object? _encString(String v) => v;
-String _decString(Object? r) => r as String;
-
-Object? _encDouble(double v) => v;
-double _decDouble(Object? r) => (r as num).toDouble();
-
-// Encoders produce a canonical Dart value; each dialect's `encodeParam` maps it
-// to the driver form (SQLite: bool->int, DateTime->epoch-ms; Postgres: native).
-// Decoders are lenient so they read back either representation.
-Object? _encBool(bool v) => v;
-bool _decBool(Object? r) => r is bool ? r : (r as num) != 0;
-
-Object? _encBlob(List<int> v) => v;
-List<int> _decBlob(Object? r) => r as List<int>;
-
-Object? _encDateTime(DateTime v) => v;
-DateTime _decDateTime(Object? r) =>
-    r is DateTime ? r : DateTime.fromMillisecondsSinceEpoch((r as num).toInt());
-
-// Nullable helpers. `_encNullable` accepts `Object?`, so it serves every type
-// whose stored form is the value itself (int/String/double/blob).
-Object? _encNullable(Object? v) => v;
-
-int? _decIntOrNull(Object? r) => r == null ? null : (r as num).toInt();
-String? _decStringOrNull(Object? r) => r as String?;
-double? _decDoubleOrNull(Object? r) => r == null ? null : (r as num).toDouble();
-
-Object? _encBoolOrNull(bool? v) => v;
-bool? _decBoolOrNull(Object? r) =>
-    r == null ? null : (r is bool ? r : (r as num) != 0);
-
-List<int>? _decBlobOrNull(Object? r) => r as List<int>?;
-
-Object? _encDateTimeOrNull(DateTime? v) => v;
-DateTime? _decDateTimeOrNull(Object? r) => r == null
-    ? null
-    : (r is DateTime
-        ? r
-        : DateTime.fromMillisecondsSinceEpoch((r as num).toInt()));
+final class _SqlTypeDecoder<T> extends Converter<Object?, T> {
+  const _SqlTypeDecoder(this._type);
+  final SqlType<T> _type;
+  @override
+  T convert(Object? input) => _type.decode(input);
+}

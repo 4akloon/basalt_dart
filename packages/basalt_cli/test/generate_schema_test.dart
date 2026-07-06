@@ -48,18 +48,18 @@ void main() {
     expect(
       source,
       contains(
-          "static const id = PrimaryKey<int, Users>('users', 'id', SqlType.integer);",),
+          "static const id = PrimaryKey<int, Users>('users', 'id', const IntSqlType());",),
     );
     expect(
       source,
       contains(
-          "static const bio = ValueColumn<String?, Users>('users', 'bio', SqlType.textOrNull);",),
+          "static const bio = ValueColumn<String?, Users>('users', 'bio', const StringOrNullSqlType());",),
     );
     expect(source, contains('abstract final class Posts {'));
     expect(
       source,
       contains('static const authorId = Ref<int, Posts, Users>('
-          "'posts', 'author_id', SqlType.integer, references: Users.id);"),
+          "'posts', 'author_id', const IntSqlType(), references: Users.id);"),
     );
     expect(
       source,

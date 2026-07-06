@@ -9,28 +9,28 @@ import 'package:test/test.dart';
 
 // int/text columns only: their codecs are identical across SQLite and Postgres.
 abstract final class Widgets {
-  static const id = PrimaryKey<int, Widgets>('widgets', 'id', SqlType.integer);
-  static const name = ValueColumn<String, Widgets>('widgets', 'name', SqlType.text);
-  static const qty = ValueColumn<int, Widgets>('widgets', 'qty', SqlType.integer);
+  static const id = PrimaryKey<int, Widgets>('widgets', 'id', IntSqlType());
+  static const name = ValueColumn<String, Widgets>('widgets', 'name', StringSqlType());
+  static const qty = ValueColumn<int, Widgets>('widgets', 'qty', IntSqlType());
   static const table = TableRef<Widgets>('widgets', [id, name, qty]);
 }
 
 abstract final class Parts {
-  static const id = PrimaryKey<int, Parts>('parts', 'id', SqlType.integer);
+  static const id = PrimaryKey<int, Parts>('parts', 'id', IntSqlType());
   static const widgetId = Ref<int, Parts, Widgets>(
-      'parts', 'widget_id', SqlType.integer,
+      'parts', 'widget_id', IntSqlType(),
       references: Widgets.id,);
-  static const label = ValueColumn<String, Parts>('parts', 'label', SqlType.text);
+  static const label = ValueColumn<String, Parts>('parts', 'label', StringSqlType());
   static const table = TableRef<Parts>('parts', [id, widgetId, label]);
 }
 
 // Native Postgres bool + timestamp — exercises the cross-backend codecs.
 abstract final class Flags {
-  static const id = PrimaryKey<int, Flags>('flags', 'id', SqlType.integer);
+  static const id = PrimaryKey<int, Flags>('flags', 'id', IntSqlType());
   static const active =
-      ValueColumn<bool, Flags>('flags', 'active', SqlType.boolean);
+      ValueColumn<bool, Flags>('flags', 'active', BooleanSqlType());
   static const createdAt =
-      ValueColumn<DateTime, Flags>('flags', 'created_at', SqlType.dateTime);
+      ValueColumn<DateTime, Flags>('flags', 'created_at', DateTimeSqlType());
   static const table = TableRef<Flags>('flags', [id, active, createdAt]);
 }
 

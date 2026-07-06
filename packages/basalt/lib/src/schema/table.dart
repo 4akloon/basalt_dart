@@ -77,7 +77,7 @@ sealed class TableColumn<T, Tbl> implements Selection<T> {
 
   /// `COUNT(this_column)` — a non-null count, selectable and readable.
   Aggregate<int> count() =>
-      Aggregate('COUNT', node, 'count_$name', SqlType.integer);
+      Aggregate('COUNT', node, 'count_$name', const IntSqlType());
 
   Expression<bool, Tbl> between(T low, T high) =>
       Expression(BetweenNode(node, type.encode(low), type.encode(high)));

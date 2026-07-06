@@ -3,9 +3,9 @@ import 'package:basalt_postgres/basalt_postgres.dart';
 import 'package:test/test.dart';
 
 abstract final class Users {
-  static const id = PrimaryKey<int, Users>('users', 'id', SqlType.integer);
-  static const name = ValueColumn<String, Users>('users', 'name', SqlType.text);
-  static const age = ValueColumn<int, Users>('users', 'age', SqlType.integer);
+  static const id = PrimaryKey<int, Users>('users', 'id', IntSqlType());
+  static const name = ValueColumn<String, Users>('users', 'name', StringSqlType());
+  static const age = ValueColumn<int, Users>('users', 'age', IntSqlType());
   static const table = TableRef<Users>('users', [id, name, age]);
 }
 

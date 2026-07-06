@@ -41,12 +41,13 @@ final class Aggregate<T> implements Selection<T> {
   Expression<bool, Object?> le(T value) => _cmp('<=', value);
 
   Expression<bool, Object?> _cmp(String op, T value) => Expression(
-      BinaryNode(selectExpression, op, ParamNode(type.encode(value))),);
+        BinaryNode(selectExpression, op, ParamNode(type.encode(value))),
+      );
 }
 
 /// `COUNT(*)` — total row count.
 Aggregate<int> countAll() =>
-    const Aggregate('COUNT', null, 'count', SqlType.integer);
+    const Aggregate('COUNT', null, 'count', IntSqlType());
 
 /// Resolves a numeric aggregate operand: its AST node, its decode type, and
 /// (for columns) the SQL column name used to derive a default alias.
@@ -54,15 +55,19 @@ Aggregate<int> countAll() =>
     switch (operand) {
       final TableColumn<int, Object?> c => (
           c.node,
-          SqlType.integerOrNull,
+          const IntOrNullSqlType(),
           c.name
         ),
       final TableColumn<double, Object?> c => (
           c.node,
-          SqlType.realOrNull,
+          const DoubleOrNullSqlType(),
           c.name
         ),
-      final Expression<num, Object?> e => (e.node, SqlType.realOrNull, null),
+      final Expression<num, Object?> e => (
+          e.node,
+          const DoubleOrNullSqlType(),
+          null
+        ),
       _ => throw ArgumentError.value(
           operand,
           'operand',
@@ -93,7 +98,12 @@ Aggregate<T?> _numericAggregate<T extends num>(
       '$function<int>, double columns and expressions to $function<double>.',
     );
   }
-  return Aggregate(function, node, _aggregateAlias(function, as, columnName), type);
+  return Aggregate(
+    function,
+    node,
+    _aggregateAlias(function, as, columnName),
+    type,
+  );
 }
 
 /// `SUM` over a numeric column or expression.
@@ -123,7 +133,7 @@ Aggregate<double?> avg(Object operand, {String? as}) {
     'AVG',
     node,
     _aggregateAlias('AVG', as, columnName),
-    SqlType.realOrNull,
+    const DoubleOrNullSqlType(),
   );
 }
 
@@ -136,6 +146,6 @@ Aggregate<int> countDistinct(
       'COUNT',
       column.node,
       as ?? 'count_${column.name}',
-      SqlType.integer,
+      const IntSqlType(),
       distinct: true,
     );

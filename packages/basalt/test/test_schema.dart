@@ -4,45 +4,45 @@ import 'package:basalt/basalt.dart';
 /// table-scoped type safety, foreign keys and joins.
 abstract final class Users {
   static const _t = 'users';
-  static const id = PrimaryKey<int, Users>(_t, 'id', SqlType.integer);
-  static const name = ValueColumn<String, Users>(_t, 'name', SqlType.text);
-  static const age = ValueColumn<int, Users>(_t, 'age', SqlType.integer);
-  static const active = ValueColumn<bool, Users>(_t, 'active', SqlType.boolean);
+  static const id = PrimaryKey<int, Users>(_t, 'id', IntSqlType());
+  static const name = ValueColumn<String, Users>(_t, 'name', StringSqlType());
+  static const age = ValueColumn<int, Users>(_t, 'age', IntSqlType());
+  static const active = ValueColumn<bool, Users>(_t, 'active', BooleanSqlType());
   static const table = TableRef<Users>(_t, [id, name, age, active]);
 }
 
 abstract final class Posts {
   static const _t = 'posts';
-  static const id = PrimaryKey<int, Posts>(_t, 'id', SqlType.integer);
+  static const id = PrimaryKey<int, Posts>(_t, 'id', IntSqlType());
   static const authorId = Ref<int, Posts, Users>(
-      _t, 'author_id', SqlType.integer,
+      _t, 'author_id', IntSqlType(),
       references: Users.id,);
-  static const title = ValueColumn<String, Posts>(_t, 'title', SqlType.text);
-  static const views = ValueColumn<int, Posts>(_t, 'views', SqlType.integer);
+  static const title = ValueColumn<String, Posts>(_t, 'title', StringSqlType());
+  static const views = ValueColumn<int, Posts>(_t, 'views', IntSqlType());
   static const table = TableRef<Posts>(_t, [id, authorId, title, views]);
 }
 
 abstract final class Comments {
   static const _t = 'comments';
-  static const id = PrimaryKey<int, Comments>(_t, 'id', SqlType.integer);
+  static const id = PrimaryKey<int, Comments>(_t, 'id', IntSqlType());
   static const postId = Ref<int, Comments, Posts>(
-      _t, 'post_id', SqlType.integer,
+      _t, 'post_id', IntSqlType(),
       references: Posts.id,);
-  static const body = ValueColumn<String, Comments>(_t, 'body', SqlType.text);
+  static const body = ValueColumn<String, Comments>(_t, 'body', StringSqlType());
   static const table = TableRef<Comments>(_t, [id, postId, body]);
 }
 
 /// Two foreign keys to the SAME table — needs aliased self-joins.
 abstract final class Messages {
   static const _t = 'messages';
-  static const id = PrimaryKey<int, Messages>(_t, 'id', SqlType.integer);
+  static const id = PrimaryKey<int, Messages>(_t, 'id', IntSqlType());
   static const senderId = Ref<int, Messages, Users>(
-      _t, 'sender_id', SqlType.integer,
+      _t, 'sender_id', IntSqlType(),
       references: Users.id,);
   static const recipientId = Ref<int, Messages, Users>(
-      _t, 'recipient_id', SqlType.integer,
+      _t, 'recipient_id', IntSqlType(),
       references: Users.id,);
-  static const body = ValueColumn<String, Messages>(_t, 'body', SqlType.text);
+  static const body = ValueColumn<String, Messages>(_t, 'body', StringSqlType());
   static const table =
       TableRef<Messages>(_t, [id, senderId, recipientId, body]);
 }
@@ -50,9 +50,9 @@ abstract final class Messages {
 /// Has a nullable column (`bio TEXT NULL`).
 abstract final class Profiles {
   static const _t = 'profiles';
-  static const id = PrimaryKey<int, Profiles>(_t, 'id', SqlType.integer);
+  static const id = PrimaryKey<int, Profiles>(_t, 'id', IntSqlType());
   static const bio =
-      ValueColumn<String?, Profiles>(_t, 'bio', SqlType.textOrNull);
+      ValueColumn<String?, Profiles>(_t, 'bio', StringOrNullSqlType());
   static const table = TableRef<Profiles>(_t, [id, bio]);
 }
 

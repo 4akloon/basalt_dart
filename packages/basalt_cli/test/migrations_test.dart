@@ -9,9 +9,9 @@ import 'package:test/test.dart';
 /// Typed view of the table a test migration creates — lets us assert the up/down
 /// SQL really ran by querying through the ORM.
 abstract final class Widgets {
-  static const id = PrimaryKey<int, Widgets>('widgets', 'id', SqlType.integer);
+  static const id = PrimaryKey<int, Widgets>('widgets', 'id', IntSqlType());
   static const name =
-      ValueColumn<String, Widgets>('widgets', 'name', SqlType.text);
+      ValueColumn<String, Widgets>('widgets', 'name', StringSqlType());
   static const table = TableRef<Widgets>('widgets', [id, name]);
 }
 

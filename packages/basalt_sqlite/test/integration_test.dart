@@ -75,27 +75,37 @@ List<_UserPosts> _foldUsersWithPosts(List<RowReader> rows) {
   ];
 }
 
-// A custom column type: an enum stored by name via a const SqlType with top-level
-// codec tear-offs (const-compatible, so it works in `static const` columns).
+// A custom column type: an enum stored by name via a SqlType subclass
+// (const-compatible, so it works in `static const` columns).
 enum Role { admin, user, guest }
 
-Object? _encodeRole(Role r) => r.name;
-Role _decodeRole(Object? v) => Role.values.byName(v as String);
-const roleType = SqlType<Role>('TEXT', _encodeRole, _decodeRole);
+final class RoleSqlType extends SqlType<Role> {
+  const RoleSqlType();
+
+  @override
+  String get sqlName => 'TEXT';
+
+  @override
+  Object? encode(Role input) => input.name;
+
+  @override
+  Role decode(Object? encoded) => Role.values.byName(encoded as String);
+}
 
 abstract final class Accounts {
   static const id =
-      PrimaryKey<int, Accounts>('accounts', 'id', SqlType.integer);
-  static const role = ValueColumn<Role, Accounts>('accounts', 'role', roleType);
+      PrimaryKey<int, Accounts>('accounts', 'id', IntSqlType());
+  static const role =
+      ValueColumn<Role, Accounts>('accounts', 'role', RoleSqlType());
   static const table = TableRef<Accounts>('accounts', [id, role]);
 }
 
 abstract final class Events {
-  static const id = PrimaryKey<int, Events>('events', 'id', SqlType.integer);
+  static const id = PrimaryKey<int, Events>('events', 'id', IntSqlType());
   static const done =
-      ValueColumn<bool, Events>('events', 'done', SqlType.boolean);
+      ValueColumn<bool, Events>('events', 'done', BooleanSqlType());
   static const at =
-      ValueColumn<DateTime, Events>('events', 'at', SqlType.dateTime);
+      ValueColumn<DateTime, Events>('events', 'at', DateTimeSqlType());
   static const table = TableRef<Events>('events', [id, done, at]);
 }
 
@@ -555,7 +565,7 @@ void main() {
 
   test('raw() typed SQL selection', () async {
     await seed(); // Bob = 30
-    final nextAge = raw<int>('age + 1', SqlType.integer, as: 'next_age');
+    final nextAge = raw<int>('age + 1', const IntSqlType(), as: 'next_age');
     final rows = await from(Users.table)
         .select([Users.name, nextAge])
         .where(Users.id.eq(1))

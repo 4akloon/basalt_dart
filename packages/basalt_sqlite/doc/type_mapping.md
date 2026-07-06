@@ -9,8 +9,8 @@ SQLite has no native boolean or timestamp type. As a result:
 - A `bool` column is declared `INTEGER`; introspection (`generate-schema`)
   can't distinguish it from a plain integer, so a generated boolean-ish column
   comes back as `int` (`active` in the example app). You can still use
-  `SqlType.boolean` when you hand-write or adjust the schema.
-- `DateTime` is stored as `INTEGER` epoch milliseconds by `SqlType.dateTime`.
+  `BooleanSqlType()` when you hand-write or adjust the schema.
+- `DateTime` is stored as `INTEGER` epoch milliseconds by `DateTimeSqlType()`.
 
 `SqliteDialect.encodeParam` maps canonical Dart values to driver form:
 `bool`→`int`, `DateTime`→epoch-ms. Decoders in `SqlType` are lenient and
