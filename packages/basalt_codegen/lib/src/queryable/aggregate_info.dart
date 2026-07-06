@@ -10,6 +10,10 @@ final class AggregateField {
   });
   final String fieldName;
   final String selectCall;
+
+  /// True when the field is non-nullable numeric: the generated decoder then
+  /// coalesces SQL NULL (an empty group) to `0` (`?? 0`). A nullable field
+  /// keeps NULL distinguishable from an actual zero.
   final bool zeroFallback;
 }
 

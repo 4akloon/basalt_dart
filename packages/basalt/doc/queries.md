@@ -111,8 +111,11 @@ final kinds = await from(Users.table)
     .load(db);
 ```
 
-> Aggregate result types: `count`/`countAll` → `int`; `sum`/`min`/`max` →
-> `int?`; `avg` → `double?`. Non-int numeric columns are not yet supported.
+> Aggregate result types: `count`/`countAll`/`countDistinct` → `int`;
+> `sum`/`min`/`max` → nullable, typed by the operand (int columns → `int?`,
+> double columns and expressions → `double?`); `avg` → `double?`. When `as:`
+> is omitted the alias derives from the column name (`sum_age`); expression
+> operands require an explicit `as:`.
 
 ## `@HasMany` fold queries (one SQL + JOIN)
 

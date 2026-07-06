@@ -445,6 +445,16 @@ void main() {
     expect(sum, 89); // 30 + 17 + 42
     expect(avg, closeTo(29.666, 0.01));
 
+    // Top-level min/max are typed by the operand: int column -> int?.
+    final Aggregate<int?> youngest = min(Users.age);
+    final Aggregate<int?> oldest = max(Users.age);
+    final (lo, hi) = await from(Users.table)
+        .select([youngest, oldest])
+        .map((r) => (r.get(youngest), r.get(oldest)))
+        .first(db);
+    expect(lo, 17);
+    expect(hi, 42);
+
     final distinctActive = await from(Users.table)
         .select([Users.active])
         .distinct()

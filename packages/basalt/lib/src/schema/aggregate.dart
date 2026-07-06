@@ -48,51 +48,94 @@ final class Aggregate<T> implements Selection<T> {
 Aggregate<int> countAll() =>
     const Aggregate('COUNT', null, 'count', SqlType.integer);
 
-/// `SUM` over a numeric column or expression.
-///
-/// Integer columns decode to [Aggregate<int?>]; double columns and arbitrary
-/// expressions decode to [Aggregate<double?>].
-Aggregate<T?> sum<T extends num>(
-  Object operand, {
-  required String as,
-}) {
-  final (node, sqlType) = switch (operand) {
-    TableColumn<int, Object?> c => (c.node, SqlType.integerOrNull),
-    TableColumn<double, Object?> c => (c.node, SqlType.realOrNull),
-    Expression<num, Object?> e => (e.node, SqlType.realOrNull),
-    _ => throw ArgumentError.value(
-        operand,
-        'operand',
-        'Must be a numeric column or expression',
-      ),
-  };
-  return Aggregate('SUM', node, as, sqlType as SqlType<T?>);
+/// Resolves a numeric aggregate operand: its AST node, its decode type, and
+/// (for columns) the SQL column name used to derive a default alias.
+(SqlNode, SqlType<Object?>, String?) _numericOperand(Object operand) =>
+    switch (operand) {
+      final TableColumn<int, Object?> c => (
+          c.node,
+          SqlType.integerOrNull,
+          c.name
+        ),
+      final TableColumn<double, Object?> c => (
+          c.node,
+          SqlType.realOrNull,
+          c.name
+        ),
+      final Expression<num, Object?> e => (e.node, SqlType.realOrNull, null),
+      _ => throw ArgumentError.value(
+          operand,
+          'operand',
+          'Must be a numeric column or expression',
+        ),
+    };
+
+/// Picks the aggregate's alias: explicit [as] wins, else `sum_$column` style
+/// derived from the column name; expression operands must alias explicitly.
+String _aggregateAlias(String function, String? as, String? columnName) {
+  if (as case final alias?) return alias;
+  if (columnName case final name?) return '${function.toLowerCase()}_$name';
+  throw ArgumentError(
+    "$function over an expression needs an explicit alias — pass as: 'name'.",
+  );
 }
 
-/// `AVG(expr)` over an arbitrary numeric expression.
-Aggregate<double?> avg(
-  Expression<num, Object?> expression, {
-  required String as,
-}) =>
-    Aggregate('AVG', expression.node, as, SqlType.realOrNull);
+/// Builds `SUM`/`MIN`/`MAX` with a decode type checked against the operand.
+Aggregate<T?> _numericAggregate<T extends num>(
+  String function,
+  Object operand,
+  String? as,
+) {
+  final (node, type, columnName) = _numericOperand(operand);
+  if (type is! SqlType<T?>) {
+    throw ArgumentError(
+      '$function<$T> does not match the operand: integer columns decode to '
+      '$function<int>, double columns and expressions to $function<double>.',
+    );
+  }
+  return Aggregate(function, node, _aggregateAlias(function, as, columnName), type);
+}
 
-/// `MIN(expr)` over an arbitrary numeric expression.
-Aggregate<double?> min(
-  Expression<num, Object?> expression, {
-  required String as,
-}) =>
-    Aggregate('MIN', expression.node, as, SqlType.realOrNull);
+/// `SUM` over a numeric column or expression.
+///
+/// Integer columns decode to `Aggregate<int?>`; double columns and arbitrary
+/// expressions decode to `Aggregate<double?>` (nullable: SQL returns NULL
+/// over an empty set). When [as] is omitted the alias is derived from the
+/// column name (`sum_age`); expression operands require an explicit [as].
+Aggregate<T?> sum<T extends num>(Object operand, {String? as}) =>
+    _numericAggregate('SUM', operand, as);
 
-/// `MAX(expr)` over an arbitrary numeric expression.
-Aggregate<double?> max(
-  Expression<num, Object?> expression, {
-  required String as,
-}) =>
-    Aggregate('MAX', expression.node, as, SqlType.realOrNull);
+/// `MIN` over a numeric column or expression — typed like [sum]
+/// (integer columns decode to `Aggregate<int?>`).
+Aggregate<T?> min<T extends num>(Object operand, {String? as}) =>
+    _numericAggregate('MIN', operand, as);
 
-/// `COUNT(DISTINCT col)`.
+/// `MAX` over a numeric column or expression — typed like [sum]
+/// (integer columns decode to `Aggregate<int?>`).
+Aggregate<T?> max<T extends num>(Object operand, {String? as}) =>
+    _numericAggregate('MAX', operand, as);
+
+/// `AVG` over a numeric column or expression — always decodes to
+/// `Aggregate<double?>`. Alias defaults to `avg_$column` for columns.
+Aggregate<double?> avg(Object operand, {String? as}) {
+  final (node, _, columnName) = _numericOperand(operand);
+  return Aggregate(
+    'AVG',
+    node,
+    _aggregateAlias('AVG', as, columnName),
+    SqlType.realOrNull,
+  );
+}
+
+/// `COUNT(DISTINCT col)`. Alias defaults to `count_$column`.
 Aggregate<int> countDistinct(
   TableColumn<Object?, Object?> column, {
-  required String as,
+  String? as,
 }) =>
-    Aggregate('COUNT', column.node, as, SqlType.integer, distinct: true);
+    Aggregate(
+      'COUNT',
+      column.node,
+      as ?? 'count_${column.name}',
+      SqlType.integer,
+      distinct: true,
+    );

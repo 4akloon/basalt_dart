@@ -145,8 +145,15 @@ final class QueryBuilder {
 
   /// Verifies every referenced column belongs to a table in the FROM/JOIN
   /// clause — the runtime safety net for joined queries (single-table queries
-  /// are already guaranteed by the type system).
+  /// are already guaranteed by the type system). Also rejects `HAVING` without
+  /// `GROUP BY`: SQLite errors on it (standard SQL/Postgres would treat the
+  /// whole table as one group) — strictness matches the SQLite-first posture.
   void _validateScope(SelectQuery<dynamic> stmt) {
+    if (stmt.havingNode != null && stmt.groupByColumns.isEmpty) {
+      throw StateError(
+        'having() requires groupBy() — HAVING without GROUP BY is not supported.',
+      );
+    }
     // Columns address a source by its effective name (alias when aliased).
     final allowed = {
       stmt.fromAlias ?? stmt.fromTable,

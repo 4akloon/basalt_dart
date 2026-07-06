@@ -36,6 +36,8 @@ A class may carry several annotations; each generator contributes its own
 | `@AsChangeset(table)` | class | `extension XChangeset { UpdateStatement<T> toUpdate() }` (SET only) |
 | `@Column(col, {readOnly, writeOnly})` | field | column mapping + read/write direction |
 | `@Relation(fk, {depth})` | field | a joined, nested related object (read-side) |
+| `@HasMany(fk)` | field | a `List<Child>` folded from one JOIN query (`static fold`) |
+| `@Agg(tearOff)` | field | an aggregate selection in a GROUP BY view (see below) |
 
 The class annotations are **independent**: a write-only DTO can be `@Insertable`
 alone.
@@ -134,6 +136,43 @@ final posts = await db.fetch(PostQuery().orderBy(Posts.views.desc()));
 Nullable FKs use `LEFT JOIN`; non-null FKs use `INNER JOIN`. Relations are
 read-only — include the raw FK as its own field (e.g. `managerId`) if you
 need to write it.
+
+## `@Agg` (aggregate GROUP BY views)
+
+A `@Queryable` class mixing plain `@Column` dimensions with `@Agg` aggregates
+becomes a GROUP BY view: the generated `XQuery` joins the dimension tables
+(`joins:`), groups by the dimensions and selects each aggregate. Every `@Agg`
+field references a private static tear-off returning the selection:
+
+```dart
+@Queryable(
+  OrderItems.table,
+  joins: [OrderItems.productId, Products.categoryId],
+  orderBy: CategoryRevenueRow._revenue,
+  orderDesc: true,
+)
+class CategoryRevenueRow {
+  const CategoryRevenueRow({required this.categoryName, required this.revenue});
+
+  @Column(Categories.name)
+  final String categoryName;
+
+  @Agg(CategoryRevenueRow._revenue)
+  final double revenue;
+
+  static Aggregate<double?> _revenue() =>
+      sum(OrderItems.quantity * OrderItems.unitPrice, as: 'revenue');
+}
+
+final rows = await CategoryRevenueRowQuery().load(db);
+```
+
+Each tear-off is hoisted into one `static final` field of the companion and
+shared by the SELECT, ORDER BY and the decoder.
+
+> **NULL vs 0:** a non-nullable numeric `@Agg` field coalesces SQL NULL (an
+> empty group) to `0` in the generated decoder. Declare the field nullable to
+> distinguish "no rows" from an actual zero.
 
 ## `@Insertable` / `@AsChangeset` output
 

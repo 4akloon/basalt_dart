@@ -470,6 +470,39 @@ void main() {
       expect(params, [100]);
     });
 
+    test('HAVING without GROUP BY throws StateError', () {
+      expect(
+        () => compileSelect(
+          from(Posts.table)
+              .select([Posts.authorId, Posts.views.sum()])
+              .having(Posts.views.sum().gt(100))
+              .map(_ignore),
+        ),
+        throwsStateError,
+      );
+    });
+
+    test('min/max are typed by the operand and derive column aliases', () {
+      final Aggregate<int?> lowest = min(Posts.views);
+      final (sql, _) = compileSelect(
+        from(Posts.table).select([lowest, max<int>(Posts.views)]).map(_ignore),
+      );
+      expect(
+        sql,
+        'SELECT MIN("posts"."views") AS "min_views", '
+        'MAX("posts"."views") AS "max_views" FROM "posts"',
+      );
+      expect(lowest.type, SqlType.integerOrNull);
+    });
+
+    test('mismatched aggregate type argument throws ArgumentError', () {
+      expect(() => sum<int>(Posts.views * 2, as: 'x'), throwsArgumentError);
+    });
+
+    test('expression aggregate without as: throws ArgumentError', () {
+      expect(() => sum(Posts.views * 2), throwsArgumentError);
+    });
+
     test('SUM over arithmetic expression', () {
       final revenue = sum(Posts.views * 2, as: 'revenue');
       final (sql, _) = compileSelect(
