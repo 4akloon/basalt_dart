@@ -38,7 +38,6 @@ void main() {
     test('emits a simple leaf reader (only src)', () {
       final code = readerEmitter.emit(
         className: 'User',
-        readerName: r'$UserFromRow',
         tableMarker: 'Users',
         columnArgs: userColumns,
         relationArgs: const [],
@@ -46,7 +45,7 @@ void main() {
       expect(
         code,
         contains(
-          r'$UserFromRow(RowReader r, [QuerySource<Users> src = Users.table,])',
+          'static User fromRow(RowReader r, [QuerySource<Users> src = Users.table,])',
         ),
       );
       expect(code, contains('r.get(src.col(Users.id))'));
@@ -56,7 +55,6 @@ void main() {
     test('adds prefix/budget params and inlines relation calls', () {
       final code = readerEmitter.emit(
         className: 'Post',
-        readerName: r'$PostFromRow',
         tableMarker: 'Posts',
         columnArgs: postColumns,
         relationArgs: const [
@@ -66,7 +64,7 @@ void main() {
       expect(
         code,
         contains(
-          r"$PostFromRow(RowReader r, [QuerySource<Posts> src = Posts.table, String prefix = '', int budget = 0,])",
+          "static Post fromRow(RowReader r, [QuerySource<Posts> src = Posts.table, String prefix = '', int budget = 0,])",
         ),
       );
       expect(code, contains('author: AUTHOR_CALL'));
@@ -78,7 +76,7 @@ void main() {
       final args = relationCalls.forReader([authorEdge], (_) => true);
       expect(
         args.single.childCall,
-        r"(prefix.isEmpty ? (budget > 1 ? 1 : budget) : budget) <= 0 ? null : $UserFromRow(r, Users.table.aliased('${prefix}author'), '${prefix}author_', (prefix.isEmpty ? (budget > 1 ? 1 : budget) : budget) - 1,)",
+        r"(prefix.isEmpty ? (budget > 1 ? 1 : budget) : budget) <= 0 ? null : UserQuery.fromRow(r, Users.table.aliased('${prefix}author'), '${prefix}author_', (prefix.isEmpty ? (budget > 1 ? 1 : budget) : budget) - 1,)",
       );
     });
 
@@ -86,40 +84,33 @@ void main() {
       final args = relationCalls.forReader([authorEdge], (_) => false);
       expect(
         args.single.childCall,
-        r"(prefix.isEmpty ? (budget > 1 ? 1 : budget) : budget) <= 0 ? null : $UserFromRow(r, Users.table.aliased('${prefix}author'))",
+        r"(prefix.isEmpty ? (budget > 1 ? 1 : budget) : budget) <= 0 ? null : UserQuery.fromRow(r, Users.table.aliased('${prefix}author'))",
       );
     });
   });
 
   group('SelectQueryEmitter', () {
-    test('emits a select-narrowing getter over the class columns', () {
+    test('emits a select-narrowing constructor over the class columns', () {
       final code = const SelectQueryEmitter().emit(
         className: 'UserSummary',
-        queryName: 'userSummaryQuery',
         tableMarker: 'Users',
-        readerName: r'$UserSummaryFromRow',
         columnArgs: const [
           ColumnArg(paramName: 'id', isNamed: false, columnExpr: 'Users.id'),
           ColumnArg(
               paramName: 'name', isNamed: false, columnExpr: 'Users.name',),
         ],
       );
-      expect(
-          code, contains('MappedQuery<UserSummary> get userSummaryQuery =>'),);
+      expect(code, contains('UserSummaryQuery() : super(_build(), fromRow);'));
       expect(
         code,
-        contains(
-          r'from(Users.table).select([Users.id, Users.name]).map($UserSummaryFromRow)',
-        ),
+        contains('from(Users.table).select([Users.id, Users.name])'),
       );
     });
 
     test('skips writeOnly columns', () {
       final code = const SelectQueryEmitter().emit(
         className: 'U',
-        queryName: 'uQuery',
         tableMarker: 'Users',
-        readerName: r'$UFromRow',
         columnArgs: const [
           ColumnArg(paramName: 'id', isNamed: false, columnExpr: 'Users.id'),
           ColumnArg(
@@ -136,12 +127,10 @@ void main() {
   });
 
   group('QueryGetterEmitter', () {
-    test('emits a joined query that maps via the seeded reader', () {
+    test('emits a joined query that decodes via the seeded reader', () {
       final code = queryGetterEmitter.emit(
         className: 'Post',
-        queryName: 'postQuery',
         tableMarker: 'Posts',
-        readerName: r'$PostFromRow',
         seedBudget: 2,
         treeNodes: [
           const TreeNode(
@@ -152,7 +141,7 @@ void main() {
           ),
         ],
       );
-      expect(code, contains('MappedQuery<Post> get postQuery'));
+      expect(code, contains('PostQuery() : super(_build(), _decode);'));
       expect(code, contains('from(Posts.table)'));
       expect(
         code,
@@ -160,8 +149,7 @@ void main() {
           '.innerJoin(author, on: Posts.authorId.eqColumn(author.col(Users.id)),)',
         ),
       );
-      expect(
-          code, contains(r".map((r) => $PostFromRow(r, Posts.table, '', 2))"),);
+      expect(code, contains("fromRow(r, Posts.table, '', 2)"));
     });
   });
 }

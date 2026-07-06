@@ -64,8 +64,7 @@ void main() {
         ownEdges: [authorEdge(depth)],
       );
 
-  test('emits one public leaf reader + mapper for a class with no relations',
-      () {
+  test('emits one UserQuery companion for a class with no relations', () {
     final code = generator.generateSource(
       const QueryableModel(
         root: userNoEdges,
@@ -73,29 +72,29 @@ void main() {
       ),
     );
 
+    expect(code, contains('final class UserQuery extends MappedQuery<User> {'));
     expect(
       code,
       contains(
-        r'$UserFromRow(RowReader r, [QuerySource<Users> src = Users.table,])',
+        'static User fromRow(RowReader r, [QuerySource<Users> src = Users.table,])',
       ),
     );
     expect(code, contains('r.get(src.col(Users.id))'));
     expect(
       code,
-      contains(r'const userMapper = RowMapper<User>($UserFromRow);'),
+      contains('static const mapper = RowMapper<User>(fromRow);'),
     );
-    // No relations -> no runtime budget machinery, but a select-narrowing getter.
+    // No relations -> no runtime budget machinery, but a select-narrowing query.
     expect(code, isNot(contains('budget')));
-    expect(code, contains('MappedQuery<User> get userQuery =>'));
+    expect(code, contains('UserQuery() : super(_build(), fromRow);'));
     expect(
       code,
       contains(
-        r'from(Users.table).select([Users.id, Users.name, Users.age, Users.active]).map($UserFromRow)',
+        'from(Users.table).select([Users.id, Users.name, Users.age, Users.active])',
       ),
     );
-    // A PrimaryKey column -> find via the query getter's findBy.
+    // A PrimaryKey column -> find via the inherited findBy.
     expect(code, isNot(contains('findUser(')));
-    expect(code, contains('MappedQuery<User> get userQuery'));
   });
 
   test('self-referential reader recurses into the same public reader', () {
@@ -109,17 +108,17 @@ void main() {
     expect(
       code,
       contains(
-        r"$UserFromRow(RowReader r, [QuerySource<Users> src = Users.table, String prefix = '', int budget = 0,])",
+        "static User fromRow(RowReader r, [QuerySource<Users> src = Users.table, String prefix = '', int budget = 0,])",
       ),
     );
     expect(
       code,
       contains(
-        r"manager: (prefix.isEmpty ? (budget > 1 ? 1 : budget) : budget) <= 0 ? null : r.get(src.col(Users.managerId)) == null ? null : $UserFromRow(r, Users.table.aliased('${prefix}manager'), '${prefix}manager_', (prefix.isEmpty ? (budget > 1 ? 1 : budget) : budget) - 1,)",
+        r"manager: (prefix.isEmpty ? (budget > 1 ? 1 : budget) : budget) <= 0 ? null : r.get(src.col(Users.managerId)) == null ? null : UserQuery.fromRow(r, Users.table.aliased('${prefix}manager'), '${prefix}manager_', (prefix.isEmpty ? (budget > 1 ? 1 : budget) : budget) - 1,)",
       ),
     );
-    expect(code, contains('MappedQuery<User> get userQuery'));
-    expect(code, contains(r".map((r) => $UserFromRow(r, Users.table, '', 1))"));
+    expect(code, contains('UserQuery() : super(_build(), _decode);'));
+    expect(code, contains("fromRow(r, Users.table, '', 1)"));
   });
 
   test('post reader reuses the User reader instead of redefining it', () {
@@ -135,23 +134,23 @@ void main() {
     expect(
       code,
       contains(
-        r"author: (prefix.isEmpty ? (budget > 1 ? 1 : budget) : budget) <= 0 ? null : $UserFromRow(r, Users.table.aliased('${prefix}author'))",
+        r"author: (prefix.isEmpty ? (budget > 1 ? 1 : budget) : budget) <= 0 ? null : UserQuery.fromRow(r, Users.table.aliased('${prefix}author'))",
       ),
     );
-    expect(code, contains('MappedQuery<Post> get postQuery'));
+    expect(code, contains('PostQuery() : super(_build(), _decode);'));
     expect(
       code,
       contains(
         '.innerJoin(author, on: Posts.authorId.eqColumn(author.col(Users.id)),)',
       ),
     );
-    expect(code, contains(r".map((r) => $PostFromRow(r, Posts.table, '', 1))"));
+    expect(code, contains("fromRow(r, Posts.table, '', 1)"));
     // Crucially: the User reader is NOT regenerated in Post's output.
     expect(
       code,
       isNot(
         contains(
-          r'$UserFromRow(RowReader r, [QuerySource<Users> src = Users.table,])',
+          'static User fromRow(RowReader r, [QuerySource<Users> src = Users.table,])',
         ),
       ),
     );
@@ -170,7 +169,7 @@ void main() {
     expect(
       code,
       contains(
-        r"author: (prefix.isEmpty ? (budget > 2 ? 2 : budget) : budget) <= 0 ? null : $UserFromRow(r, Users.table.aliased('${prefix}author'), '${prefix}author_', (prefix.isEmpty ? (budget > 2 ? 2 : budget) : budget) - 1,)",
+        r"author: (prefix.isEmpty ? (budget > 2 ? 2 : budget) : budget) <= 0 ? null : UserQuery.fromRow(r, Users.table.aliased('${prefix}author'), '${prefix}author_', (prefix.isEmpty ? (budget > 2 ? 2 : budget) : budget) - 1,)",
       ),
     );
     expect(
@@ -183,7 +182,7 @@ void main() {
         '.leftJoin(authorManager, on: author.col(Users.managerId).eqColumn(authorManager.col(Users.id)),)',
       ),
     );
-    expect(code, contains(r".map((r) => $PostFromRow(r, Posts.table, '', 2))"));
+    expect(code, contains("fromRow(r, Posts.table, '', 2)"));
     // Post does not define a User reader; that lives in User's own file.
     expect(code, isNot(contains('manager:')));
   });

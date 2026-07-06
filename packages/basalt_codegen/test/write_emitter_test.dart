@@ -82,7 +82,6 @@ void main() {
     test('reads readOnly columns but omits writeOnly ones', () {
       final code = readerEmitter.emit(
         className: 'User',
-        readerName: r'$UserFromRow',
         tableMarker: 'Users',
         columnArgs: columns,
         relationArgs: const [],

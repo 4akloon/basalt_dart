@@ -35,7 +35,7 @@ The same query builder, schema, and generated mappers work unchanged:
 import 'package:basalt/basalt.dart';
 
 final rows = await db.fetch(
-  from(Users.table).where(Users.age > 18).map(userMapper.read),
+  from(Users.table).where(Users.age > 18).mapWith(UserQuery.mapper),
 );
 
 await db.close();

@@ -7,9 +7,11 @@ import 'queryable/queryable.dart';
 
 export 'queryable/queryable.dart';
 
-/// Generates alias-parameterized row readers, `RowMapper<T>` instances, and
-/// self-mapping join queries for each `@Queryable` class. `@Relation` fields
-/// drive nested joins with per-edge depth limits and path-based table aliases.
+/// Generates a `${Class}Query` companion for each `@Queryable` class — the
+/// companion *is* the canonical query (`extends MappedQuery`/`FoldMappedQuery`)
+/// and carries the alias-parameterized `static fromRow` reader plus its
+/// `RowMapper`. `@Relation` fields drive nested joins with per-edge depth
+/// limits and path-based table aliases.
 ///
 /// {@category getting-started}
 class QueryableGenerator extends GeneratorForAnnotation<Queryable> {

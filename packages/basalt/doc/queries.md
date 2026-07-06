@@ -116,22 +116,23 @@ final kinds = await from(Users.table)
 
 ## `@HasMany` fold queries (one SQL + JOIN)
 
-Codegen for `@HasMany` emits a `FoldMappedQuery<T>` getter: one `SELECT` with
-`LEFT JOIN`s for children (and nested children), then a generated
-`$ClassFold(List<RowReader>)` that dedupes the cartesian product into parent
-rows with `List<Child>` fields.
+Codegen for `@HasMany` emits a `${Class}Query` companion extending
+`FoldMappedQuery<T>`: one `SELECT` with `LEFT JOIN`s for children (and nested
+children), then a generated `static fold(List<RowReader>)` member that dedupes
+the cartesian product into parent rows with `List<Child>` fields.
 
 ```dart
 // Generated — one round-trip via Connection.fetch, fold in Dart.
-final rows = await customerProfileRowQuery
+final rows = await CustomerProfileRowQuery()
     .order(Customers.name.asc())
     .limit(50)
     .load(db);
 ```
 
-- **`.mapFold(folder)`** — after manual JOINs, same pattern without codegen.
+- **`.mapFold(folder)`** — after manual JOINs, same pattern without codegen
+  (a generated `XQuery.fold` is reusable here).
 - **`.load(db)`** / **`.optional(db)`** / **`.first(db)`** — on
-  `FoldMappedQuery` via `FoldMappedQueryExecute` (`fold(await db.fetch(this))`).
+  `FoldMappedQuery` via `FoldMappedQueryExecute` (`folder(await db.fetch(this))`).
 - **Parent `limit` / `offset`** — not SQL `LIMIT` on flat JOIN rows; the
   serializer adds `WHERE root_pk IN (SELECT … ORDER BY … LIMIT/OFFSET)`. Call
   **`.withRootPk(rootPk)`** before `.limit()` / `.offset()`.
@@ -144,7 +145,7 @@ final rows = await customerProfileRowQuery
 them by foreign key — avoids N+1:
 
 ```dart
-final users = await from(Users.table).map(userMapper.read).load(db);
+final users = await from(Users.table).mapWith(UserQuery.mapper).load(db);
 final postsByAuthor = await loadGroupedByFk(
   db, Posts.table, Posts.authorId, users.map((u) => u.id).toList(), readPost);
 // Map<int, List<Post>>; every author id is present (empty list if no posts).
@@ -163,9 +164,8 @@ final postsByAuthor = await loadGroupedByFk(
 | `users.find(1)` | `from(Users.table).findBy(Users.id, 1)` |
 
 ```dart
-final adults = await from(Users.table)
+final adults = await UserQuery()
     .filter(Users.age.ge(18))
     .order(Users.name.asc())
-    .map(userMapper.read)
     .load(db);
 ```

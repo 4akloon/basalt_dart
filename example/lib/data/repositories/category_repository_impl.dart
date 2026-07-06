@@ -14,7 +14,7 @@ class CategoryRepositoryImpl implements CategoryRepository {
 
   @override
   Future<List<Category>> all() async {
-    final rows = await categoryRowQuery.orderBy(Categories.name.asc()).load(_db);
+    final rows = await CategoryRowQuery().orderBy(Categories.name.asc()).load(_db);
     return [for (final row in rows) row.toDomain()];
   }
 

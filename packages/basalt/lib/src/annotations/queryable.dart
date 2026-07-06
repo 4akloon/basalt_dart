@@ -1,8 +1,9 @@
 import '../schema/table.dart';
 
-/// Marks a data class for row-mapper generation against [table]
-/// (e.g. `@Queryable(Posts.table)`). The generator emits a `RowMapper<ThisClass>`
-/// plus a `fromRow` reader that calls `RowReader.get` for each mapped field.
+/// Marks a data class for query generation against [table]
+/// (e.g. `@Queryable(Posts.table)`). The generator emits a `ThisClassQuery`
+/// companion that *is* the canonical query, carrying a `static fromRow`
+/// reader (one `RowReader.get` per mapped field) and its `RowMapper`.
 ///
 /// For aggregate views, pass [joins] and optional [orderBy] (private static
 /// tear-offs) alongside `@Agg` fields.

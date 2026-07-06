@@ -6,27 +6,35 @@ part of 'customer_row.dart';
 // QueryableGenerator
 // **************************************************************************
 
-CustomerRow $CustomerRowFromRow(
-  RowReader r, [
-  QuerySource<Customers> src = Customers.table,
-]) =>
-    CustomerRow(
-      id: r.get(src.col(Customers.id)),
-      name: r.get(src.col(Customers.name)),
-      email: r.get(src.col(Customers.email)),
-      loyaltyTier: r.get(src.col(Customers.loyaltyTier)),
-      createdAt: r.get(src.col(Customers.createdAt)),
-    );
+/// Generated read-side query for [CustomerRow] — the object *is* the
+/// query (`db.fetch(CustomerRowQuery())`).
+final class CustomerRowQuery extends MappedQuery<CustomerRow> {
+  CustomerRowQuery() : super(_build(), fromRow);
 
-const customerRowMapper = RowMapper<CustomerRow>($CustomerRowFromRow);
+  static Query<Customers> _build() => from(Customers.table).select([
+        Customers.id,
+        Customers.name,
+        Customers.email,
+        Customers.loyaltyTier,
+        Customers.createdAt
+      ]);
 
-MappedQuery<CustomerRow> get customerRowQuery => from(Customers.table).select([
-      Customers.id,
-      Customers.name,
-      Customers.email,
-      Customers.loyaltyTier,
-      Customers.createdAt
-    ]).map($CustomerRowFromRow);
+  /// Reads a [CustomerRow] from [r] at [src] (alias-aware, composable).
+  static CustomerRow fromRow(
+    RowReader r, [
+    QuerySource<Customers> src = Customers.table,
+  ]) =>
+      CustomerRow(
+        id: r.get(src.col(Customers.id)),
+        name: r.get(src.col(Customers.name)),
+        email: r.get(src.col(Customers.email)),
+        loyaltyTier: r.get(src.col(Customers.loyaltyTier)),
+        createdAt: r.get(src.col(Customers.createdAt)),
+      );
+
+  /// Reusable row mapper: `from(t).mapWith(CustomerRowQuery.mapper)`.
+  static const mapper = RowMapper<CustomerRow>(fromRow);
+}
 
 // **************************************************************************
 // InsertableGenerator

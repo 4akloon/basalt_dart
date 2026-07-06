@@ -1,22 +1,29 @@
 import 'class_info.dart';
 import 'has_many_edge.dart';
 
-/// Emits `$ClassFold(List<RowReader>)` and nested `_ClassFoldAcc` helpers.
+/// Emitted `@HasMany` fold code: the `static fold` member of the `${Class}Query`
+/// companion plus the top-level private `_ClassFoldAcc` accumulator classes it
+/// uses (private helpers can't nest inside the companion — Dart has no nested
+/// classes).
+typedef HasManyFoldCode = ({String foldMember, List<String> accClasses});
+
+/// Emits `static List<Class> fold(List<RowReader>)` and the nested
+/// `_ClassFoldAcc` helper classes.
 final class HasManyFoldEmitter {
   const HasManyFoldEmitter();
 
-  String emit({
+  HasManyFoldCode emit({
     required ClassInfo root,
     required Map<String, ClassInfo> classInfos,
   }) {
-    final units = <String>[];
+    final accClasses = <String>[];
     final emitted = <String>{};
 
     void ensureAcc(ClassInfo info) {
       if (info.hasManyEdges.isEmpty) return;
       final name = '_${info.className}FoldAcc';
       if (!emitted.add(name)) return;
-      units.add(_emitAccClass(info, classInfos));
+      accClasses.add(_emitAccClass(info, classInfos));
       for (final edge in info.hasManyEdges) {
         final child = classInfos[edge.childClass];
         if (child != null) ensureAcc(child);
@@ -24,8 +31,7 @@ final class HasManyFoldEmitter {
     }
 
     ensureAcc(root);
-    units.add(_emitFoldFn(root, classInfos));
-    return units.join('\n\n');
+    return (foldMember: _emitFoldFn(root, classInfos), accClasses: accClasses);
   }
 
   String _emitAccClass(
@@ -79,46 +85,46 @@ final class HasManyFoldEmitter {
   String _emitFoldFn(ClassInfo root, Map<String, ClassInfo> classInfos) {
     final pkType = root.pkType ?? 'Object';
     final pkExpr = root.pkColumnExpr!;
-    final reader = '\$${root.className}FromRow';
     final relationBudget = root.ownEdges.isEmpty
         ? 0
         : root.ownEdges.map((e) => e.depth).reduce((a, b) => a > b ? a : b);
 
     final buf = StringBuffer()
-      ..writeln('List<${root.className}> \$${root.className}Fold(')
-      ..writeln('  List<RowReader> rows,')
-      ..writeln(') {')
-      ..writeln('  final parents = <$pkType, _${root.className}FoldAcc>{};')
-      ..writeln('  for (final r in rows) {')
-      ..writeln('    final pk = r.get($pkExpr);')
+      ..writeln('  /// Folds flat JOIN rows into deduplicated parents.')
+      ..writeln('  static List<${root.className}> fold(')
+      ..writeln('    List<RowReader> rows,')
+      ..writeln('  ) {')
+      ..writeln('    final parents = <$pkType, _${root.className}FoldAcc>{};')
+      ..writeln('    for (final r in rows) {')
+      ..writeln('      final pk = r.get($pkExpr);')
       ..writeln(
-        '    final acc = parents.putIfAbsent(pk, () => _${root.className}FoldAcc(',
+        '      final acc = parents.putIfAbsent(pk, () => _${root.className}FoldAcc(',
       );
 
     if (root.ownEdges.isNotEmpty) {
       buf.writeln(
-        '      $reader(r, ${root.tableMarker}.table, \'\', $relationBudget),',
+        '        fromRow(r, ${root.tableMarker}.table, \'\', $relationBudget),',
       );
     } else {
-      buf.writeln('      ${root.className}(');
+      buf.writeln('        ${root.className}(');
       for (final col in root.columnArgs) {
         if (!col.writeOnly) {
-          buf.writeln('        ${col.paramName}: r.get(${col.columnExpr}),');
+          buf.writeln('          ${col.paramName}: r.get(${col.columnExpr}),');
         }
       }
-      buf.writeln('      ),');
+      buf.writeln('        ),');
     }
 
-    buf.writeln('    ));');
+    buf.writeln('      ));');
 
     for (final edge in root.hasManyEdges) {
       buf.write(_mergeHasMany(edge, edge.fieldName, 'acc', classInfos));
     }
 
     buf
-      ..writeln('  }')
-      ..writeln('  return [for (final a in parents.values) a.build()];')
-      ..writeln('}');
+      ..writeln('    }')
+      ..writeln('    return [for (final a in parents.values) a.build()];')
+      ..writeln('  }');
     return buf.toString();
   }
 
@@ -132,7 +138,7 @@ final class HasManyFoldEmitter {
     final childPk = child.pkColumnExpr!;
     final src = '${child.tableMarker}.table.aliased(\'$aliasPath\')';
     final childPkSel = '$src.col($childPk)';
-    final reader = '\$${child.className}FromRow';
+    final reader = '${child.className}Query.fromRow';
     final budget = child.ownEdges.isEmpty
         ? 0
         : child.ownEdges.map((e) => e.depth).reduce((a, b) => a > b ? a : b);
@@ -142,12 +148,12 @@ final class HasManyFoldEmitter {
         : '$reader(r, $src, \'$prefix\', $budget,)';
 
     final buf = StringBuffer()
-      ..writeln('    if (r.isPresent($childPkSel)) {')
-      ..writeln('      final childPk = r.get($childPkSel);');
+      ..writeln('      if (r.isPresent($childPkSel)) {')
+      ..writeln('        final childPk = r.get($childPkSel);');
 
     if (child.hasManyEdges.isNotEmpty) {
       buf.writeln(
-        '      final childAcc = $parentAccVar.${edge.fieldName}'
+        '        final childAcc = $parentAccVar.${edge.fieldName}'
         '.putIfAbsent(childPk, () => _${child.className}FoldAcc($readerCall));',
       );
       for (final nested in child.hasManyEdges) {
@@ -162,11 +168,11 @@ final class HasManyFoldEmitter {
       }
     } else {
       buf.writeln(
-        '      $parentAccVar.${edge.fieldName}.putIfAbsent(childPk, () => $readerCall);',
+        '        $parentAccVar.${edge.fieldName}.putIfAbsent(childPk, () => $readerCall);',
       );
     }
 
-    buf.writeln('    }');
+    buf.writeln('      }');
     return buf.toString();
   }
 }

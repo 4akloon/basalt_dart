@@ -8,7 +8,7 @@ part 'category_row.g.dart';
 /// shape carry relations while the write shape stays a flat column list.
 ///
 /// The `@Relation` on [parent] is a self-referential belongs-to: the generated
-/// `categoryRowQuery` left-joins the table to itself on `parent_id`, so a row's
+/// `CategoryRowQuery` left-joins the table to itself on `parent_id`, so a row's
 /// immediate [parent] is filled in (its grandparent is left null — depth 1).
 @Queryable(Categories.table)
 class CategoryRow {

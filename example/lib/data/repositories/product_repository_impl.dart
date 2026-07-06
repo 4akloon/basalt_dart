@@ -16,9 +16,9 @@ class ProductRepositoryImpl implements ProductRepository {
 
   @override
   Future<List<Product>> list({String? search, int? categoryId}) async {
-    // `productRowQuery` already inner-joins the category; we AND on extra
+    // `ProductRowQuery()` already inner-joins the category; we AND on extra
     // predicates with `filter` (repeated `where` would *replace*, not combine).
-    var query = productRowQuery.filter(Products.isActive.eq(1));
+    var query = ProductRowQuery().filter(Products.isActive.eq(1));
     if (search != null && search.trim().isNotEmpty) {
       query = query.filter(Products.name.like('%${search.trim()}%'));
     }
@@ -31,7 +31,7 @@ class ProductRepositoryImpl implements ProductRepository {
 
   @override
   Future<ProductWithStats?> detail(int id) async {
-    final row = await productDetailRowQuery
+    final row = await ProductDetailRowQuery()
         .findBy(Products.id, id)
         .order(Reviews.createdAt.desc())
         .optional(_db);

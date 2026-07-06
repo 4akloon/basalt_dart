@@ -1,7 +1,9 @@
 import 'class_info.dart';
 import 'has_many_join_builder.dart';
 
-/// Emits a [FoldMappedQuery] getter with JOIN tree + [mapFold].
+/// Emits the constructor + `_build()` members of a `${Class}Query` companion
+/// extending `FoldMappedQuery`: the JOIN tree feeds the sibling static `fold`,
+/// and the root PK goes to `rootPkColumn` (drives parent-row limit/offset).
 final class HasManyQueryEmitter {
   const HasManyQueryEmitter({
     this.joinBuilder = const HasManyJoinBuilder(),
@@ -11,8 +13,6 @@ final class HasManyQueryEmitter {
   String emit({
     required ClassInfo root,
     required Map<String, ClassInfo> classInfos,
-    required String queryName,
-    required String foldName,
   }) {
     final nodes = joinBuilder.build(root: root, classInfos: classInfos);
     final decls = <String>{
@@ -26,15 +26,16 @@ final class HasManyQueryEmitter {
     ];
 
     final pk = root.pkColumnExpr;
-    final rootPk = pk == null ? '' : '.withRootPk($pk)';
+    final rootPk = pk == null ? '' : ', rootPkColumn: $pk';
 
     return '''
-FoldMappedQuery<${root.className}> get $queryName {
-${decls.map((d) => '  $d').join('\n')}
-  return from(${root.tableMarker}.table)
-${joins.map((j) => '      $j').join('\n')}
-      .mapFold($foldName)$rootPk;
-}
+  ${root.className}Query() : super(_build(), fold$rootPk);
+
+  static Query<Object?> _build() {
+${decls.map((d) => '    $d').join('\n')}
+    return from(${root.tableMarker}.table)
+${joins.map((j) => '        $j').join('\n')};
+  }
 ''';
   }
 }

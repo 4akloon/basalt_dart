@@ -23,7 +23,7 @@ Use the same query builder and generated mappers as with any backend:
 import 'package:basalt/basalt.dart';
 
 final rows = await db.fetch(
-  from(Users.table).where(Users.age > 18).map(userMapper.read),
+  from(Users.table).where(Users.age > 18).mapWith(UserQuery.mapper),
 );
 
 await db.execute(user.toInsert());

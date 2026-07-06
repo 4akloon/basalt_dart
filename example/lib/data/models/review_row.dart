@@ -6,7 +6,7 @@ import 'package:basalt_example/data/models/product_row.dart';
 part 'review_row.g.dart';
 
 /// **Read** model for `reviews` (write model: `ReviewWrite`). Belongs to both a
-/// [product] and a [customer], so `reviewRowQuery` joins two parents at once.
+/// [product] and a [customer], so `ReviewRowQuery` joins two parents at once.
 @Queryable(Reviews.table)
 class ReviewRow {
   const ReviewRow({

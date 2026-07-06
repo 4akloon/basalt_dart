@@ -16,13 +16,13 @@ class CustomerRepositoryImpl implements CustomerRepository {
 
   @override
   Future<List<Customer>> all() async {
-    final rows = await customerRowQuery.orderBy(Customers.name.asc()).load(_db);
+    final rows = await CustomerRowQuery().orderBy(Customers.name.asc()).load(_db);
     return [for (final row in rows) row.toDomain()];
   }
 
   @override
   Future<CustomerProfile?> profile(int id) async {
-    final row = await customerProfileRowQuery.findBy(Customers.id, id).optional(_db);
+    final row = await CustomerProfileRowQuery().findBy(Customers.id, id).optional(_db);
     return row?.toDomain();
   }
 }

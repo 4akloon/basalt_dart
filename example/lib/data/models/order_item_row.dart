@@ -7,7 +7,7 @@ part 'order_item_row.g.dart';
 /// **Read** model for `order_items` — the orders↔products junction (write model:
 /// `OrderItemWrite`).
 ///
-/// The `@Relation` on [product] uses `depth: 2`, so `orderItemRowQuery` unrolls
+/// The `@Relation` on [product] uses `depth: 2`, so `OrderItemRowQuery` unrolls
 /// two levels of joins: the line's [product] **and** that product's category
 /// (`ProductRow` itself declares a `category` relation). One query, fully
 /// nested.

@@ -12,7 +12,6 @@ void main() {
   test('AggregateQueryEmitter emits grouped query with joins and orderBy', () {
     final code = const AggregateQueryEmitter().emit(
       className: 'CategoryRevenueRow',
-      queryName: 'categoryRevenueRowQuery',
       info: const AggregateInfo(
         fromMarker: 'OrderItems',
         joins: [
@@ -47,16 +46,30 @@ void main() {
         orderDesc: true,
       ),
     );
+    expect(
+      code,
+      contains('CategoryRevenueRowQuery() : super(_build(), _decode);'),
+    );
     expect(code, contains('from(OrderItems.table)'));
-    expect(code, contains('.innerJoin(Products.table, onFk: OrderItems.productId)'));
-    expect(code, contains('CategoryRevenueRow._revenue()'));
-    expect(code, contains('.orderBy(CategoryRevenueRow._revenue().desc())'));
+    expect(
+      code,
+      contains('.innerJoin(Products.table, onFk: OrderItems.productId)'),
+    );
+    // The tear-off is hoisted once into a static field and reused everywhere.
+    expect(
+      code,
+      contains('static final _revenue = CategoryRevenueRow._revenue();'),
+    );
+    expect(code, contains('.select([Categories.name, _revenue])'));
+    expect(code, contains('.orderBy(_revenue.desc())'));
+    expect(code, contains('revenue: r.get(_revenue) ?? 0,'));
+    expect('CategoryRevenueRow._revenue()'.allMatches(code).length, 1);
   });
 
-  test('AggregateQueryEmitter joins child tables when FROM is the FK target', () {
+  test('AggregateQueryEmitter joins child tables when FROM is the FK target',
+      () {
     final code = const AggregateQueryEmitter().emit(
       className: 'TopCustomerRow',
-      queryName: 'topCustomerRowQuery',
       info: const AggregateInfo(
         fromMarker: 'Customers',
         joins: [
@@ -135,20 +148,28 @@ void main() {
     final queryCode = const HasManyQueryEmitter().emit(
       root: root,
       classInfos: {'CustomerProfileRow': root, 'AddressRow': child},
-      queryName: 'customerProfileRowQuery',
-      foldName: r'$CustomerProfileRowFold',
     );
-    expect(queryCode, contains('FoldMappedQuery<CustomerProfileRow>'));
+    expect(
+      queryCode,
+      contains(
+        'CustomerProfileRowQuery() : super(_build(), fold, rootPkColumn: Customers.id);',
+      ),
+    );
     expect(queryCode, contains('.leftJoin('));
     expect(queryCode, isNot(contains('.innerJoin(addressesCustomer')));
-    expect(queryCode, contains(r'.mapFold($CustomerProfileRowFold)'));
-    expect(queryCode, contains('.withRootPk(Customers.id)'));
 
     final foldCode = const HasManyFoldEmitter().emit(
       root: root,
       classInfos: {'CustomerProfileRow': root, 'AddressRow': child},
     );
-    expect(foldCode, contains(r'List<CustomerProfileRow> $CustomerProfileRowFold'));
-    expect(foldCode, isNot(contains('loadCustomerProfileRow')));
+    expect(
+      foldCode.foldMember,
+      contains('static List<CustomerProfileRow> fold('),
+    );
+    expect(
+      foldCode.accClasses.single,
+      contains('final class _CustomerProfileRowFoldAcc {'),
+    );
+    expect(foldCode.foldMember, isNot(contains('loadCustomerProfileRow')));
   });
 }

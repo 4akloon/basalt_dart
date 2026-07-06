@@ -37,7 +37,7 @@ extension MappedQueryExecute<R> on MappedQuery<R> {
 extension FoldMappedQueryExecute<R> on FoldMappedQuery<R> {
   /// Runs the JOIN query and folds flat rows into parents.
   Future<List<R>> load(Connection db) async =>
-      fold(await db.fetch(this));
+      folder(await db.fetch(this));
 
   Future<R> first(Connection db) async {
     final rows = await load(db);

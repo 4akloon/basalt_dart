@@ -31,7 +31,7 @@ A class may carry several annotations; each generator contributes its own
 
 | Annotation | Level | Generates |
 |---|---|---|
-| `@Queryable(table)` | class | `$XFromRow` reader, `const xMapper = RowMapper<X>(…)`, an `xQuery` getter (join query when the class has `@Relation`s, otherwise a select-narrowing subset query), and `findX(pk)` when the class maps a `PrimaryKey` |
+| `@Queryable(table)` | class | an `XQuery` companion class that **is** the query (`extends MappedQuery`/`FoldMappedQuery`; join query when the class has `@Relation`s/`@HasMany`, otherwise a select-narrowing subset query) and carries `static X fromRow(…)`, `static const mapper = RowMapper<X>(fromRow)` and (for `@HasMany` roots) `static fold` |
 | `@Insertable(table)` | class | `extension XInsert { InsertStatement<T> toInsert() }` |
 | `@AsChangeset(table)` | class | `extension XChangeset { UpdateStatement<T> toUpdate() }` (SET only) |
 | `@Column(col, {readOnly, writeOnly})` | field | column mapping + read/write direction |
@@ -68,20 +68,26 @@ class User {
 }
 ```
 
-generates a reusable mapper:
+generates a `UserQuery` companion — an object that *is* the query, plus a
+reusable reader/mapper:
 
 ```dart
-final users = await db.fetch(from(Users.table).map(userMapper.read));
-// or: .mapWith(userMapper)
+final users = await db.fetch(UserQuery());
+// or compose by hand:
+final custom = await db.fetch(from(Users.table).mapWith(UserQuery.mapper));
 ```
 
-The generated `$XFromRow` reader is alias-parameterized and **composable** —
-it can be called on the same `RowReader` to nest objects across a join.
+The generated `static UserQuery.fromRow` reader is alias-parameterized and
+**composable** — it can be called on the same `RowReader` to nest objects
+across a join.
+
+> The companion name is `${Class}Query` — avoid hand-writing a class with
+> that name next to a `@Queryable` model.
 
 ### Selectable subsets
 
 A `@Queryable` class that maps only *some* of a table's columns gets a
-**select-narrowing `xQuery`** getter that `SELECT`s exactly those columns:
+**select-narrowing `XQuery`** whose query `SELECT`s exactly those columns:
 
 ```dart
 @Queryable(Users.table)
@@ -91,16 +97,16 @@ class UserSummary {
   const UserSummary(this.id, this.name);
 }
 
-// userSummaryQuery == from(Users.table).select([Users.id, Users.name]).map($UserSummaryFromRow)
-final summaries = await db.fetch(userSummaryQuery);
+// UserSummaryQuery() selects only [Users.id, Users.name] and decodes with fromRow.
+final summaries = await db.fetch(UserSummaryQuery());
 ```
 
-(Classes with `@Relation`s get the join-based `xQuery` instead.)
+(Classes with `@Relation`s get the join-based query instead.)
 
-Find by primary key via the query getter:
+Find by primary key via the inherited `findBy`:
 
 ```dart
-final user = await userQuery.findBy(Users.id, 1).first(db);
+final user = await UserQuery().findBy(Users.id, 1).first(db);
 ```
 
 ## `@Relation` (read-side joins)
@@ -118,10 +124,10 @@ class Post {
   another `@Queryable` class.
 - `depth: n` unrolls the join `n` levels deep with path-based aliases
   (`author`, `author_manager`, …), so cyclic relations terminate safely.
-- The generator emits a self-mapping query getter (e.g. `postQuery`):
+- The generator emits a self-mapping query class (e.g. `PostQuery`):
 
 ```dart
-final posts = await db.fetch(postQuery.orderBy(Posts.views.desc()));
+final posts = await db.fetch(PostQuery().orderBy(Posts.views.desc()));
 // each Post has .author, and .author.manager, populated.
 ```
 

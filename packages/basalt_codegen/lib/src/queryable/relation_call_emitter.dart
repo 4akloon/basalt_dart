@@ -4,8 +4,8 @@ import 'relation_edge.dart';
 /// Builds the inline relation expressions placed inside a unified reader.
 ///
 /// Each relation reads from a path-based alias (`${prefix}field`) and recurses
-/// into the target's own public reader with `budget - 1`, so the whole join
-/// tree is unrolled at runtime by one function per class.
+/// into the target's own `TargetQuery.fromRow` reader with `budget - 1`, so
+/// the whole join tree is unrolled at runtime by one reader per class.
 final class RelationCallEmitter {
   const RelationCallEmitter();
 
@@ -23,7 +23,7 @@ final class RelationCallEmitter {
   }
 
   String _call(RelationEdge edge, bool targetHasRelations) {
-    final reader = '\$${edge.targetClass}FromRow';
+    final reader = '${edge.targetClass}Query.fromRow';
     final alias =
         "${edge.targetMarker}.table.aliased('\${prefix}${edge.fieldName}')";
     // Cap budget per root relation: join trees are per-edge but the query

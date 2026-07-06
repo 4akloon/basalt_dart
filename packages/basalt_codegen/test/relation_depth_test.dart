@@ -92,16 +92,16 @@ void main() {
     expect(
       code,
       contains(
-        r"author: (prefix.isEmpty ? (budget > 1 ? 1 : budget) : budget) <= 0 ? null : $UserFromRow(r, Users.table.aliased('${prefix}author'), '${prefix}author_', (prefix.isEmpty ? (budget > 1 ? 1 : budget) : budget) - 1,)",
+        r"author: (prefix.isEmpty ? (budget > 1 ? 1 : budget) : budget) <= 0 ? null : UserQuery.fromRow(r, Users.table.aliased('${prefix}author'), '${prefix}author_', (prefix.isEmpty ? (budget > 1 ? 1 : budget) : budget) - 1,)",
       ),
     );
     expect(
       code,
       contains(
-        r"editor: (prefix.isEmpty ? (budget > 2 ? 2 : budget) : budget) <= 0 ? null : $UserFromRow(r, Users.table.aliased('${prefix}editor'), '${prefix}editor_', (prefix.isEmpty ? (budget > 2 ? 2 : budget) : budget) - 1,)",
+        r"editor: (prefix.isEmpty ? (budget > 2 ? 2 : budget) : budget) <= 0 ? null : UserQuery.fromRow(r, Users.table.aliased('${prefix}editor'), '${prefix}editor_', (prefix.isEmpty ? (budget > 2 ? 2 : budget) : budget) - 1,)",
       ),
     );
-    expect(code, contains(r".map((r) => $PostFromRow(r, Posts.table, '', 2))"));
+    expect(code, contains("fromRow(r, Posts.table, '', 2)"));
     expect(code, contains("final author = Users.table.aliased('author');"));
     expect(code, isNot(contains('author_manager')));
     expect(
@@ -173,9 +173,7 @@ void main() {
     test('nullable FK emits leftJoin', () {
       final code = queryGetterEmitter.emit(
         className: 'User',
-        queryName: 'userQuery',
         tableMarker: 'Users',
-        readerName: r'$UserFromRow',
         seedBudget: 1,
         treeNodes: [
           const TreeNode(
@@ -197,9 +195,7 @@ void main() {
     test('non-nullable FK emits innerJoin', () {
       final code = queryGetterEmitter.emit(
         className: 'Post',
-        queryName: 'postQuery',
         tableMarker: 'Posts',
-        readerName: r'$PostFromRow',
         seedBudget: 1,
         treeNodes: [
           const TreeNode(

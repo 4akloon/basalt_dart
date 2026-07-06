@@ -3,7 +3,7 @@ part of 'query.dart';
 /// Folds a flat JOIN result set into parent rows (e.g. `@HasMany` codegen).
 typedef RowFolder<R> = List<R> Function(List<RowReader> readers);
 
-/// A JOIN [Query] whose SQL rows are folded into fewer parents via [fold].
+/// A JOIN [Query] whose SQL rows are folded into fewer parents via [folder].
 ///
 /// Implements [SelectQuery] as `SelectQuery<RowReader>` so `Connection.fetch`
 /// returns one [RowReader] per SQL row; call `load` (the
@@ -16,18 +16,21 @@ typedef RowFolder<R> = List<R> Function(List<RowReader> readers);
 /// {@category queries}
 base class FoldMappedQuery<R>
     extends _MappedQueryBase<FoldMappedQuery<R>, RowReader> {
-  /// Wraps a built JOIN [query] with a row [fold]er. Application code normally
+  /// Wraps a built JOIN [query] with a row [folder]. Application code normally
   /// reaches this through [QueryMapFold.mapFold]; subclassing is the codegen
   /// seam.
+  ///
+  /// The field is named `folder` (not `fold`) so generated subclasses can
+  /// expose their `static fold` member without a static/instance name clash.
   FoldMappedQuery(
     super.query,
-    this.fold, {
+    this.folder, {
     this.rootPkColumn,
     this.parentLimit,
     this.parentOffset,
   });
 
-  final RowFolder<R> fold;
+  final RowFolder<R> folder;
 
   /// Root primary key — drives parent-limit subquery serialization.
   final TableColumn<Object?, Object?>? rootPkColumn;
@@ -37,7 +40,7 @@ base class FoldMappedQuery<R>
   @override
   FoldMappedQuery<R> _withQuery(Query<dynamic> query) => FoldMappedQuery(
         query,
-        fold,
+        folder,
         rootPkColumn: rootPkColumn,
         parentLimit: parentLimit,
         parentOffset: parentOffset,
@@ -50,7 +53,7 @@ base class FoldMappedQuery<R>
   }) =>
       FoldMappedQuery(
         _query,
-        fold,
+        folder,
         rootPkColumn: rootPkColumn ?? this.rootPkColumn,
         parentLimit: parentLimit ?? this.parentLimit,
         parentOffset: parentOffset ?? this.parentOffset,

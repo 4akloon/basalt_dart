@@ -16,19 +16,19 @@ class AnalyticsRepositoryImpl implements AnalyticsRepository {
 
   @override
   Future<List<CategoryRevenue>> revenueByCategory() async {
-    final rows = await categoryRevenueRowQuery.load(_db);
+    final rows = await CategoryRevenueRowQuery().load(_db);
     return [for (final row in rows) row.toDomain()];
   }
 
   @override
   Future<List<TopCustomer>> topCustomers({int limit = 5}) async {
-    final rows = await topCustomerRowQuery.limit(limit).load(_db);
+    final rows = await TopCustomerRowQuery().limit(limit).load(_db);
     return [for (final row in rows) row.toDomain()];
   }
 
   @override
   Future<List<LowStockProduct>> lowStock({int threshold = 5}) async {
-    final rows = await productRowQuery
+    final rows = await ProductRowQuery()
         .filter(Products.isActive.eq(1))
         .filter(Products.stock.le(threshold))
         .orderBy(Products.stock.asc())

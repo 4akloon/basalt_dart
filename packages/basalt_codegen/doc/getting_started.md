@@ -58,7 +58,7 @@ dart run build_runner build
 
 | Annotation | Generator | Output |
 |---|---|---|
-| `@Queryable` | `QueryableGenerator` | `$XFromRow` reader, `RowMapper<X>`, `xQuery` getter, optional `findX(pk)` |
+| `@Queryable` | `QueryableGenerator` | `XQuery` companion class — *is* the query (`extends MappedQuery`/`FoldMappedQuery`) and carries `static fromRow`, `static const mapper` and (for `@HasMany`) `static fold` |
 | `@Insertable` | `InsertableGenerator` | `toInsert()` extension |
 | `@AsChangeset` | `AsChangesetGenerator` | `toUpdate()` extension |
 

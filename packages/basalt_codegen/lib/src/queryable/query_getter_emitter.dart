@@ -1,15 +1,15 @@
 import 'naming.dart';
 import 'tree_node.dart';
 
-/// Emits self-mapping `MappedQuery` getters with aliased joins.
+/// Emits the constructor + `_build()`/`_decode` members of a `${Class}Query`
+/// companion whose query joins the class's `@Relation` targets with aliased
+/// joins.
 final class QueryGetterEmitter {
   const QueryGetterEmitter();
 
   String emit({
     required String className,
-    required String queryName,
     required String tableMarker,
-    required String readerName,
     required int seedBudget,
     required List<TreeNode> treeNodes,
   }) {
@@ -36,16 +36,20 @@ final class QueryGetterEmitter {
       );
     }
 
-    final decls = aliasDecls.map((d) => '  $d').join('\n');
-    final joins = joinLines.map((j) => '      $j').join('\n');
+    final decls = aliasDecls.map((d) => '    $d').join('\n');
+    final joins = joinLines.map((j) => '        $j').join('\n');
 
     return '''
-MappedQuery<$className> get $queryName {
+  ${className}Query() : super(_build(), _decode);
+
+  static Query<Object?> _build() {
 $decls
-  return from($tableMarker.table)
-$joins
-      .map((r) => $readerName(r, $tableMarker.table, '', $seedBudget));
-}
+    return from($tableMarker.table)
+$joins;
+  }
+
+  static $className _decode(RowReader r) =>
+      fromRow(r, $tableMarker.table, '', $seedBudget);
 ''';
   }
 }

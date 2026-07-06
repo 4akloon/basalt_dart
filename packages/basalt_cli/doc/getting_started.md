@@ -142,7 +142,7 @@ Future<void> main() async {
   await db.execute(const User(1, 'Bob', 30, 1).toInsert());
 
   final adults = await db.fetch(
-    from(Users.table).where(Users.age > 18).orderBy(Users.name.asc()).map(userMapper.read),
+    from(Users.table).where(Users.age > 18).orderBy(Users.name.asc()).mapWith(UserQuery.mapper),
   );
   print(adults);
 
