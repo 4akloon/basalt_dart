@@ -365,4 +365,4 @@ cd example && dart run build_runner build && dart run bin/example.dart
 
 ## License
 
-Not yet specified.
+MIT — see [LICENSE](LICENSE).
