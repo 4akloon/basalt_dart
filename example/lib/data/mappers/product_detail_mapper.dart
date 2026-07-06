@@ -25,6 +25,7 @@ extension ProductDetailRowMapper on ProductDetailRow {
         stock: stock,
         categoryId: categoryId,
         isActive: isActive,
+        metadata: metadata,
         category: category,
       ).toDomain(),
       averageRating: average,

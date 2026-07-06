@@ -13,5 +13,6 @@ extension ProductWriteInsert on ProductWrite {
       .value(Products.price.set(price))
       .value(Products.stock.set(stock))
       .value(Products.categoryId.set(categoryId))
-      .value(Products.isActive.set(isActive));
+      .value(Products.isActive.set(isActive))
+      .value(Products.metadata.set(metadata));
 }

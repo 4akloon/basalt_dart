@@ -36,6 +36,7 @@ final class ProductRowQuery extends MappedQuery<ProductRow> {
         stock: r.get(src.col(Products.stock)),
         categoryId: r.get(src.col(Products.categoryId)),
         isActive: r.get(src.col(Products.isActive)),
+        metadata: r.get(src.col(Products.metadata)),
         category: (prefix.isEmpty ? (budget > 1 ? 1 : budget) : budget) <= 0
             ? null
             : CategoryRowQuery.fromRow(

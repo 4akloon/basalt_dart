@@ -13,3 +13,4 @@ export 'src/connection_factory.dart';
 export 'src/directory_migration_source.dart';
 export 'src/migration_scaffolder.dart';
 export 'src/schema_generator.dart';
+export 'src/schema_type_overrides.dart';

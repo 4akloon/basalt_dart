@@ -14,6 +14,7 @@ class ProductWrite {
     required this.stock,
     required this.categoryId,
     required this.isActive,
+    this.metadata,
   });
 
   final String name;
@@ -22,4 +23,8 @@ class ProductWrite {
   final int stock;
   final int categoryId;
   final int isActive;
+
+  /// Free-form JSON attributes, written through the custom
+  /// `JsonMapOrNullSqlType` codec (`products.metadata`).
+  final Map<String, Object?>? metadata;
 }

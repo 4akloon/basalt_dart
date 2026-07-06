@@ -66,9 +66,8 @@ class _ProductDetailView extends StatelessWidget {
             return const SizedBox.shrink();
           }
           return FloatingActionButton.extended(
-            onPressed: state.submitting
-                ? null
-                : () => _openReviewDialog(context),
+            onPressed:
+                state.submitting ? null : () => _openReviewDialog(context),
             icon: const Icon(Icons.rate_review),
             label: const Text('Review'),
           );
@@ -106,14 +105,14 @@ class _Content extends StatelessWidget {
       children: [
         Text(product.name, style: theme.textTheme.headlineSmall),
         const SizedBox(height: 4),
-        if (product.category != null)
-          Chip(label: Text(product.category!.name)),
+        if (product.category != null) Chip(label: Text(product.category!.name)),
         const SizedBox(height: 12),
         Text(product.description, style: theme.textTheme.bodyLarge),
         const SizedBox(height: 16),
         Row(
           children: [
-            Text(formatMoney(product.price), style: theme.textTheme.headlineSmall),
+            Text(formatMoney(product.price),
+                style: theme.textTheme.headlineSmall),
             const Spacer(),
             FilledButton.icon(
               onPressed: product.inStock
@@ -132,6 +131,34 @@ class _Content extends StatelessWidget {
             ),
           ],
         ),
+        if (product.metadata case final metadata? when metadata.isNotEmpty) ...[
+          const Divider(height: 32),
+          Text('Details', style: theme.textTheme.titleLarge),
+          const SizedBox(height: 8),
+          for (final entry in metadata.entries)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 2),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  SizedBox(
+                    width: 120,
+                    child: Text(
+                      entry.key,
+                      style: theme.textTheme.bodyMedium
+                          ?.copyWith(fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                  Expanded(
+                    child: Text(
+                      '${entry.value}',
+                      style: theme.textTheme.bodyMedium,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+        ],
         const Divider(height: 32),
         Row(
           children: [

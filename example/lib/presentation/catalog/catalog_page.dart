@@ -1,3 +1,4 @@
+import 'package:basalt_example/core/database/app_database.dart';
 import 'package:basalt_example/core/di/injector.dart';
 import 'package:basalt_example/presentation/cart/cart_cubit.dart';
 import 'package:basalt_example/presentation/catalog/catalog_cubit.dart';
@@ -7,6 +8,7 @@ import 'package:basalt_example/presentation/common/load_status.dart';
 import 'package:basalt_example/presentation/common/refresh_icon_button.dart';
 import 'package:basalt_example/presentation/common/status_views.dart';
 import 'package:basalt_example/presentation/product_detail/product_detail_page.dart';
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -32,6 +34,23 @@ class _CatalogView extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Catalogue'),
         actions: [
+          if (kDebugMode)
+            IconButton(
+              tooltip: 'Reset & reseed demo data',
+              icon: const Icon(Icons.restart_alt),
+              onPressed: () async {
+                final messenger = ScaffoldMessenger.of(context);
+                final cubit = context.read<CatalogCubit>();
+                await AppDatabase.reset();
+                await cubit.load();
+                messenger.showSnackBar(
+                  const SnackBar(
+                    content: Text('Demo data reset'),
+                    duration: Duration(seconds: 1),
+                  ),
+                );
+              },
+            ),
           RefreshIconButton(
             onRefresh: () => context.read<CatalogCubit>().load(),
           ),
@@ -57,7 +76,8 @@ class _CatalogView extends StatelessWidget {
                     break;
                 }
                 if (state.products.isEmpty) {
-                  return const EmptyView(message: 'No products match your filters');
+                  return const EmptyView(
+                      message: 'No products match your filters');
                 }
                 return ListView.builder(
                   itemCount: state.products.length,
@@ -67,7 +87,8 @@ class _CatalogView extends StatelessWidget {
                       product: product,
                       onTap: () => Navigator.of(context).push(
                         MaterialPageRoute<void>(
-                          builder: (_) => ProductDetailPage(productId: product.id),
+                          builder: (_) =>
+                              ProductDetailPage(productId: product.id),
                         ),
                       ),
                       onAddToCart: () {
@@ -143,8 +164,9 @@ class _CategoryFilter extends StatelessWidget {
                   child: ChoiceChip(
                     label: Text(category.name),
                     selected: state.selectedCategoryId == category.id,
-                    onSelected: (_) =>
-                        context.read<CatalogCubit>().selectCategory(category.id),
+                    onSelected: (_) => context
+                        .read<CatalogCubit>()
+                        .selectCategory(category.id),
                   ),
                 ),
             ],

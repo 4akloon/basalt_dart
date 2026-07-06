@@ -13,6 +13,7 @@ extension ProductRowMapper on ProductRow {
         stock: stock,
         categoryId: categoryId,
         isActive: isActive == 1,
+        metadata: metadata,
         category: category?.toDomain(),
       );
 }

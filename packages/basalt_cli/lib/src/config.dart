@@ -2,6 +2,8 @@ import 'dart:io';
 
 import 'package:yaml/yaml.dart';
 
+import 'schema_type_overrides.dart';
+
 /// CLI configuration, resolved from `DATABASE_URL` (env) with `basalt.yaml` as
 /// a fallback / for the migrations directory.
 ///
@@ -11,10 +13,15 @@ final class BasaltConfig {
     required this.databaseUrl,
     required this.migrationsDir,
     required this.schemaOutput,
+    this.typeOverrides = const SchemaTypeOverrides.empty(),
   });
   final String databaseUrl;
   final String migrationsDir;
   final String schemaOutput;
+
+  /// Column-type overrides for `generate-schema`, from the optional `types:`
+  /// block of `basalt.yaml`.
+  final SchemaTypeOverrides typeOverrides;
 
   /// SQLite filesystem path (scheme stripped). `:memory:` is passed through.
   String get databasePath {
@@ -34,6 +41,7 @@ final class BasaltConfig {
     var databaseUrl = env['DATABASE_URL'];
     var migrationsDir = 'migrations';
     var schemaOutput = 'lib/schema.dart';
+    var typeOverrides = const SchemaTypeOverrides.empty();
 
     final file = File(configPath);
     if (file.existsSync()) {
@@ -42,6 +50,7 @@ final class BasaltConfig {
         databaseUrl ??= yaml['database_url'] as String?;
         if (yaml['migrations_dir'] case final String dir) migrationsDir = dir;
         if (yaml['schema_output'] case final String path) schemaOutput = path;
+        typeOverrides = SchemaTypeOverrides.fromYaml(yaml['types']);
       }
     }
 
@@ -50,6 +59,7 @@ final class BasaltConfig {
         databaseUrl: url,
         migrationsDir: migrationsDir,
         schemaOutput: schemaOutput,
+        typeOverrides: typeOverrides,
       );
     }
     throw StateError(

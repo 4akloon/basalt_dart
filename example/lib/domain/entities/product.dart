@@ -11,6 +11,7 @@ class Product {
     required this.stock,
     required this.categoryId,
     required this.isActive,
+    this.metadata,
     this.category,
   });
 
@@ -21,6 +22,10 @@ class Product {
   final int stock;
   final int categoryId;
   final bool isActive;
+
+  /// Free-form JSON attributes (e.g. warranty, ports), or null if none.
+  final Map<String, Object?>? metadata;
+
   final Category? category;
 
   bool get inStock => stock > 0;

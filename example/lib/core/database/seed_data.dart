@@ -42,21 +42,42 @@ class SeedData {
         ('Home', null),
         ('Kitchen', 4),
       ]) {
-        await tx.execute(CategoryWrite(name: name, parentId: parent).toInsert());
+        await tx
+            .execute(CategoryWrite(name: name, parentId: parent).toInsert());
       }
 
       // ---- Products -------------------------------------------------------
-      for (final (name, desc, price, stock, cat) in const [
-        ('Laptop Pro 14', 'Powerful 14-inch laptop', 1999.0, 8, 2),
-        ('Laptop Air 13', 'Thin and light ultrabook', 1299.0, 3, 2),
-        ('Smartphone X', 'Flagship smartphone', 999.0, 20, 3),
-        ('Smartphone Mini', 'Compact and affordable', 699.0, 2, 3),
-        ('Wireless Earbuds', 'Noise-cancelling earbuds', 149.0, 50, 1),
-        ('4K Monitor', '27-inch 4K display', 449.0, 5, 2),
-        ('Espresso Machine', 'Barista-grade espresso', 599.0, 4, 5),
-        ('Blender Pro', 'High-speed blender', 129.0, 15, 5),
-        ('Smart Speaker', 'Voice-assistant speaker', 99.0, 0, 1),
-        ('Air Fryer', 'Oil-free air fryer', 179.0, 6, 5),
+      // The trailing record field is the JSON `metadata` map (or null) — it
+      // round-trips through the custom `JsonMapOrNullSqlType` codec.
+      for (final (name, desc, price, stock, cat, metadata)
+          in const <(String, String, double, int, int, Map<String, Object?>?)>[
+        (
+          'Laptop Pro 14',
+          'Powerful 14-inch laptop',
+          1999.0,
+          8,
+          2,
+          {
+            'warranty': '2 years',
+            'ports': ['USB-C', 'HDMI'],
+          }
+        ),
+        ('Laptop Air 13', 'Thin and light ultrabook', 1299.0, 3, 2, null),
+        ('Smartphone X', 'Flagship smartphone', 999.0, 20, 3, null),
+        ('Smartphone Mini', 'Compact and affordable', 699.0, 2, 3, null),
+        (
+          'Wireless Earbuds',
+          'Noise-cancelling earbuds',
+          149.0,
+          50,
+          1,
+          {'batteryHours': 8, 'wireless': true}
+        ),
+        ('4K Monitor', '27-inch 4K display', 449.0, 5, 2, null),
+        ('Espresso Machine', 'Barista-grade espresso', 599.0, 4, 5, null),
+        ('Blender Pro', 'High-speed blender', 129.0, 15, 5, null),
+        ('Smart Speaker', 'Voice-assistant speaker', 99.0, 0, 1, null),
+        ('Air Fryer', 'Oil-free air fryer', 179.0, 6, 5, null),
       ]) {
         await tx.execute(
           ProductWrite(
@@ -66,6 +87,7 @@ class SeedData {
             stock: stock,
             categoryId: cat,
             isActive: 1,
+            metadata: metadata,
           ).toInsert(),
         );
       }

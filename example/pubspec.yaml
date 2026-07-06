@@ -84,3 +84,4 @@ flutter:
     - migrations/0005_create_orders/
     - migrations/0006_create_order_items/
     - migrations/0007_create_reviews/
+    - migrations/0008_add_product_metadata/

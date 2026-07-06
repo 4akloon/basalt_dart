@@ -17,6 +17,7 @@ class ProductRow {
     required this.stock,
     required this.categoryId,
     required this.isActive,
+    this.metadata,
     this.category,
   });
 
@@ -27,6 +28,10 @@ class ProductRow {
   final int stock;
   final int categoryId;
   final int isActive;
+
+  /// Free-form JSON attributes, decoded by the custom `JsonMapOrNullSqlType`
+  /// (`products.metadata`) into a real `Map`.
+  final Map<String, Object?>? metadata;
 
   @Relation(Products.categoryId)
   final CategoryRow? category;

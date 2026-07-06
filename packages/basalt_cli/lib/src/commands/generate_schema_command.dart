@@ -17,7 +17,8 @@ final class GenerateSchemaCommand extends DbCommand {
           stderr.writeln('Warning: no tables found in the database. '
               'Run `basalt migration run` first.');
         }
-        final source = const SchemaGenerator().generate(tables);
+        final source = SchemaGenerator(typeOverrides: config.typeOverrides)
+            .generate(tables);
         final out = File(config.schemaOutput);
         out.parent.createSync(recursive: true);
         out.writeAsStringSync(source);

@@ -54,6 +54,7 @@ final class ProductDetailRowQuery extends FoldMappedQuery<ProductDetailRow> {
         stock: r.get(src.col(Products.stock)),
         categoryId: r.get(src.col(Products.categoryId)),
         isActive: r.get(src.col(Products.isActive)),
+        metadata: r.get(src.col(Products.metadata)),
         category: (prefix.isEmpty ? (budget > 1 ? 1 : budget) : budget) <= 0
             ? null
             : CategoryRowQuery.fromRow(
@@ -108,6 +109,7 @@ final class _ProductDetailRowFoldAcc {
         stock: base.stock,
         categoryId: base.categoryId,
         isActive: base.isActive,
+        metadata: base.metadata,
         category: base.category,
         reviews: [for (final c in reviews.values) c],
       );

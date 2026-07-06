@@ -67,5 +67,6 @@ static const role = ValueColumn<Role, Accounts>('accounts', 'role', RoleSqlType(
 
 The custom type flows through reads (`r.get(Accounts.role)` → `Role`), writes
 (`Accounts.role.set(Role.admin)`), and predicates (`Accounts.role.eq(Role.admin)`).
-`generate-schema` still emits built-in types, so swap in a custom `SqlType` by
-editing the generated schema.
+`generate-schema` emits built-in types by default; to have it emit a custom
+`SqlType` instead of hand-editing the generated schema, configure a `types:`
+override in `basalt.yaml` (see the `basalt_cli` guide).

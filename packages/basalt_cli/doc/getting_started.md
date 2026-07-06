@@ -28,6 +28,7 @@ Create `basalt.yaml` in the directory you'll run the CLI from:
 ```yaml
 database_url: app.db        # SQLite file path (or sqlite:/file: URL; ':memory:' is passed through)
 migrations_dir: migrations
+# types:                    # optional — customize generated column types (see §4)
 ```
 
 Alternatively set `DATABASE_URL` in the environment (it takes precedence over
@@ -92,6 +93,56 @@ abstract final class Users {
 > SQLite has no native boolean or timestamp, so `active` may come back as `int`.
 > See `basalt_sqlite` **Type Mapping** for SQLite-specific caveats, and
 > `basalt` **Types** for the codec model.
+
+### Customizing column types
+
+By default each column maps to a built-in `SqlType`. To emit a **custom**
+`SqlType` (e.g. an enum codec, or a JSON type) instead of editing the generated
+file by hand, add an optional `types:` block to `basalt.yaml`. Overrides are
+matched per column with the precedence **specific column > native type >
+canonical type**, each falling back to the built-in mapping:
+
+```yaml
+types:
+  # By canonical type — keys are ColumnType names
+  # (integer, text, real, boolean, blob, dateTime).
+  canonical:
+    dateTime:
+      dart_type: "DateTime"
+      sql_type: "UtcDateTimeSqlType()"
+      import: "package:my_app/db/utc_date_time_sql_type.dart"
+
+  # By native/backend type — matched against the introspected column type
+  # (trimmed, lower-cased; a `varchar` key also matches `VARCHAR(255)`).
+  native:
+    jsonb:
+      dart_type: "Map<String, Object?>"
+      sql_type: "JsonMapSqlType()"
+      import: "package:my_app/db/json_map_sql_type.dart"
+      nullable:                          # used for NULLable columns
+        dart_type: "Map<String, Object?>?"
+        sql_type: "JsonMapOrNullSqlType()"
+
+  # By a single column — key is "table.column" (highest precedence).
+  columns:
+    users.metadata:
+      dart_type: "UserMeta"
+      sql_type: "UserMetaSqlType()"
+      import: "package:my_app/models/user_meta.dart"
+```
+
+Each entry needs `dart_type` and `sql_type` (both written **verbatim** —
+`dart_type` must equal the `SqlType`'s `T`), an optional `import` the generated
+file needs for a custom symbol (omit it for built-in types), and an optional
+`nullable:` variant used when the column allows NULL. The generator collects and
+de-duplicates the imports at the top of the file. Overrides apply to
+`ValueColumn`, `PrimaryKey` and `Ref` alike; a foreign key and the primary key
+it references must resolve to the same base type (override both or neither),
+otherwise `generate-schema` fails with a clear error.
+
+> Postgres reports `enum`/array columns as `USER-DEFINED`/`ARRAY` (the specific
+> name isn't captured), so target those with a per-column override rather than a
+> `native:` entry.
 
 ## 5. Write data classes and generate mappers
 

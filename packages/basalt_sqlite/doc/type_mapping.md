@@ -28,5 +28,7 @@ differ.
 ## Custom types
 
 Custom `SqlType` codecs work the same as on any backend — see `basalt`
-**Types**. `generate-schema` still emits built-in types; swap in a custom
-`SqlType` by editing the generated schema.
+**Types**. `generate-schema` emits built-in types by default; to have it emit a
+custom `SqlType` instead of editing the generated schema by hand, configure a
+`types:` override in `basalt.yaml` (by specific column, native type, or
+canonical type) — see `basalt_cli` **Getting Started**.

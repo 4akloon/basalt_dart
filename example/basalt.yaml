@@ -4,3 +4,13 @@
 database_url: example.db
 migrations_dir: migrations
 schema_output: lib/core/database/schema.dart
+
+# Custom column types: `generate-schema` emits these SqlTypes/Dart types instead
+# of the built-in mapping. Here the free-form `products.metadata` JSON column is
+# backed by the app's own `JsonMapOrNullSqlType` codec.
+types:
+  columns:
+    products.metadata:
+      dart_type: "Map<String, Object?>?"
+      sql_type: "JsonMapOrNullSqlType()"
+      import: "package:basalt_example/core/database/json_map_sql_type.dart"
