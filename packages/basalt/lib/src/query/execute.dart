@@ -1,5 +1,4 @@
 import '../connection.dart';
-import 'fold_query.dart';
 import 'query.dart';
 
 /// basalt-style terminal helpers so a finished query reads like `query.load(db)`

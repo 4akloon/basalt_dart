@@ -15,7 +15,6 @@ export 'src/expression/arithmetic.dart';
 export 'src/expression/expression.dart';
 export 'src/query/associations.dart';
 export 'src/query/execute.dart';
-export 'src/query/fold_query.dart';
 export 'src/query/query.dart';
 export 'src/query/row_reader.dart';
 export 'src/query/write.dart';

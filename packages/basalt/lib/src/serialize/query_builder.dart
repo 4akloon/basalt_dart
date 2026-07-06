@@ -1,5 +1,4 @@
 import '../ast/sql_node.dart';
-import '../query/fold_query.dart';
 import '../query/query.dart';
 import '../query/write.dart';
 import 'sql_dialect.dart';

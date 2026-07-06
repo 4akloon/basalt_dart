@@ -3,8 +3,13 @@ import '../expression/expression.dart';
 import '../schema/table.dart';
 import 'row_reader.dart';
 
+part 'fold_query.dart';
+part 'mapped_query.dart';
+part 'mapped_query_base.dart';
+
 /// The shape the serializer and `Connection` consume. Implemented by the
-/// terminal [MappedQuery]; [Query] is the builder that produces it.
+/// terminal [MappedQuery] and [FoldMappedQuery]; [Query] is the builder that
+/// produces them.
 abstract interface class SelectQuery<R> {
   String get fromTable;
   String? get fromAlias;
@@ -158,10 +163,10 @@ final class Query<Scope> {
     );
   }
 
-  /// Attach a row decoder. The result is still chainable via [MappedQuery.orderBy],
-  /// [MappedQuery.limit], and friends.
+  /// Attach a row decoder. The result is still chainable via
+  /// [MappedQuery.orderBy], [MappedQuery.limit], and friends.
   MappedQuery<R> map<R>(R Function(RowReader reader) decode) =>
-      MappedQuery._(this, decode);
+      MappedQuery(this, decode);
 
   /// Like [map] but using a reusable [RowMapper] (the codegen output).
   MappedQuery<R> mapWith<R>(RowMapper<R> mapper) => map(mapper.read);
@@ -198,82 +203,3 @@ Query<Tbl> from<Tbl>(QuerySource<Tbl> source) => Query<Tbl>(
       fromAlias: source.alias,
       projection: [...source.columns],
     );
-
-/// A [Query] finished with a decoder — the executable [SelectQuery].
-///
-/// {@category queries}
-final class MappedQuery<R> implements SelectQuery<R> {
-  MappedQuery._(Query<dynamic> query, this._decode)
-      : _query = query,
-        _columnIndex = {
-          for (var i = 0; i < query.projection.length; i++)
-            query.projection[i].readKey: i,
-        };
-  final Query<dynamic> _query;
-  final R Function(RowReader reader) _decode;
-  final Map<String, int> _columnIndex;
-
-  @override
-  String get fromTable => _query.fromTable;
-  @override
-  String? get fromAlias => _query.fromAlias;
-  @override
-  List<Join> get joins => _query.joins;
-  @override
-  List<Projection> get projection => [
-        for (final s in _query.projection)
-          Projection(s.selectExpression, alias: s.selectAlias),
-      ];
-  @override
-  bool get isDistinct => _query.isDistinct;
-  @override
-  SqlNode? get whereNode => _query.whereNode;
-  @override
-  List<ColumnNode> get groupByColumns =>
-      [for (final c in _query.groupByColumns) c.node];
-  @override
-  SqlNode? get havingNode => _query.havingNode;
-  @override
-  List<Ordering> get orderings => _query.orderings;
-  @override
-  int? get limitCount => _query.limitCount;
-  @override
-  int? get offsetCount => _query.offsetCount;
-  @override
-  R Function(List<Object?>) get rowDecoder =>
-      (row) => _decode(RowReader(_columnIndex, row));
-
-  /// Further refine the query while keeping the row decoder.
-  MappedQuery<R> orderBy(Ordering ordering) =>
-      MappedQuery._(_query.orderBy(ordering), _decode);
-
-  MappedQuery<R> limit(int count) =>
-      MappedQuery._(_query.limit(count), _decode);
-
-  MappedQuery<R> offset(int count) =>
-      MappedQuery._(_query.offset(count), _decode);
-
-  MappedQuery<R> where(Expression<bool, dynamic> predicate) =>
-      MappedQuery._(_query.where(predicate), _decode);
-
-  /// basalt-style `filter`: ANDs with any existing predicate (see [Query.filter]).
-  MappedQuery<R> filter(Expression<bool, dynamic> predicate) =>
-      MappedQuery._(_query.filter(predicate), _decode);
-
-  /// basalt-style alias for [orderBy] (appends an ordering).
-  MappedQuery<R> order(Ordering ordering) =>
-      MappedQuery._(_query.order(ordering), _decode);
-
-  /// basalt-style find-by-key (see [Query.findBy]).
-  MappedQuery<R> findBy<T>(TableColumn<T, dynamic> key, T value) =>
-      filter(key.eq(value));
-
-  MappedQuery<R> distinct([bool value = true]) =>
-      MappedQuery._(_query.distinct(value), _decode);
-
-  MappedQuery<R> groupBy(List<TableColumn<Object?, Object?>> columns) =>
-      MappedQuery._(_query.groupBy(columns), _decode);
-
-  MappedQuery<R> having(Expression<bool, dynamic> predicate) =>
-      MappedQuery._(_query.having(predicate), _decode);
-}
