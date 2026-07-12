@@ -95,29 +95,32 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: dart-lang/setup-dart@v1
+      # basalt ships the compiled DevTools extension, which is a Flutter web app
+      # kept out of git — so this job needs Flutter to regenerate it before the
+      # basalt dry-run. Flutter also bundles the Dart SDK used for the dry-runs.
+      - uses: subosito/flutter-action@v2
         with:
-          sdk: stable
+          channel: stable
 
-      # example/ and packages/basalt_devtools_extension are Flutter apps, NOT Dart
-      # workspace members. `dart pub get` still descends into every nested pubspec
-      # in the tree and fails on their `sdk: flutter` deps without a Flutter SDK.
-      # Hide their pubspecs so the Dart-only workspace resolves cleanly (the CI
-      # checkout is ephemeral, so no restore needed).
-      - name: Exclude Flutter apps from workspace resolution
+      # Regenerate the compiled DevTools extension into basalt/extension/devtools/
+      # (build/ is .gitignored, so this produces no uncommitted tracked changes and
+      # basalt's dry-run sees a non-empty build dir, matching a real release).
+      - name: Build DevTools extension
+        working-directory: packages/basalt_devtools_extension
         run: |
-          mv example/pubspec.yaml example/pubspec.yaml.ci-hidden
-          mv packages/basalt_devtools_extension/pubspec.yaml packages/basalt_devtools_extension/pubspec.yaml.ci-hidden
+          flutter pub get
+          dart run devtools_extensions build_and_copy \
+            --source=. --dest=../basalt/extension/devtools
 
       - name: Install dependencies (workspace)
         run: dart pub get
 
-      # Dry-run the pure-Dart first-wave packages. `basalt` itself is NOT gated
-      # here: its DevTools extension build/ lives outside git (regenerated before
-      # publishing), so on a fresh CI checkout pub warns about the empty build dir
-      # and --dry-run exits non-zero. basalt's dry-run is validated locally at
-      # publish time, once the extension build is regenerated. basalt_postgres is
-      # intentionally held from the first publish and is not dry-run-gated here.
+      # Dry-run each first-wave package. basalt_postgres is intentionally held
+      # from the first publish and is not dry-run-gated here.
+      - name: Dry-run basalt
+        run: dart pub publish --dry-run
+        working-directory: packages/basalt
+
       - name: Dry-run basalt_sqlite
         run: dart pub publish --dry-run
         working-directory: packages/basalt_sqlite
