@@ -68,8 +68,7 @@ final class BasaltConfig {
         if (yaml['migrations_dir'] case final String dir) migrationsDir = dir;
         if (yaml['schema_output'] case final String path) schemaOutput = path;
         nativeTypes = _nativeTypes(yaml['native_types']);
-        typeOverrides =
-            const SchemaTypeOverridesParser().parse(yaml['types']);
+        typeOverrides = const SchemaTypeOverridesParser().parse(yaml['types']);
       }
     }
 
@@ -115,7 +114,9 @@ final class BasaltConfig {
     if (node is! Map) {
       throw StateError('basalt.yaml: `database:` must be a mapping.');
     }
-    return {for (final entry in node.entries) entry.key.toString(): entry.value};
+    return {
+      for (final entry in node.entries) entry.key.toString(): entry.value
+    };
   }
 
   static bool _nativeTypes(Object? node) {

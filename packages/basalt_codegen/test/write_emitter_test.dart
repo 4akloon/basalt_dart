@@ -87,7 +87,9 @@ void main() {
         relationArgs: const [],
       );
       expect(
-          code, contains('r.get(src.col(Users.id))'),); // readOnly -> still read
+        code,
+        contains('r.get(src.col(Users.id))'),
+      ); // readOnly -> still read
       expect(code, contains('r.get(src.col(Users.name))'));
       expect(code, isNot(contains('Users.token'))); // writeOnly -> not read
     });

@@ -97,7 +97,10 @@ void main() {
         columnArgs: const [
           ColumnArg(paramName: 'id', isNamed: false, columnExpr: 'Users.id'),
           ColumnArg(
-              paramName: 'name', isNamed: false, columnExpr: 'Users.name',),
+            paramName: 'name',
+            isNamed: false,
+            columnExpr: 'Users.name',
+          ),
         ],
       );
       expect(code, contains('UserSummaryQuery() : super(_build(), fromRow);'));

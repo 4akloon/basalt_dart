@@ -25,9 +25,10 @@ final class QueryGetterEmitter {
 
     final joinLines = <String>[];
     for (final node in treeNodes) {
-      final onLeft = node.parentAliasPath == null
+      final parentAliasPath = node.parentAliasPath;
+      final onLeft = parentAliasPath == null
           ? '${node.edge.parentMarker}.${node.edge.fkAccessor}'
-          : '${varOf(node.parentAliasPath!)}.col(${node.edge.parentMarker}.${node.edge.fkAccessor})';
+          : '${varOf(parentAliasPath)}.col(${node.edge.parentMarker}.${node.edge.fkAccessor})';
       final onRight =
           '${varOf(node.aliasPath)}.col(${node.edge.targetMarker}.${node.edge.pkAccessor})';
       final join = node.edge.fkNullable ? 'leftJoin' : 'innerJoin';

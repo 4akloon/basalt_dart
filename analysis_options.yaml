@@ -48,7 +48,9 @@ linter:
     - use_raw_strings
     - prefer_const_constructors
     - prefer_const_declarations
-    - require_trailing_commas
+    # require_trailing_commas is intentionally omitted: it conflicts with Dart's
+    # 3.7+ formatter, which manages commas itself (the Dart team retired the rule
+    # for this reason). `dart format` is the source of truth for commas here.
 
 formatter:
   trailing_commas: preserve

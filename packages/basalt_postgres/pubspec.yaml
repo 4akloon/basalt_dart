@@ -1,6 +1,11 @@
 name: basalt_postgres
 description: Postgres backend for the Basalt Dart ORM — dialect now; driver-backed Connection + introspection are WIP.
 version: 0.0.1
+repository: https://github.com/4akloon/basalt_dart
+homepage: https://github.com/4akloon/basalt_dart
+issue_tracker: https://github.com/4akloon/basalt_dart/issues
+documentation: https://github.com/4akloon/basalt_dart/tree/main/packages/basalt_postgres/doc
+topics: [orm, database, postgres, sql]
 
 environment:
   sdk: ">=3.5.0 <4.0.0"

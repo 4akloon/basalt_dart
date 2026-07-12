@@ -1,6 +1,13 @@
 name: basalt_sqlite
-description: SQLite backend (driver + dialect) for the Basalt Dart ORM.
+description: >-
+  SQLite backend for the Basalt Dart ORM — a Connection + SqlDialect on
+  package:sqlite3, plus the CLI adapter for migrations and schema generation.
 version: 0.0.1
+repository: https://github.com/4akloon/basalt_dart
+homepage: https://github.com/4akloon/basalt_dart
+issue_tracker: https://github.com/4akloon/basalt_dart/issues
+documentation: https://github.com/4akloon/basalt_dart/tree/main/packages/basalt_sqlite/doc
+topics: [orm, database, sqlite, sql]
 
 environment:
   sdk: ">=3.5.0 <4.0.0"

@@ -173,9 +173,7 @@ final class SchemaGenerator {
     // No `const` prefix: the column is emitted into a `static const` field, so
     // the constructor is already a const context — an explicit `const` here
     // trips `unnecessary_const` in lint-enabled projects (e.g. flutter_lints).
-    return nullable
-        ? ('$base?', 'NullableSqlType($cls())')
-        : (base, '$cls()');
+    return nullable ? ('$base?', 'NullableSqlType($cls())') : (base, '$cls()');
   }
 
   String _pascal(String s) => s

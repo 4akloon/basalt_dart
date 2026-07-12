@@ -51,7 +51,8 @@ final class Bootstrapper {
 
     final basaltDir = Directory(p.join(packageConfig.parent.path, 'basalt'));
     final entrypoint = File(p.join(basaltDir.path, 'entrypoint.dart'));
-    final fingerprintFile = File(p.join(basaltDir.path, 'entrypoint.fingerprint'));
+    final fingerprintFile =
+        File(p.join(basaltDir.path, 'entrypoint.fingerprint'));
     final fingerprint = '$_formatVersion\n$backend\n$packageConfigContent';
     final stale = !entrypoint.existsSync() ||
         !fingerprintFile.existsSync() ||

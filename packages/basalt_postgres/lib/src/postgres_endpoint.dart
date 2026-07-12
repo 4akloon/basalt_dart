@@ -96,9 +96,8 @@ final class PostgresEndpoint {
       username: credentials.isNotEmpty && credentials.first.isNotEmpty
           ? Uri.decodeComponent(credentials.first)
           : 'postgres',
-      password: credentials.length > 1
-          ? Uri.decodeComponent(credentials[1])
-          : '',
+      password:
+          credentials.length > 1 ? Uri.decodeComponent(credentials[1]) : '',
       // Default to SSL; opt out for local/dev with `?sslmode=disable`.
       ssl: uri.queryParameters['sslmode'] != 'disable',
     );

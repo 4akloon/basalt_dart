@@ -20,7 +20,8 @@ final class GenerateCommand extends Command<int> {
     final config = BasaltConfig.load(
       configPath: globalResults?['config'] as String? ?? 'basalt.yaml',
     );
-    final dir = const MigrationScaffolder().scaffold(rest.first, config.migrationsDir);
+    final dir =
+        const MigrationScaffolder().scaffold(rest.first, config.migrationsDir);
     stdout.writeln('Created $dir');
     return 0;
   }

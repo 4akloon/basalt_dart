@@ -70,7 +70,7 @@ abstract class _PgSession implements Connection {
 
     final tables = <IntrospectedTable>[];
     for (final tableRow in tableRows) {
-      final tableName = tableRow[0]! as String;
+      final tableName = tableRow[0] as String;
 
       final columnRows = await _session.execute(
         'SELECT column_name, data_type, is_nullable '
@@ -88,7 +88,7 @@ abstract class _PgSession implements Connection {
         "AND tc.constraint_type = 'PRIMARY KEY'",
         parameters: ['public', tableName],
       );
-      final pks = {for (final r in pkRows) r[0]! as String};
+      final pks = {for (final r in pkRows) r[0] as String};
 
       final fkRows = await _session.execute(
         'SELECT kcu.column_name, ccu.table_name, ccu.column_name '
@@ -105,19 +105,19 @@ abstract class _PgSession implements Connection {
       );
       final fkByColumn = <String, ForeignKey>{
         for (final r in fkRows)
-          r[0]! as String: ForeignKey(r[1]! as String, r[2]! as String),
+          r[0] as String: ForeignKey(r[1] as String, r[2] as String),
       };
 
       tables.add(
         IntrospectedTable(tableName, [
           for (final c in columnRows)
             IntrospectedColumn(
-              name: c[0]! as String,
-              rawType: c[1]! as String,
-              type: _columnType(c[1]! as String),
-              isNullable: (c[2]! as String) == 'YES',
-              isPrimaryKey: pks.contains(c[0]! as String),
-              foreignKey: fkByColumn[c[0]! as String],
+              name: c[0] as String,
+              rawType: c[1] as String,
+              type: _columnType(c[1] as String),
+              isNullable: (c[2] as String) == 'YES',
+              isPrimaryKey: pks.contains(c[0] as String),
+              foreignKey: fkByColumn[c[0] as String],
             ),
         ]),
       );

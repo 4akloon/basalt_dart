@@ -116,7 +116,7 @@ per category) + `///` doc comments in `lib/`.
 
 | Package | Guides (`doc/`) |
 |---|---|
-| `basalt` | getting_started, schema, types, expressions, queries, writes, serialization, connection, annotations, tooling |
+| `basalt` | getting_started, schema, types, expressions, queries, writes, serialization, connection, migrations, annotations, tooling |
 | `basalt_cli` | getting_started, migrations |
 | `basalt_codegen` | getting_started |
 | `basalt_sqlite` | getting_started, type_mapping |

@@ -14,8 +14,10 @@ final class SelectQueryEmitter {
     required String tableMarker,
     required List<ColumnArg> columnArgs,
   }) {
-    final cols =
-        [for (final c in columnArgs) if (!c.writeOnly) c.columnExpr].join(', ');
+    final cols = [
+      for (final c in columnArgs)
+        if (!c.writeOnly) c.columnExpr
+    ].join(', ');
     return '''
   ${className}Query() : super(_build(), fromRow);
 

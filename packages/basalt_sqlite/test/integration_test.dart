@@ -6,7 +6,7 @@ import 'package:test/test.dart';
 
 import 'test_schema.dart';
 
-/// ponytail: test-only fetch counter; delegates every other [Connection] method.
+/// Test-only fetch counter; delegates every other [Connection] method.
 final class _CountingConnection implements Connection {
   _CountingConnection(this._inner);
   final Connection _inner;
@@ -90,8 +90,7 @@ final class RoleSqlType extends SqlType<Role> {
 }
 
 abstract final class Accounts {
-  static const id =
-      PrimaryKey<int, Accounts>('accounts', 'id', IntSqlType());
+  static const id = PrimaryKey<int, Accounts>('accounts', 'id', IntSqlType());
   static const role =
       ValueColumn<Role, Accounts>('accounts', 'role', RoleSqlType());
   static const table = TableRef<Accounts>('accounts', [id, role]);
@@ -127,21 +126,27 @@ void main() {
   tearDown(() => db.close());
 
   Future<void> seed() async {
-    await db.execute(insertInto(Users.table)
-        .value(Users.id.set(1))
-        .value(Users.name.set('Bob'))
-        .value(Users.age.set(30))
-        .value(Users.active.set(true)),);
-    await db.execute(insertInto(Users.table)
-        .value(Users.id.set(2))
-        .value(Users.name.set('Alice'))
-        .value(Users.age.set(17))
-        .value(Users.active.set(false)),);
-    await db.execute(insertInto(Users.table)
-        .value(Users.id.set(3))
-        .value(Users.name.set('Carol'))
-        .value(Users.age.set(42))
-        .value(Users.active.set(true)),);
+    await db.execute(
+      insertInto(Users.table)
+          .value(Users.id.set(1))
+          .value(Users.name.set('Bob'))
+          .value(Users.age.set(30))
+          .value(Users.active.set(true)),
+    );
+    await db.execute(
+      insertInto(Users.table)
+          .value(Users.id.set(2))
+          .value(Users.name.set('Alice'))
+          .value(Users.age.set(17))
+          .value(Users.active.set(false)),
+    );
+    await db.execute(
+      insertInto(Users.table)
+          .value(Users.id.set(3))
+          .value(Users.name.set('Carol'))
+          .value(Users.age.set(42))
+          .value(Users.active.set(true)),
+    );
   }
 
   test('round-trip: insert then typed select (record via map)', () async {
@@ -172,14 +177,16 @@ void main() {
 
   test('update returns affected rows and persists', () async {
     await seed();
-    final n = await db.execute(update(Users.table)
-        .value(Users.age.set(31))
-        .where(Users.name.eq('Bob')),);
+    final n = await db.execute(
+      update(Users.table).value(Users.age.set(31)).where(Users.name.eq('Bob')),
+    );
     expect(n, 1);
     expect(
-      await db.fetch(from(Users.table)
-          .where(Users.name.eq('Bob'))
-          .map((r) => r.get(Users.age)),),
+      await db.fetch(
+        from(Users.table)
+            .where(Users.name.eq('Bob'))
+            .map((r) => r.get(Users.age)),
+      ),
       [31],
     );
   });
@@ -189,8 +196,9 @@ void main() {
     final n = await db.execute(deleteFrom(Users.table).where(Users.age.lt(18)));
     expect(n, 1);
     expect(
-        (await db.fetch(from(Users.table).map((r) => r.get(Users.id)))).length,
-        2,);
+      (await db.fetch(from(Users.table).map((r) => r.get(Users.id)))).length,
+      2,
+    );
   });
 
   test('selectModel returns data class instances (mapWith)', () async {
@@ -208,16 +216,20 @@ void main() {
 
   test('join nests the author User inside Post', () async {
     await seed();
-    await db.execute(insertInto(Posts.table)
-        .value(Posts.id.set(1))
-        .value(Posts.authorId.set(1))
-        .value(Posts.title.set('Hello'))
-        .value(Posts.views.set(150)),);
-    await db.execute(insertInto(Posts.table)
-        .value(Posts.id.set(2))
-        .value(Posts.authorId.set(3))
-        .value(Posts.title.set('World'))
-        .value(Posts.views.set(50)),);
+    await db.execute(
+      insertInto(Posts.table)
+          .value(Posts.id.set(1))
+          .value(Posts.authorId.set(1))
+          .value(Posts.title.set('Hello'))
+          .value(Posts.views.set(150)),
+    );
+    await db.execute(
+      insertInto(Posts.table)
+          .value(Posts.id.set(2))
+          .value(Posts.authorId.set(3))
+          .value(Posts.title.set('World'))
+          .value(Posts.views.set(50)),
+    );
 
     final List<Post> posts = await db.fetch(
       from(Posts.table)
@@ -236,32 +248,41 @@ void main() {
 
   test('chained joins (two joins) nest Comment -> Post -> User', () async {
     await seed();
-    await db.execute(insertInto(Posts.table)
-        .value(Posts.id.set(1))
-        .value(Posts.authorId.set(1))
-        .value(Posts.title.set('Hello'))
-        .value(Posts.views.set(150)),);
-    await db.execute(insertInto(Posts.table)
-        .value(Posts.id.set(2))
-        .value(Posts.authorId.set(3))
-        .value(Posts.title.set('World'))
-        .value(Posts.views.set(50)),);
-    await db.execute(insertInto(Comments.table)
-        .value(Comments.id.set(1))
-        .value(Comments.postId.set(1))
-        .value(Comments.body.set('Nice')),);
-    await db.execute(insertInto(Comments.table)
-        .value(Comments.id.set(2))
-        .value(Comments.postId.set(2))
-        .value(Comments.body.set('Meh')),);
+    await db.execute(
+      insertInto(Posts.table)
+          .value(Posts.id.set(1))
+          .value(Posts.authorId.set(1))
+          .value(Posts.title.set('Hello'))
+          .value(Posts.views.set(150)),
+    );
+    await db.execute(
+      insertInto(Posts.table)
+          .value(Posts.id.set(2))
+          .value(Posts.authorId.set(3))
+          .value(Posts.title.set('World'))
+          .value(Posts.views.set(50)),
+    );
+    await db.execute(
+      insertInto(Comments.table)
+          .value(Comments.id.set(1))
+          .value(Comments.postId.set(1))
+          .value(Comments.body.set('Nice')),
+    );
+    await db.execute(
+      insertInto(Comments.table)
+          .value(Comments.id.set(2))
+          .value(Comments.postId.set(2))
+          .value(Comments.body.set('Meh')),
+    );
 
     final List<Comment> comments = await db.fetch(
       from(Comments.table)
           .innerJoin(Posts.table, onFk: Comments.postId) // comments -> posts
           .innerJoin(Users.table, onFk: Posts.authorId) // posts -> users
           .orderBy(Comments.id.asc())
-          .map((r) =>
-              readComment(r).withPost(readPost(r).withAuthor(readUser(r))),),
+          .map(
+            (r) => readComment(r).withPost(readPost(r).withAuthor(readUser(r))),
+          ),
     );
 
     expect(comments.length, 2);
@@ -274,21 +295,27 @@ void main() {
 
   test('self-join: two FKs to the same table via aliases', () async {
     await seed(); // Bob=1, Alice=2, Carol=3
-    await db.execute(insertInto(Messages.table)
-        .value(Messages.id.set(1))
-        .value(Messages.senderId.set(1))
-        .value(Messages.recipientId.set(3))
-        .value(Messages.body.set('Hi Carol')),);
+    await db.execute(
+      insertInto(Messages.table)
+          .value(Messages.id.set(1))
+          .value(Messages.senderId.set(1))
+          .value(Messages.recipientId.set(3))
+          .value(Messages.body.set('Hi Carol')),
+    );
 
     final sender = Users.table.aliased('sender');
     final recipient = Users.table.aliased('recipient');
 
     final List<Message> messages = await db.fetch(
       from(Messages.table)
-          .innerJoin(sender,
-              on: Messages.senderId.eqColumn(sender.col(Users.id)),)
-          .innerJoin(recipient,
-              on: Messages.recipientId.eqColumn(recipient.col(Users.id)),)
+          .innerJoin(
+            sender,
+            on: Messages.senderId.eqColumn(sender.col(Users.id)),
+          )
+          .innerJoin(
+            recipient,
+            on: Messages.recipientId.eqColumn(recipient.col(Users.id)),
+          )
           .map(
             (r) => Message(
               r.get(Messages.id),
@@ -309,12 +336,16 @@ void main() {
   test('nullable column round-trips null and non-null', () async {
     await db
         .executeSql('CREATE TABLE profiles (id INTEGER PRIMARY KEY, bio TEXT)');
-    await db.execute(insertInto(Profiles.table)
-        .value(Profiles.id.set(1))
-        .value(Profiles.bio.set('hello')),);
-    await db.execute(insertInto(Profiles.table)
-        .value(Profiles.id.set(2))
-        .value(Profiles.bio.set(null)),);
+    await db.execute(
+      insertInto(Profiles.table)
+          .value(Profiles.id.set(1))
+          .value(Profiles.bio.set('hello')),
+    );
+    await db.execute(
+      insertInto(Profiles.table)
+          .value(Profiles.id.set(2))
+          .value(Profiles.bio.set(null)),
+    );
 
     final List<String?> bios = await db.fetch(
       from(Profiles.table)
@@ -342,18 +373,21 @@ void main() {
     await seed();
     await expectLater(
       db.transaction((tx) async {
-        await tx.execute(insertInto(Users.table)
-            .value(Users.id.set(99))
-            .value(Users.name.set('Temp'))
-            .value(Users.age.set(1))
-            .value(Users.active.set(false)),);
+        await tx.execute(
+          insertInto(Users.table)
+              .value(Users.id.set(99))
+              .value(Users.name.set('Temp'))
+              .value(Users.age.set(1))
+              .value(Users.active.set(false)),
+        );
         throw StateError('boom');
       }),
       throwsStateError,
     );
     expect(
       await db.fetch(
-          from(Users.table).where(Users.id.eq(99)).map((r) => r.get(Users.id)),),
+        from(Users.table).where(Users.id.eq(99)).map((r) => r.get(Users.id)),
+      ),
       isEmpty,
     );
   });
@@ -361,18 +395,22 @@ void main() {
   test('nested transaction (savepoint) rolls back inner only', () async {
     await seed();
     await db.transaction((tx) async {
-      await tx.execute(insertInto(Users.table)
-          .value(Users.id.set(10))
-          .value(Users.name.set('Outer'))
-          .value(Users.age.set(50))
-          .value(Users.active.set(true)),);
+      await tx.execute(
+        insertInto(Users.table)
+            .value(Users.id.set(10))
+            .value(Users.name.set('Outer'))
+            .value(Users.age.set(50))
+            .value(Users.active.set(true)),
+      );
       try {
         await tx.transaction((inner) async {
-          await inner.execute(insertInto(Users.table)
-              .value(Users.id.set(11))
-              .value(Users.name.set('Inner'))
-              .value(Users.age.set(60))
-              .value(Users.active.set(true)),);
+          await inner.execute(
+            insertInto(Users.table)
+                .value(Users.id.set(11))
+                .value(Users.name.set('Inner'))
+                .value(Users.age.set(60))
+                .value(Users.active.set(true)),
+          );
           throw Exception('inner boom');
         });
       } on Exception {
@@ -380,14 +418,15 @@ void main() {
       }
     });
     expect(
-      await db.fetch(from(Users.table)
-          .where(Users.id.eq(10))
-          .map((r) => r.get(Users.name)),),
+      await db.fetch(
+        from(Users.table).where(Users.id.eq(10)).map((r) => r.get(Users.name)),
+      ),
       ['Outer'],
     );
     expect(
       await db.fetch(
-          from(Users.table).where(Users.id.eq(11)).map((r) => r.get(Users.id)),),
+        from(Users.table).where(Users.id.eq(11)).map((r) => r.get(Users.id)),
+      ),
       isEmpty,
     );
   });
@@ -573,24 +612,35 @@ void main() {
 
   test('loadGroupedByFk groups children by parent (belongs_to)', () async {
     await seed(); // Bob=1, Alice=2, Carol=3
-    await db.execute(insertInto(Posts.table)
-        .value(Posts.id.set(1))
-        .value(Posts.authorId.set(1))
-        .value(Posts.title.set('a'))
-        .value(Posts.views.set(1)),);
-    await db.execute(insertInto(Posts.table)
-        .value(Posts.id.set(2))
-        .value(Posts.authorId.set(1))
-        .value(Posts.title.set('b'))
-        .value(Posts.views.set(2)),);
-    await db.execute(insertInto(Posts.table)
-        .value(Posts.id.set(3))
-        .value(Posts.authorId.set(3))
-        .value(Posts.title.set('c'))
-        .value(Posts.views.set(3)),);
+    await db.execute(
+      insertInto(Posts.table)
+          .value(Posts.id.set(1))
+          .value(Posts.authorId.set(1))
+          .value(Posts.title.set('a'))
+          .value(Posts.views.set(1)),
+    );
+    await db.execute(
+      insertInto(Posts.table)
+          .value(Posts.id.set(2))
+          .value(Posts.authorId.set(1))
+          .value(Posts.title.set('b'))
+          .value(Posts.views.set(2)),
+    );
+    await db.execute(
+      insertInto(Posts.table)
+          .value(Posts.id.set(3))
+          .value(Posts.authorId.set(3))
+          .value(Posts.title.set('c'))
+          .value(Posts.views.set(3)),
+    );
 
     final byAuthor = await loadGroupedByFk(
-        db, Posts.table, Posts.authorId, [1, 2, 3], readPost,);
+      db,
+      Posts.table,
+      Posts.authorId,
+      [1, 2, 3],
+      readPost,
+    );
     expect(byAuthor[1]!.map((p) => p.title), ['a', 'b']);
     expect(byAuthor[2], isEmpty); // Alice has no posts, but the key is present
     expect(byAuthor[3]!.map((p) => p.title), ['c']);
@@ -672,21 +722,27 @@ void main() {
 
   test('FoldMappedQuery.load uses one fetch and folds JOIN rows', () async {
     await seed();
-    await db.execute(insertInto(Posts.table)
-        .value(Posts.id.set(1))
-        .value(Posts.authorId.set(1))
-        .value(Posts.title.set('a'))
-        .value(Posts.views.set(1)),);
-    await db.execute(insertInto(Posts.table)
-        .value(Posts.id.set(2))
-        .value(Posts.authorId.set(1))
-        .value(Posts.title.set('b'))
-        .value(Posts.views.set(2)),);
-    await db.execute(insertInto(Posts.table)
-        .value(Posts.id.set(3))
-        .value(Posts.authorId.set(3))
-        .value(Posts.title.set('c'))
-        .value(Posts.views.set(3)),);
+    await db.execute(
+      insertInto(Posts.table)
+          .value(Posts.id.set(1))
+          .value(Posts.authorId.set(1))
+          .value(Posts.title.set('a'))
+          .value(Posts.views.set(1)),
+    );
+    await db.execute(
+      insertInto(Posts.table)
+          .value(Posts.id.set(2))
+          .value(Posts.authorId.set(1))
+          .value(Posts.title.set('b'))
+          .value(Posts.views.set(2)),
+    );
+    await db.execute(
+      insertInto(Posts.table)
+          .value(Posts.id.set(3))
+          .value(Posts.authorId.set(3))
+          .value(Posts.title.set('c'))
+          .value(Posts.views.set(3)),
+    );
 
     final counting = _CountingConnection(db);
     final rows = await from(Users.table)

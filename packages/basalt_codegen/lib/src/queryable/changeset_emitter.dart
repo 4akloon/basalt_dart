@@ -14,7 +14,8 @@ final class ChangesetEmitter {
   }) {
     final sets = [
       for (final col in columnArgs)
-        if (!col.readOnly) '      .value(${col.columnExpr}.set(${col.paramName}))',
+        if (!col.readOnly)
+          '      .value(${col.columnExpr}.set(${col.paramName}))',
     ].join('\n');
     return '''
 extension ${className}Changeset on $className {

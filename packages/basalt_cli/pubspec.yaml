@@ -1,6 +1,13 @@
 name: basalt_cli
-description: CLI (basalt) for the Basalt Dart ORM — migrations and codegen.
+description: >-
+  The `basalt` command-line tool for the Basalt Dart ORM — migrations, database
+  reset, and schema generation over any pluggable backend.
 version: 0.0.1
+repository: https://github.com/4akloon/basalt_dart
+homepage: https://github.com/4akloon/basalt_dart
+issue_tracker: https://github.com/4akloon/basalt_dart/issues
+documentation: https://github.com/4akloon/basalt_dart/tree/main/packages/basalt_cli/doc
+topics: [orm, cli, migrations, code-generation]
 
 environment:
   sdk: ">=3.5.0 <4.0.0"

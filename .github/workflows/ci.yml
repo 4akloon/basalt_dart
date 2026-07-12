@@ -1,0 +1,111 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  analyze-test:
+    name: Analyze & test
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: basalt_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      # The basalt_postgres integration tests read these; without them they skip.
+      BASALT_PG_HOST: localhost
+      BASALT_PG_PORT: 5432
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: stable
+
+      - name: Install dependencies (workspace)
+        run: dart pub get
+
+      - name: Verify formatting
+        run: >-
+          dart format --output=none --set-exit-if-changed
+          packages/basalt
+          packages/basalt_sqlite
+          packages/basalt_postgres
+          packages/basalt_cli
+          packages/basalt_codegen
+
+      - name: Analyze
+        run: >-
+          dart analyze
+          packages/basalt
+          packages/basalt_sqlite
+          packages/basalt_postgres
+          packages/basalt_cli
+          packages/basalt_codegen
+
+      - name: Test basalt
+        run: dart test
+        working-directory: packages/basalt
+
+      - name: Test basalt_sqlite
+        run: dart test
+        working-directory: packages/basalt_sqlite
+
+      - name: Test basalt_postgres
+        run: dart test
+        working-directory: packages/basalt_postgres
+
+      - name: Test basalt_cli
+        run: dart test
+        working-directory: packages/basalt_cli
+
+      - name: Test basalt_codegen
+        run: dart test
+        working-directory: packages/basalt_codegen
+
+  publish-dry-run:
+    name: Publish dry-run
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: stable
+
+      - name: Install dependencies (workspace)
+        run: dart pub get
+
+      # Dry-run each first-wave package. basalt_postgres is intentionally held
+      # from the first publish and is not dry-run-gated here.
+      - name: Dry-run basalt
+        run: dart pub publish --dry-run
+        working-directory: packages/basalt
+
+      - name: Dry-run basalt_sqlite
+        run: dart pub publish --dry-run
+        working-directory: packages/basalt_sqlite
+
+      - name: Dry-run basalt_cli
+        run: dart pub publish --dry-run
+        working-directory: packages/basalt_cli
+
+      - name: Dry-run basalt_codegen
+        run: dart pub publish --dry-run
+        working-directory: packages/basalt_codegen

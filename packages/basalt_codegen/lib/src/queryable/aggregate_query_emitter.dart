@@ -24,8 +24,8 @@ final class AggregateQueryEmitter {
     }
 
     final dims = [for (final d in info.dimensions) d.columnExpr].join(', ');
-    final aggs = [for (final a in info.aggregates) fieldOf[a.selectCall]]
-        .join(', ');
+    final aggs =
+        [for (final a in info.aggregates) fieldOf[a.selectCall]].join(', ');
     final selects = aggs.isEmpty ? dims : '$dims, $aggs';
     final groupBy = [for (final d in info.dimensions) d.columnExpr].join(', ');
 
