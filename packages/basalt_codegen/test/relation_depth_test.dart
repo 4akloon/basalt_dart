@@ -105,9 +105,11 @@ void main() {
     expect(code, contains("final author = Users.table.aliased('author');"));
     expect(code, isNot(contains('author_manager')));
     expect(
-        code,
-        contains(
-            "final editorManager = Users.table.aliased('editor_manager');",),);
+      code,
+      contains(
+        "final editorManager = Users.table.aliased('editor_manager');",
+      ),
+    );
   });
 
   test('nullable FK fan-out at depth > 1 uses leftJoin', () {

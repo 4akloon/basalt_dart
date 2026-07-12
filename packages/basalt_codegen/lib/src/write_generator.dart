@@ -6,6 +6,7 @@ import 'package:source_gen/source_gen.dart';
 import 'queryable/changeset_emitter.dart';
 import 'queryable/edge_analyzer.dart';
 import 'queryable/insert_emitter.dart';
+import 'queryable/require_present.dart';
 
 /// Emits a `toInsert()` extension for each `@Insertable` data class. Independent
 /// of `@Queryable`, so a write-only DTO works on its own.
@@ -36,7 +37,7 @@ class InsertableGenerator extends GeneratorForAnnotation<Insertable> {
     }
     return [
       const InsertEmitter().emit(
-        className: element.name!,
+        className: requirePresent(element.name, 'the @Insertable class name'),
         tableMarker: marker,
         columnArgs: analyzer.writeColumnArgs(element, marker),
       ),
@@ -72,7 +73,7 @@ class AsChangesetGenerator extends GeneratorForAnnotation<AsChangeset> {
     }
     return [
       const ChangesetEmitter().emit(
-        className: element.name!,
+        className: requirePresent(element.name, 'the @AsChangeset class name'),
         tableMarker: marker,
         columnArgs: analyzer.writeColumnArgs(element, marker),
       ),

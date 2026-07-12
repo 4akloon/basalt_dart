@@ -1,6 +1,13 @@
 name: basalt_codegen
-description: build_runner code generator for the Basalt Dart ORM (@Queryable derive).
+description: >-
+  build_runner code generator for the Basalt Dart ORM — derives row readers and
+  INSERT/UPDATE builders from @Queryable, @Insertable, and @AsChangeset.
 version: 0.0.1
+repository: https://github.com/4akloon/basalt_dart
+homepage: https://github.com/4akloon/basalt_dart
+issue_tracker: https://github.com/4akloon/basalt_dart/issues
+documentation: https://github.com/4akloon/basalt_dart/tree/main/packages/basalt_codegen/doc
+topics: [orm, code-generation, build-runner, database]
 
 environment:
   sdk: ">=3.5.0 <4.0.0"

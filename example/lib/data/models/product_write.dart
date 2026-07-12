@@ -25,6 +25,6 @@ class ProductWrite {
   final int isActive;
 
   /// Free-form JSON attributes, written through the custom
-  /// `JsonMapOrNullSqlType` codec (`products.metadata`).
+  /// `JsonMapSqlType` codec (`products.metadata`).
   final Map<String, Object?>? metadata;
 }

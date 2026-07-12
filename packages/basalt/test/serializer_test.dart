@@ -173,7 +173,8 @@ void main() {
             .value(Users.name.set('Bob'))
             .value(Users.age.set(30))
             .onConflict([Users.id]).doUpdate(
-                [Users.name.setToExcluded(), Users.age.set(99)],),
+          [Users.name.setToExcluded(), Users.age.set(99)],
+        ),
       );
       expect(
         sql,
@@ -273,8 +274,10 @@ void main() {
       final recipient = Users.table.aliased('recipient');
       final (sql, _) = compileSelect(
         from(Messages.table)
-            .innerJoin(sender,
-                on: Messages.senderId.eqColumn(sender.col(Users.id)),)
+            .innerJoin(
+              sender,
+              on: Messages.senderId.eqColumn(sender.col(Users.id)),
+            )
             .innerJoin(
               recipient,
               on: Messages.recipientId.eqColumn(recipient.col(Users.id)),
@@ -413,7 +416,8 @@ void main() {
     test('column aggregates count/sum/avg', () {
       final (sql, _) = compileSelect(
         from(Users.table).select(
-            [Users.age.count(), Users.age.sum(), Users.age.avg()],).map(_ignore),
+          [Users.age.count(), Users.age.sum(), Users.age.avg()],
+        ).map(_ignore),
       );
       expect(
         sql,
@@ -437,8 +441,12 @@ void main() {
     });
 
     test('raw() selection emits verbatim SQL, params ordered before WHERE', () {
-      final next = raw<int>('"users"."age" + ?', const IntSqlType(),
-          as: 'next_age', params: [1],);
+      final next = raw<int>(
+        '"users"."age" + ?',
+        const IntSqlType(),
+        as: 'next_age',
+        params: [1],
+      );
       final (sql, params) = compileSelect(
         from(Users.table)
             .select([Users.id, next])
@@ -492,7 +500,7 @@ void main() {
         'SELECT MIN("posts"."views") AS "min_views", '
         'MAX("posts"."views") AS "max_views" FROM "posts"',
       );
-      expect(lowest.type, const IntOrNullSqlType());
+      expect(lowest.type, const NullableSqlType(IntSqlType()));
     });
 
     test('mismatched aggregate type argument throws ArgumentError', () {
@@ -506,10 +514,8 @@ void main() {
     test('SUM over arithmetic expression', () {
       final revenue = sum(Posts.views * 2, as: 'revenue');
       final (sql, _) = compileSelect(
-        from(Posts.table)
-            .select([Posts.authorId, revenue])
-            .groupBy([Posts.authorId])
-            .map(_ignore),
+        from(Posts.table).select([Posts.authorId, revenue]).groupBy(
+            [Posts.authorId]).map(_ignore),
       );
       expect(
         sql,
@@ -524,7 +530,7 @@ void main() {
         from(Posts.table).select([units]).map(_ignore),
       );
       expect(sql, 'SELECT SUM("posts"."views") AS "units_sold" FROM "posts"');
-      expect(units.type, const IntOrNullSqlType());
+      expect(units.type, const NullableSqlType(IntSqlType()));
     });
 
     test('COUNT(DISTINCT col)', () {
@@ -532,7 +538,8 @@ void main() {
       final (sql, _) = compileSelect(
         from(Posts.table).select([distinctAuthors]).map(_ignore),
       );
-      expect(sql, 'SELECT COUNT(DISTINCT "posts"."author_id") AS "n" FROM "posts"');
+      expect(sql,
+          'SELECT COUNT(DISTINCT "posts"."author_id") AS "n" FROM "posts"');
     });
 
     test('ORDER BY aggregate alias expression', () {

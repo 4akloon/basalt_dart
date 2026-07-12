@@ -3,6 +3,8 @@ import 'dart:io';
 import 'db_command.dart';
 
 final class SetupCommand extends DbCommand {
+  SetupCommand(super.adapter);
+
   @override
   final name = 'setup';
   @override

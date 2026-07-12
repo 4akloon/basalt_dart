@@ -33,7 +33,8 @@ abstract interface class Connection {
 
   /// Escape hatch for raw read queries (introspection, ad-hoc SQL). Each row is
   /// a `column-name -> value` map.
-  Future<List<Map<String, Object?>>> queryRaw(String sql, [List<Object?> params]);
+  Future<List<Map<String, Object?>>> queryRaw(String sql,
+      [List<Object?> params]);
 
   /// Reads the database schema into a dialect-neutral model (for codegen).
   /// Each backend maps its own catalog and native types into the canonical form.

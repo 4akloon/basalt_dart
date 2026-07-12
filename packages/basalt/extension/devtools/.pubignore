@@ -1,0 +1,7 @@
+# When present, pub uses this file instead of .gitignore in this directory.
+# The compiled DevTools extension build/ is .gitignored (44 MB, kept out of git
+# history) but MUST ship in the published package for the "basalt" DevTools tab
+# to load — so we re-include it here. Regenerate before publishing with:
+#   cd packages/basalt_devtools_extension && dart run devtools_extensions \
+#     build_and_copy --source=. --dest=../basalt/extension/devtools
+!build/

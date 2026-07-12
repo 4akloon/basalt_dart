@@ -3,6 +3,7 @@ import 'package:analyzer/dart/element/element.dart';
 import 'edge_analyzer.dart';
 import 'model_code_generator.dart';
 import 'queryable_model.dart';
+import 'require_present.dart';
 
 /// Bridges analyzer metadata to [ModelCodeGenerator].
 final class QueryableClassCodegen {
@@ -17,7 +18,10 @@ final class QueryableClassCodegen {
     // Resolve the relation closure so nested `@HasMany` loaders call the child's
     // generated `loadChild` from its own library (imported by the model file).
     final classInfos = edgeAnalyzer.reachableFrom(element);
-    final root = classInfos[element.name]!;
+    final root = requirePresent(
+      classInfos[element.name],
+      'the registered ClassInfo for ${element.name}',
+    );
     return modelGenerator.generate(
       QueryableModel(
         root: root,

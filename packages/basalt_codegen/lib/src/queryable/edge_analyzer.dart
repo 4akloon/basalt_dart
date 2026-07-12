@@ -12,6 +12,7 @@ import 'column_arg.dart';
 import 'has_many_edge.dart';
 import 'naming.dart';
 import 'relation_edge.dart';
+import 'require_present.dart';
 
 // Match annotations by name within the `basalt` package. This resolves the
 // types regardless of whether they are referenced via the `basalt.dart` barrel
@@ -26,7 +27,7 @@ const relationChecker = TypeChecker.typeNamed(Relation, inPackage: 'basalt');
 const hasManyChecker = TypeChecker.typeNamed(HasMany, inPackage: 'basalt');
 const aggChecker = TypeChecker.typeNamed(Agg, inPackage: 'basalt');
 
-/// ponytail: top-level so depth guard is unit-testable without analyzer mocks.
+/// Top-level so the depth guard is unit-testable without analyzer mocks.
 int validateRelationDepth(int depth, Element element) {
   if (depth < 1) {
     throw InvalidGenerationSourceError(
@@ -67,7 +68,10 @@ final class EdgeAnalyzer {
       );
     }
 
-    final relAnn = relationChecker.firstAnnotationOfExact(field)!;
+    final relAnn = requirePresent(
+      relationChecker.firstAnnotationOfExact(field),
+      'the @Relation annotation',
+    );
     final depth = validateRelationDepth(
       relAnn.getField('depth')?.toIntValue() ?? 1,
       field,
@@ -108,13 +112,14 @@ final class EdgeAnalyzer {
     final fkNullable = fkType.nullabilitySuffix == NullabilitySuffix.question;
 
     return RelationEdge(
-      fieldName: param.name!,
+      fieldName: requirePresent(param.name, 'the @Relation field name'),
       depth: depth,
       parentMarker: parentMarker,
       fkAccessor: camelCase(sqlName),
       fkNullable: fkNullable,
       targetMarker: targetMarker,
-      targetClass: targetClass.name!,
+      targetClass:
+          requirePresent(targetClass.name, 'the @Relation target class name'),
       pkAccessor: camelCase(pkSqlName),
     );
   }
@@ -153,7 +158,10 @@ final class EdgeAnalyzer {
       );
     }
 
-    final ann = hasManyChecker.firstAnnotationOfExact(field)!;
+    final ann = requirePresent(
+      hasManyChecker.firstAnnotationOfExact(field),
+      'the @HasMany annotation',
+    );
     final colObj = ann.getField('column');
     if (colObj == null) {
       throw InvalidGenerationSourceError(
@@ -174,9 +182,10 @@ final class EdgeAnalyzer {
     final sqlName = colObj.getField('name')?.toStringValue();
     final pkObj = colObj.getField('references');
     final pkSqlName = pkObj?.getField('name')?.toStringValue();
-    final pkMarker = pkObj?.type is InterfaceType
-        ? (pkObj!.type as InterfaceType).typeArguments[1].element?.name
-        : null;
+    final pkMarker = switch (pkObj?.type) {
+      final InterfaceType pkType => pkType.typeArguments[1].element?.name,
+      _ => null,
+    };
 
     if (childMarker == null ||
         parentMarker == null ||
@@ -206,8 +215,9 @@ final class EdgeAnalyzer {
     );
 
     return HasManyEdge(
-      fieldName: param.name!,
-      childClass: childClass.name!,
+      fieldName: requirePresent(param.name, 'the @HasMany field name'),
+      childClass:
+          requirePresent(childClass.name, 'the @HasMany child class name'),
       childMarker: childMarker,
       childFkColumnExpr: childFkColumnExpr,
       childFkParamName: childFkParamName,
@@ -236,11 +246,15 @@ final class EdgeAnalyzer {
     if (ctor == null) {
       throw StateError('${parent.name} has no unnamed constructor.');
     }
-    final tableMarker = tableMarkerOf(parent)!;
+    final tableMarker = requirePresent(
+      tableMarkerOf(parent),
+      'the table marker for ${parent.name}',
+    );
     for (final param in ctor.formalParameters) {
       final name = param.name;
       final f = name == null ? null : parent.getField(name);
-      final arg = parseColumnArg(param: param, field: f, tableMarker: tableMarker);
+      final arg =
+          parseColumnArg(param: param, field: f, tableMarker: tableMarker);
       if (arg.columnExpr == pkColumnExpr) return arg.paramName;
     }
     throw StateError('$pkColumnExpr not mapped on ${parent.name}.');
@@ -283,7 +297,7 @@ final class EdgeAnalyzer {
         );
       }
       return ColumnArg(
-        paramName: param.name!,
+        paramName: requirePresent(param.name, 'a @Column parameter name'),
         isNamed: param.isNamed,
         columnExpr: '$marker.${camelCase(sqlName)}',
         readOnly: readOnly,
@@ -292,7 +306,7 @@ final class EdgeAnalyzer {
     }
 
     return ColumnArg(
-      paramName: param.name!,
+      paramName: requirePresent(param.name, 'a column parameter name'),
       isNamed: param.isNamed,
       columnExpr: '$tableMarker.${param.name}',
       readOnly: readOnly,
@@ -417,7 +431,10 @@ final class EdgeAnalyzer {
           element: element,
         );
       }
-      final ann = queryableChecker.firstAnnotationOfExact(element)!;
+      final ann = requirePresent(
+        queryableChecker.firstAnnotationOfExact(element),
+        'the @Queryable annotation',
+      );
       final reader = ConstantReader(ann);
       aggregateInfo = AggregateInfo(
         fromMarker: tableMarker,
@@ -430,7 +447,7 @@ final class EdgeAnalyzer {
     }
 
     return ClassInfo(
-      className: element.name!,
+      className: requirePresent(element.name, 'the @Queryable class name'),
       tableMarker: tableMarker,
       columnArgs: columnArgs,
       ownEdges: ownEdges,
@@ -446,14 +463,17 @@ final class EdgeAnalyzer {
     FieldElement field,
     FormalParameterElement param,
   ) {
-    final ann = aggChecker.firstAnnotationOfExact(field)!;
+    final ann = requirePresent(
+      aggChecker.firstAnnotationOfExact(field),
+      'the @Agg annotation',
+    );
     final selectCall = _selectCallFrom(
       ConstantReader(ann).read('select'),
       field,
       label: '@Agg(select)',
     );
     return AggregateField(
-      fieldName: param.name!,
+      fieldName: requirePresent(param.name, 'the @Agg field name'),
       selectCall: selectCall,
       zeroFallback: _needsZeroFallback(param.type),
     );
@@ -532,7 +552,8 @@ final class EdgeAnalyzer {
         element: element,
       );
     }
-    if (fn.name == null || !fn.name!.startsWith('_')) {
+    final fnName = fn.name;
+    if (fnName == null || !fnName.startsWith('_')) {
       throw InvalidGenerationSourceError(
         '$label must reference a private static method (name starts with _).',
         element: element,

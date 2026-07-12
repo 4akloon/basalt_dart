@@ -4,7 +4,7 @@
 ![Backends](https://img.shields.io/badge/backends-SQLite%20%7C%20Postgres-informational)
 ![Status](https://img.shields.io/badge/status-experimental-orange)
 ![Style](https://img.shields.io/badge/style-lints-brightgreen)
-![License](https://img.shields.io/badge/license-TBD-lightgrey)
+![License](https://img.shields.io/badge/license-MIT-brightgreen)
 
 **A type-safe, migration-first ORM for Dart — a compile-time-checked query builder, a
 CLI, code-generated row mappers, and a DevTools inspector.**

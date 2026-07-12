@@ -1,16 +1,26 @@
 # Config read by the `basalt` CLI (run from this directory). Used at *development
 # time* to apply migrations against a throwaway dev DB and to regenerate the typed
 # schema. The running Flutter app applies the same migrations from bundled assets.
-database_url: example.db
+#
+# `backend:` (required) names the backend package the CLI bootstraps with — add
+# it to dev_dependencies. Connection options under `database:` are
+# adapter-specific: SQLite takes `path:`; Postgres takes `url:` or
+# host/port/database/... keys. Set `native_types: true` to let the adapter's
+# backend-native type presets apply during `generate-schema`.
+backend: basalt_sqlite
+database:
+  path: example.db
 migrations_dir: migrations
 schema_output: lib/core/database/schema.dart
 
 # Custom column types: `generate-schema` emits these SqlTypes/Dart types instead
-# of the built-in mapping. Here the free-form `products.metadata` JSON column is
-# backed by the app's own `JsonMapOrNullSqlType` codec.
+# of the built-in mapping (and instead of the adapter's presets). Register the
+# non-nullable form — the free-form `products.metadata` JSON column is backed by
+# the app's own `JsonMapSqlType` codec, and since the column is nullable the
+# generator wraps it in `NullableSqlType` automatically.
 types:
   columns:
     products.metadata:
-      dart_type: "Map<String, Object?>?"
-      sql_type: "JsonMapOrNullSqlType()"
+      dart_type: "Map<String, Object?>"
+      sql_type: "JsonMapSqlType()"
       import: "package:basalt_example/core/database/json_map_sql_type.dart"

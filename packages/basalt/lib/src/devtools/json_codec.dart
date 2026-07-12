@@ -21,7 +21,8 @@ Object? toJsonValue(Object? value) {
 String _hexPreview(Uint8List bytes) {
   const cap = 32;
   final shown = bytes.length > cap ? bytes.sublist(0, cap) : bytes;
-  final hex = [for (final b in shown) b.toRadixString(16).padLeft(2, '0')].join();
+  final hex =
+      [for (final b in shown) b.toRadixString(16).padLeft(2, '0')].join();
   final ellipsis = bytes.length > cap ? '…' : '';
   return '0x$hex$ellipsis (${bytes.length} bytes)';
 }

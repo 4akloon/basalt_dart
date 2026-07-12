@@ -20,16 +20,14 @@ final class HasManyJoinBuilder {
       if (info.ownEdges.isEmpty) return;
       final tree = RelationTreeBuilder(edgesOf).unrollRoots(info.ownEdges);
       for (final node in tree) {
-        final fullAlias = prefix.isEmpty
-            ? node.aliasPath
-            : '${prefix}_${node.aliasPath}';
+        final fullAlias =
+            prefix.isEmpty ? node.aliasPath : '${prefix}_${node.aliasPath}';
         final varName = camelCase(fullAlias);
-        final parentVar = node.parentAliasPath == null
+        final parentAliasPath = node.parentAliasPath;
+        final parentVar = parentAliasPath == null
             ? (prefix.isEmpty ? info.tableMarker : camelCase(prefix))
             : camelCase(
-                prefix.isEmpty
-                    ? node.parentAliasPath!
-                    : '${prefix}_${node.parentAliasPath}',
+                prefix.isEmpty ? parentAliasPath : '${prefix}_$parentAliasPath',
               );
         final onLeft = node.parentAliasPath == null
             ? (prefix.isEmpty
@@ -38,9 +36,8 @@ final class HasManyJoinBuilder {
             : '$parentVar.col(${node.edge.parentMarker}.${node.edge.fkAccessor})';
         final onRight =
             '$varName.col(${node.edge.targetMarker}.${node.edge.pkAccessor})';
-        final joinKind = optional || node.edge.fkNullable
-            ? 'leftJoin'
-            : 'innerJoin';
+        final joinKind =
+            optional || node.edge.fkNullable ? 'leftJoin' : 'innerJoin';
         nodes.add(
           HasManyJoinNode(
             aliasPath: fullAlias,
@@ -90,16 +87,16 @@ final class HasManyJoinBuilder {
     for (final edge in root.hasManyEdges) {
       final alias = edge.fieldName;
       final varName = camelCase(alias);
-        nodes.add(
-          HasManyJoinNode(
-            aliasPath: alias,
-            tableMarker: edge.childMarker,
-            dartVar: varName,
-            joinKind: 'leftJoin',
-            onLeft: '$varName.col(${edge.childFkColumnExpr})',
-            onRight: rootPk,
-          ),
-        );
+      nodes.add(
+        HasManyJoinNode(
+          aliasPath: alias,
+          tableMarker: edge.childMarker,
+          dartVar: varName,
+          joinKind: 'leftJoin',
+          onLeft: '$varName.col(${edge.childFkColumnExpr})',
+          onRight: rootPk,
+        ),
+      );
       final child = classInfos[edge.childClass];
       final childPk = child?.pkColumnExpr;
       if (child != null && childPk != null) {

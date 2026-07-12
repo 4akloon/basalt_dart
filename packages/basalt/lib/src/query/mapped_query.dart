@@ -17,7 +17,8 @@ base class MappedQuery<R> extends _MappedQueryBase<MappedQuery<R>, R> {
   final R Function(RowReader reader) _decode;
 
   @override
-  MappedQuery<R> _withQuery(Query<dynamic> query) => MappedQuery(query, _decode);
+  MappedQuery<R> _withQuery(Query<dynamic> query) =>
+      MappedQuery(query, _decode);
 
   @override
   R Function(List<Object?>) get rowDecoder => (row) => _decode(_reader(row));

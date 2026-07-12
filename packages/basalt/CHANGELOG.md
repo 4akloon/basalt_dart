@@ -1,10 +1,11 @@
 # Changelog
 
-## 0.0.1 (unreleased)
+## 0.0.1
 
 Initial development release of the basalt_dart core.
 
-- Type system: `SqlType<T>` with `integer`/`text`/`real`/`boolean`/`blob`/`dateTime` and `*OrNull` variants.
+- Type system: `SqlType<T>` codecs (`IntSqlType`/`StringSqlType`/`DoubleSqlType`/`BooleanSqlType`/
+  `BlobSqlType`/`DateTimeSqlType`) with a single `NullableSqlType(...)` wrapper for nullable columns.
 - Schema: sealed `TableColumn<T, Tbl>` (`ValueColumn` / `PrimaryKey` / `Ref`), `TableRef`, `QuerySource`,
   `TableAlias` for self-joins.
 - Expressions with phantom table scope; `eq`/`ne`/`gt`/`ge`/`lt`/`le`/`isIn`/`between`/`isNull`/`like`/

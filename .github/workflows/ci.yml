@@ -1,0 +1,134 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  analyze-test:
+    name: Analyze & test
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: basalt_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      # The basalt_postgres integration tests read these; without them they skip.
+      BASALT_PG_HOST: localhost
+      BASALT_PG_PORT: 5432
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: stable
+
+      # example/ and packages/basalt_devtools_extension are Flutter apps, NOT Dart
+      # workspace members. `dart pub get` still descends into every nested pubspec
+      # in the tree and fails on their `sdk: flutter` deps without a Flutter SDK.
+      # Hide their pubspecs so the Dart-only workspace resolves cleanly (the CI
+      # checkout is ephemeral, so no restore needed).
+      - name: Exclude Flutter apps from workspace resolution
+        run: |
+          mv example/pubspec.yaml example/pubspec.yaml.ci-hidden
+          mv packages/basalt_devtools_extension/pubspec.yaml packages/basalt_devtools_extension/pubspec.yaml.ci-hidden
+
+      - name: Install dependencies (workspace)
+        run: dart pub get
+
+      - name: Verify formatting
+        run: >-
+          dart format --output=none --set-exit-if-changed
+          packages/basalt
+          packages/basalt_sqlite
+          packages/basalt_postgres
+          packages/basalt_cli
+          packages/basalt_codegen
+
+      - name: Analyze
+        run: >-
+          dart analyze
+          packages/basalt
+          packages/basalt_sqlite
+          packages/basalt_postgres
+          packages/basalt_cli
+          packages/basalt_codegen
+
+      - name: Test basalt
+        run: dart test
+        working-directory: packages/basalt
+
+      - name: Test basalt_sqlite
+        run: dart test
+        working-directory: packages/basalt_sqlite
+
+      - name: Test basalt_postgres
+        run: dart test
+        working-directory: packages/basalt_postgres
+
+      - name: Test basalt_cli
+        run: dart test
+        working-directory: packages/basalt_cli
+
+      - name: Test basalt_codegen
+        run: dart test
+        working-directory: packages/basalt_codegen
+
+  publish-dry-run:
+    name: Publish dry-run
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # basalt ships the compiled DevTools extension, which is a Flutter web app
+      # kept out of git — so this job needs Flutter to regenerate it before the
+      # basalt dry-run. Flutter also bundles the Dart SDK used for the dry-runs.
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      # Regenerate the compiled DevTools extension into basalt/extension/devtools/
+      # (build/ is .gitignored, so this produces no uncommitted tracked changes and
+      # basalt's dry-run sees a non-empty build dir, matching a real release).
+      - name: Build DevTools extension
+        working-directory: packages/basalt_devtools_extension
+        run: |
+          flutter pub get
+          dart run devtools_extensions build_and_copy \
+            --source=. --dest=../basalt/extension/devtools
+
+      - name: Install dependencies (workspace)
+        run: dart pub get
+
+      # Dry-run each first-wave package. basalt_postgres is intentionally held
+      # from the first publish and is not dry-run-gated here.
+      - name: Dry-run basalt
+        run: dart pub publish --dry-run
+        working-directory: packages/basalt
+
+      - name: Dry-run basalt_sqlite
+        run: dart pub publish --dry-run
+        working-directory: packages/basalt_sqlite
+
+      - name: Dry-run basalt_cli
+        run: dart pub publish --dry-run
+        working-directory: packages/basalt_cli
+
+      - name: Dry-run basalt_codegen
+        run: dart pub publish --dry-run
+        working-directory: packages/basalt_codegen

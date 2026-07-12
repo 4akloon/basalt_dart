@@ -5,9 +5,6 @@ final class DoubleSqlType extends SqlType<double> {
   const DoubleSqlType();
 
   @override
-  String get sqlName => 'REAL';
-
-  @override
   Object? encode(double input) => input;
 
   @override

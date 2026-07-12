@@ -16,7 +16,8 @@ final class InsertEmitter {
     // the in-scope instance field.
     final values = [
       for (final col in columnArgs)
-        if (!col.readOnly) '      .value(${col.columnExpr}.set(${col.paramName}))',
+        if (!col.readOnly)
+          '      .value(${col.columnExpr}.set(${col.paramName}))',
     ].join('\n');
     return '''
 extension ${className}Insert on $className {

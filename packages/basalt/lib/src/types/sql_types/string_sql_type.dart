@@ -5,9 +5,6 @@ final class StringSqlType extends SqlType<String> {
   const StringSqlType();
 
   @override
-  String get sqlName => 'TEXT';
-
-  @override
   Object? encode(String input) => input;
 
   @override

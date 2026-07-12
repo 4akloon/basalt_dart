@@ -58,11 +58,15 @@ void main() {
     expect(await runner.appliedVersions(), ['20200101000000']);
 
     // The up.sql really ran: we can write and read through the new table.
-    await db.execute(insertInto(Widgets.table)
-        .value(Widgets.id.set(1))
-        .value(Widgets.name.set('a')),);
-    expect(await db.fetch(from(Widgets.table).map((r) => r.get(Widgets.name))),
-        ['a'],);
+    await db.execute(
+      insertInto(Widgets.table)
+          .value(Widgets.id.set(1))
+          .value(Widgets.name.set('a')),
+    );
+    expect(
+      await db.fetch(from(Widgets.table).map((r) => r.get(Widgets.name))),
+      ['a'],
+    );
 
     // Re-running is a no-op.
     expect(await runner.runPending(), isEmpty);
@@ -86,8 +90,10 @@ void main() {
 
     final ran = await runner.runPending();
     expect(ran, ['20200101000000', '20200102000000']);
-    expect(await db.fetch(from(Widgets.table).map((r) => r.get(Widgets.name))),
-        ['seed'],);
+    expect(
+      await db.fetch(from(Widgets.table).map((r) => r.get(Widgets.name))),
+      ['seed'],
+    );
   });
 
   test('revertLast runs down.sql and forgets the version', () async {

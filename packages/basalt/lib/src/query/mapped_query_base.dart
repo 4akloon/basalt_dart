@@ -66,8 +66,7 @@ abstract base class _MappedQueryBase<Self extends _MappedQueryBase<Self, Row>,
   Self order(Ordering ordering) => orderBy(ordering);
 
   /// basalt-style find-by-key (see [Query.findBy]).
-  Self findBy<T>(TableColumn<T, dynamic> key, T value) =>
-      filter(key.eq(value));
+  Self findBy<T>(TableColumn<T, dynamic> key, T value) => filter(key.eq(value));
 
   Self limit(int count) => _withQuery(_query.limit(count));
 

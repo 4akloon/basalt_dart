@@ -10,7 +10,8 @@ import 'package:test/test.dart';
 // int/text columns only: their codecs are identical across SQLite and Postgres.
 abstract final class Widgets {
   static const id = PrimaryKey<int, Widgets>('widgets', 'id', IntSqlType());
-  static const name = ValueColumn<String, Widgets>('widgets', 'name', StringSqlType());
+  static const name =
+      ValueColumn<String, Widgets>('widgets', 'name', StringSqlType());
   static const qty = ValueColumn<int, Widgets>('widgets', 'qty', IntSqlType());
   static const table = TableRef<Widgets>('widgets', [id, name, qty]);
 }
@@ -18,9 +19,13 @@ abstract final class Widgets {
 abstract final class Parts {
   static const id = PrimaryKey<int, Parts>('parts', 'id', IntSqlType());
   static const widgetId = Ref<int, Parts, Widgets>(
-      'parts', 'widget_id', IntSqlType(),
-      references: Widgets.id,);
-  static const label = ValueColumn<String, Parts>('parts', 'label', StringSqlType());
+    'parts',
+    'widget_id',
+    IntSqlType(),
+    references: Widgets.id,
+  );
+  static const label =
+      ValueColumn<String, Parts>('parts', 'label', StringSqlType());
   static const table = TableRef<Parts>('parts', [id, widgetId, label]);
 }
 
@@ -74,16 +79,20 @@ void main() {
   });
 
   bool skip() {
-    if (!available) markTestSkipped('Postgres not reachable (start the container)');
+    if (!available) {
+      markTestSkipped('Postgres not reachable (start the container)');
+    }
     return !available;
   }
 
   test(r'insert + typed select ($N placeholders)', () async {
     if (skip()) return;
-    await db.execute(insertInto(Widgets.table).values([
-      [Widgets.id.set(1), Widgets.name.set('a'), Widgets.qty.set(10)],
-      [Widgets.id.set(2), Widgets.name.set('b'), Widgets.qty.set(20)],
-    ]),);
+    await db.execute(
+      insertInto(Widgets.table).values([
+        [Widgets.id.set(1), Widgets.name.set('a'), Widgets.qty.set(10)],
+        [Widgets.id.set(2), Widgets.name.set('b'), Widgets.qty.set(20)],
+      ]),
+    );
     final names = await from(Widgets.table)
         .where(Widgets.qty.ge(15))
         .order(Widgets.name.asc())
@@ -94,16 +103,22 @@ void main() {
 
   test('update / delete affected-row counts', () async {
     if (skip()) return;
-    await db.execute(insertInto(Widgets.table)
-        .value(Widgets.id.set(1))
-        .value(Widgets.name.set('a'))
-        .value(Widgets.qty.set(1)),);
+    await db.execute(
+      insertInto(Widgets.table)
+          .value(Widgets.id.set(1))
+          .value(Widgets.name.set('a'))
+          .value(Widgets.qty.set(1)),
+    );
     expect(
-        await db.execute(
-            update(Widgets.table).value(Widgets.qty.set(5)).where(Widgets.id.eq(1)),),
-        1,);
+      await db.execute(
+        update(Widgets.table).value(Widgets.qty.set(5)).where(Widgets.id.eq(1)),
+      ),
+      1,
+    );
     expect(
-        await db.execute(deleteFrom(Widgets.table).where(Widgets.qty.lt(10))), 1,);
+      await db.execute(deleteFrom(Widgets.table).where(Widgets.qty.lt(10))),
+      1,
+    );
   });
 
   test('RETURNING surfaces columns', () async {
@@ -114,26 +129,35 @@ void main() {
           .value(Widgets.name.set('x'))
           .value(Widgets.qty.set(3))
           .returning([Widgets.id, Widgets.qty]).map(
-              (r) => (r.get(Widgets.id), r.get(Widgets.qty)),),
+        (r) => (r.get(Widgets.id), r.get(Widgets.qty)),
+      ),
     );
     expect(rows, [(7, 3)]);
   });
 
   test('join + aggregate', () async {
     if (skip()) return;
-    await db.execute(insertInto(Widgets.table).values([
-      [Widgets.id.set(1), Widgets.name.set('a'), Widgets.qty.set(10)],
-      [Widgets.id.set(2), Widgets.name.set('b'), Widgets.qty.set(20)],
-    ]),);
+    await db.execute(
+      insertInto(Widgets.table).values([
+        [Widgets.id.set(1), Widgets.name.set('a'), Widgets.qty.set(10)],
+        [Widgets.id.set(2), Widgets.name.set('b'), Widgets.qty.set(20)],
+      ]),
+    );
     final total = Widgets.qty.sum();
     expect(
-        await from(Widgets.table).select([total]).map((r) => r.get(total)).first(db),
-        30,);
+      await from(Widgets.table)
+          .select([total])
+          .map((r) => r.get(total))
+          .first(db),
+      30,
+    );
 
-    await db.execute(insertInto(Parts.table)
-        .value(Parts.id.set(1))
-        .value(Parts.widgetId.set(1))
-        .value(Parts.label.set('p1')),);
+    await db.execute(
+      insertInto(Parts.table)
+          .value(Parts.id.set(1))
+          .value(Parts.widgetId.set(1))
+          .value(Parts.label.set('p1')),
+    );
     final joined = await from(Parts.table)
         .innerJoin(Widgets.table, onFk: Parts.widgetId)
         .map((r) => '${r.get(Parts.label)}@${r.get(Widgets.name)}')
@@ -145,10 +169,12 @@ void main() {
     if (skip()) return;
     await expectLater(
       db.transaction((tx) async {
-        await tx.execute(insertInto(Widgets.table)
-            .value(Widgets.id.set(99))
-            .value(Widgets.name.set('temp'))
-            .value(Widgets.qty.set(1)),);
+        await tx.execute(
+          insertInto(Widgets.table)
+              .value(Widgets.id.set(99))
+              .value(Widgets.name.set('temp'))
+              .value(Widgets.qty.set(1)),
+        );
         throw StateError('boom');
       }),
       throwsStateError,
@@ -167,20 +193,24 @@ void main() {
     if (skip()) return;
     // A inserts, yields, then fails -> rolls back only its own row.
     final a = db.transaction((tx) async {
-      await tx.execute(insertInto(Widgets.table)
-          .value(Widgets.id.set(1))
-          .value(Widgets.name.set('a'))
-          .value(Widgets.qty.set(1)),);
+      await tx.execute(
+        insertInto(Widgets.table)
+            .value(Widgets.id.set(1))
+            .value(Widgets.name.set('a'))
+            .value(Widgets.qty.set(1)),
+      );
       await Future<void>.delayed(const Duration(milliseconds: 20));
       throw StateError('boom');
     });
     // B starts while A is pending, inserts, commits.
     final b = db.transaction((tx) async {
       await Future<void>.delayed(const Duration(milliseconds: 5));
-      await tx.execute(insertInto(Widgets.table)
-          .value(Widgets.id.set(2))
-          .value(Widgets.name.set('b'))
-          .value(Widgets.qty.set(2)),);
+      await tx.execute(
+        insertInto(Widgets.table)
+            .value(Widgets.id.set(2))
+            .value(Widgets.name.set('b'))
+            .value(Widgets.qty.set(2)),
+      );
       return 'ok';
     });
 
@@ -197,16 +227,20 @@ void main() {
   test('nested savepoint rolls back inner only', () async {
     if (skip()) return;
     await db.transaction((tx) async {
-      await tx.execute(insertInto(Widgets.table)
-          .value(Widgets.id.set(1))
-          .value(Widgets.name.set('outer'))
-          .value(Widgets.qty.set(1)),);
+      await tx.execute(
+        insertInto(Widgets.table)
+            .value(Widgets.id.set(1))
+            .value(Widgets.name.set('outer'))
+            .value(Widgets.qty.set(1)),
+      );
       try {
         await tx.transaction((inner) async {
-          await inner.execute(insertInto(Widgets.table)
-              .value(Widgets.id.set(2))
-              .value(Widgets.name.set('inner'))
-              .value(Widgets.qty.set(2)),);
+          await inner.execute(
+            insertInto(Widgets.table)
+                .value(Widgets.id.set(2))
+                .value(Widgets.name.set('inner'))
+                .value(Widgets.qty.set(2)),
+          );
           throw Exception('inner boom');
         });
       } on Exception {
@@ -228,10 +262,12 @@ void main() {
       final a = () async {
         try {
           await tx.transaction((a) async {
-            await a.execute(insertInto(Widgets.table)
-                .value(Widgets.id.set(1))
-                .value(Widgets.name.set('a'))
-                .value(Widgets.qty.set(1)),);
+            await a.execute(
+              insertInto(Widgets.table)
+                  .value(Widgets.id.set(1))
+                  .value(Widgets.name.set('a'))
+                  .value(Widgets.qty.set(1)),
+            );
             await Future<void>.delayed(const Duration(milliseconds: 5));
             throw Exception('a fails');
           });
@@ -241,10 +277,12 @@ void main() {
       }();
       final b = tx.transaction((b) async {
         await Future<void>.delayed(const Duration(milliseconds: 20));
-        await b.execute(insertInto(Widgets.table)
-            .value(Widgets.id.set(2))
-            .value(Widgets.name.set('b'))
-            .value(Widgets.qty.set(2)),);
+        await b.execute(
+          insertInto(Widgets.table)
+              .value(Widgets.id.set(2))
+              .value(Widgets.name.set('b'))
+              .value(Widgets.qty.set(2)),
+        );
       });
       await Future.wait([a, b]);
     });
@@ -263,10 +301,12 @@ void main() {
       escaped = tx;
     });
     await expectLater(
-      escaped.execute(insertInto(Widgets.table)
-          .value(Widgets.id.set(1))
-          .value(Widgets.name.set('leaked'))
-          .value(Widgets.qty.set(1)),),
+      escaped.execute(
+        insertInto(Widgets.table)
+            .value(Widgets.id.set(1))
+            .value(Widgets.name.set('leaked'))
+            .value(Widgets.qty.set(1)),
+      ),
       throwsStateError,
     );
   });
@@ -274,10 +314,12 @@ void main() {
   test('native bool + timestamp columns round-trip', () async {
     if (skip()) return;
     final ts = DateTime.utc(2024, 1, 15, 12, 30, 45);
-    await db.execute(insertInto(Flags.table).values([
-      [Flags.id.set(1), Flags.active.set(true), Flags.createdAt.set(ts)],
-      [Flags.id.set(2), Flags.active.set(false), Flags.createdAt.set(ts)],
-    ]),);
+    await db.execute(
+      insertInto(Flags.table).values([
+        [Flags.id.set(1), Flags.active.set(true), Flags.createdAt.set(ts)],
+        [Flags.id.set(2), Flags.active.set(false), Flags.createdAt.set(ts)],
+      ]),
+    );
 
     // Native boolean predicate + decode.
     final activeIds = await from(Flags.table)
@@ -299,12 +341,16 @@ void main() {
     final tables = await db.introspect();
     final widgets = tables.firstWhere((t) => t.name == 'widgets');
     expect(widgets.columns.map((c) => c.name), ['id', 'name', 'qty']);
-    expect(widgets.columns.firstWhere((c) => c.name == 'id').isPrimaryKey, isTrue);
-    expect(widgets.columns.firstWhere((c) => c.name == 'id').type,
-        ColumnType.integer,);
+    expect(
+        widgets.columns.firstWhere((c) => c.name == 'id').isPrimaryKey, isTrue);
+    expect(
+      widgets.columns.firstWhere((c) => c.name == 'id').type,
+      ColumnType.integer,
+    );
 
     final parts = tables.firstWhere((t) => t.name == 'parts');
-    final fk = parts.columns.firstWhere((c) => c.name == 'widget_id').foreignKey;
+    final fk =
+        parts.columns.firstWhere((c) => c.name == 'widget_id').foreignKey;
     expect(fk?.table, 'widgets');
     expect(fk?.column, 'id');
   });

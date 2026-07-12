@@ -20,9 +20,18 @@ Future<void> main() async {
 
   // INSERT — typed, column-scoped values, all inside one transaction.
   await db.transaction((tx) async {
-    await tx.execute(insertInto(Users.table).value(Users.id.set(1)).value(Users.name.set('Bob')).value(Users.age.set(30)));
-    await tx.execute(insertInto(Users.table).value(Users.id.set(2)).value(Users.name.set('Alice')).value(Users.age.set(17)));
-    await tx.execute(insertInto(Users.table).value(Users.id.set(3)).value(Users.name.set('Carol')).value(Users.age.set(42)));
+    await tx.execute(insertInto(Users.table)
+        .value(Users.id.set(1))
+        .value(Users.name.set('Bob'))
+        .value(Users.age.set(30)));
+    await tx.execute(insertInto(Users.table)
+        .value(Users.id.set(2))
+        .value(Users.name.set('Alice'))
+        .value(Users.age.set(17)));
+    await tx.execute(insertInto(Users.table)
+        .value(Users.id.set(3))
+        .value(Users.name.set('Carol'))
+        .value(Users.age.set(42)));
   });
 
   // SELECT — one `map` for any shape. Here a record; the reader is typed.
@@ -39,11 +48,13 @@ Future<void> main() async {
   }
 
   // UPDATE
-  final updated = await db.execute(update(Users.table).value(Users.age.set(31)).where(Users.name.eq('Bob')));
+  final updated = await db.execute(
+      update(Users.table).value(Users.age.set(31)).where(Users.name.eq('Bob')));
   print('Rows updated: $updated');
 
   // DELETE
-  final deleted = await db.execute(deleteFrom(Users.table).where(Users.age.lt(18)));
+  final deleted =
+      await db.execute(deleteFrom(Users.table).where(Users.age.lt(18)));
   print('Rows deleted: $deleted');
 
   final names = await db.fetch(

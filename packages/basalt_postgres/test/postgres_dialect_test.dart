@@ -4,7 +4,8 @@ import 'package:test/test.dart';
 
 abstract final class Users {
   static const id = PrimaryKey<int, Users>('users', 'id', IntSqlType());
-  static const name = ValueColumn<String, Users>('users', 'name', StringSqlType());
+  static const name =
+      ValueColumn<String, Users>('users', 'name', StringSqlType());
   static const age = ValueColumn<int, Users>('users', 'age', IntSqlType());
   static const table = TableRef<Users>('users', [id, name, age]);
 }
@@ -29,7 +30,9 @@ void main() {
 
   test('INSERT numbers placeholders in order', () {
     final (sql, params) = QueryBuilder(const PostgresDialect()).buildWrite(
-      insertInto(Users.table).value(Users.id.set(1)).value(Users.name.set('Bob')),
+      insertInto(Users.table)
+          .value(Users.id.set(1))
+          .value(Users.name.set('Bob')),
     );
     expect(sql, r'INSERT INTO "users" ("id", "name") VALUES ($1, $2)');
     expect(params, [1, 'Bob']);

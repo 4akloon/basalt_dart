@@ -7,14 +7,17 @@ lets columns be `static const` and usable in annotations).
 
 ## Built-in types
 
-| `SqlType` | Dart `T` | SQL keyword | Notes |
-|---|---|---|---|
-| `IntSqlType` | `int` | `INTEGER` | |
-| `StringSqlType` | `String` | `TEXT` | |
-| `DoubleSqlType` | `double` | `REAL` | |
-| `BooleanSqlType` | `bool` | `INTEGER` | `true`→`1`, `false`→`0`; any non-zero decodes to `true`. |
-| `BlobSqlType` | `List<int>` | `BLOB` | |
-| `DateTimeSqlType` | `DateTime` | `INTEGER` | Stored as epoch milliseconds (sortable, timezone-free). |
+| `SqlType` | Dart `T` | Notes |
+|---|---|---|
+| `IntSqlType` | `int` | |
+| `StringSqlType` | `String` | |
+| `DoubleSqlType` | `double` | |
+| `BooleanSqlType` | `bool` | On SQLite `true`→`1`, `false`→`0`; any non-zero decodes to `true`. |
+| `BlobSqlType` | `List<int>` | |
+| `DateTimeSqlType` | `DateTime` | On SQLite stored as epoch milliseconds (sortable, timezone-free). |
+
+How a value is stored (column type, driver representation) is the backend's
+business — see each backend package's type-mapping guide.
 
 ## Cross-backend values
 
@@ -26,15 +29,20 @@ same schema and query DSL run unchanged on SQLite and Postgres.
 
 ## Nullable variants
 
-For columns that allow `NULL`, use the `*OrNull` classes — the column type
-becomes `T?`:
+For columns that allow `NULL`, wrap any type in `NullableSqlType` — the column
+type becomes `T?`:
 
-`IntOrNullSqlType`, `StringOrNullSqlType`, `DoubleOrNullSqlType`,
-`BooleanOrNullSqlType`, `BlobOrNullSqlType`, `DateTimeOrNullSqlType`.
+```dart
+static const deletedAt = ValueColumn<DateTime?, Users>(
+  Users.table, 'deleted_at', NullableSqlType(DateTimeSqlType()),
+);
+```
 
-Their decoders map a `NULL` row value to `null`. The **non-null** decoders
-intentionally throw on `NULL`, which surfaces an unexpected `NULL` in a column
-you declared non-nullable.
+The wrapper passes `null` through in both directions and delegates non-null
+values to the inner codec, so custom types get their nullable form for free —
+no hand-written `*OrNull` duplicate. The **non-null** decoders intentionally
+throw on `NULL`, which surfaces an unexpected `NULL` in a column you declared
+non-nullable.
 
 For null **predicates**, use `col.isNull()` / `col.isNotNull()` (an `eq(null)`
 would emit `= NULL`, which is never true in SQL).
@@ -42,7 +50,7 @@ would emit `= NULL`, which is never true in SQL).
 ## Custom type codecs
 
 `SqlType<T>` **is** the codec extension point — subclass it and implement
-`sqlName`, `encode`, and `decode`. Keep the constructor `const` so it works in
+`encode` and `decode`. Keep the constructor `const` so it works in
 `static const` columns. For example, an enum stored by name:
 
 ```dart
@@ -50,9 +58,6 @@ enum Role { admin, user, guest }
 
 final class RoleSqlType extends SqlType<Role> {
   const RoleSqlType();
-
-  @override
-  String get sqlName => 'TEXT';
 
   @override
   Object? encode(Role input) => input.name;

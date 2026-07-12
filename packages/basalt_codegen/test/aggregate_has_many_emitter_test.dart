@@ -87,7 +87,8 @@ void main() {
           ),
         ],
         dimensions: [
-          ColumnArg(paramName: 'id', isNamed: false, columnExpr: 'Customers.id'),
+          ColumnArg(
+              paramName: 'id', isNamed: false, columnExpr: 'Customers.id'),
         ],
         aggregates: [
           AggregateField(
@@ -113,7 +114,8 @@ void main() {
       tableMarker: 'Customers',
       columnArgs: [
         ColumnArg(paramName: 'id', isNamed: false, columnExpr: 'Customers.id'),
-        ColumnArg(paramName: 'name', isNamed: false, columnExpr: 'Customers.name'),
+        ColumnArg(
+            paramName: 'name', isNamed: false, columnExpr: 'Customers.name'),
       ],
       hasManyEdges: [
         HasManyEdge(

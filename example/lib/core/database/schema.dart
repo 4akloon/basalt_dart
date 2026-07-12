@@ -14,7 +14,7 @@ abstract final class Addresses {
 abstract final class Categories {
   static const id = PrimaryKey<int, Categories>('categories', 'id', IntSqlType());
   static const name = ValueColumn<String, Categories>('categories', 'name', StringSqlType());
-  static const parentId = Ref<int?, Categories, Categories>('categories', 'parent_id', IntOrNullSqlType(), references: Categories.id);
+  static const parentId = Ref<int?, Categories, Categories>('categories', 'parent_id', NullableSqlType(IntSqlType()), references: Categories.id);
   static const table = TableRef<Categories>('categories', [id, name, parentId]);
 }
 
@@ -40,7 +40,7 @@ abstract final class Orders {
   static const id = PrimaryKey<int, Orders>('orders', 'id', IntSqlType());
   static const customerId = Ref<int, Orders, Customers>('orders', 'customer_id', IntSqlType(), references: Customers.id);
   static const status = ValueColumn<String, Orders>('orders', 'status', StringSqlType());
-  static const shippingAddressId = Ref<int?, Orders, Addresses>('orders', 'shipping_address_id', IntOrNullSqlType(), references: Addresses.id);
+  static const shippingAddressId = Ref<int?, Orders, Addresses>('orders', 'shipping_address_id', NullableSqlType(IntSqlType()), references: Addresses.id);
   static const createdAt = ValueColumn<int, Orders>('orders', 'created_at', IntSqlType());
   static const table = TableRef<Orders>('orders', [id, customerId, status, shippingAddressId, createdAt]);
 }
@@ -53,7 +53,7 @@ abstract final class Products {
   static const stock = ValueColumn<int, Products>('products', 'stock', IntSqlType());
   static const categoryId = Ref<int, Products, Categories>('products', 'category_id', IntSqlType(), references: Categories.id);
   static const isActive = ValueColumn<int, Products>('products', 'is_active', IntSqlType());
-  static const metadata = ValueColumn<Map<String, Object?>?, Products>('products', 'metadata', JsonMapOrNullSqlType());
+  static const metadata = ValueColumn<Map<String, Object?>?, Products>('products', 'metadata', NullableSqlType(JsonMapSqlType()));
   static const table = TableRef<Products>('products', [id, name, description, price, stock, categoryId, isActive, metadata]);
 }
 
@@ -62,7 +62,7 @@ abstract final class Reviews {
   static const productId = Ref<int, Reviews, Products>('reviews', 'product_id', IntSqlType(), references: Products.id);
   static const customerId = Ref<int, Reviews, Customers>('reviews', 'customer_id', IntSqlType(), references: Customers.id);
   static const rating = ValueColumn<int, Reviews>('reviews', 'rating', IntSqlType());
-  static const comment = ValueColumn<String?, Reviews>('reviews', 'comment', StringOrNullSqlType());
+  static const comment = ValueColumn<String?, Reviews>('reviews', 'comment', NullableSqlType(StringSqlType()));
   static const createdAt = ValueColumn<int, Reviews>('reviews', 'created_at', IntSqlType());
   static const table = TableRef<Reviews>('reviews', [id, productId, customerId, rating, comment, createdAt]);
 }

@@ -29,7 +29,7 @@ class ProductRow {
   final int categoryId;
   final int isActive;
 
-  /// Free-form JSON attributes, decoded by the custom `JsonMapOrNullSqlType`
+  /// Free-form JSON attributes, decoded by the custom `JsonMapSqlType`
   /// (`products.metadata`) into a real `Map`.
   final Map<String, Object?>? metadata;
 

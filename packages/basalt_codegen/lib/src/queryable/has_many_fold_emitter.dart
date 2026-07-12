@@ -1,5 +1,6 @@
 import 'class_info.dart';
 import 'has_many_edge.dart';
+import 'require_present.dart';
 
 /// Emitted `@HasMany` fold code: the `static fold` member of the `${Class}Query`
 /// companion plus the top-level private `_ClassFoldAcc` accumulator classes it
@@ -44,7 +45,10 @@ final class HasManyFoldEmitter {
       ..writeln('  final ${info.className} base;');
 
     for (final edge in info.hasManyEdges) {
-      final child = classInfos[edge.childClass]!;
+      final child = requirePresent(
+        classInfos[edge.childClass],
+        'the registered ClassInfo for ${edge.childClass}',
+      );
       final childType = child.hasManyEdges.isNotEmpty
           ? '_${child.className}FoldAcc'
           : child.className;
@@ -64,7 +68,10 @@ final class HasManyFoldEmitter {
       buf.writeln('    ${rel.fieldName}: base.${rel.fieldName},');
     }
     for (final edge in info.hasManyEdges) {
-      final child = classInfos[edge.childClass]!;
+      final child = requirePresent(
+        classInfos[edge.childClass],
+        'the registered ClassInfo for ${edge.childClass}',
+      );
       if (child.hasManyEdges.isNotEmpty) {
         buf.writeln(
           '    ${edge.fieldName}: [for (final c in ${edge.fieldName}.values) c.build()],',
@@ -84,7 +91,8 @@ final class HasManyFoldEmitter {
 
   String _emitFoldFn(ClassInfo root, Map<String, ClassInfo> classInfos) {
     final pkType = root.pkType ?? 'Object';
-    final pkExpr = root.pkColumnExpr!;
+    final pkExpr =
+        requirePresent(root.pkColumnExpr, 'the root primary-key column');
     final relationBudget = root.ownEdges.isEmpty
         ? 0
         : root.ownEdges.map((e) => e.depth).reduce((a, b) => a > b ? a : b);
@@ -134,8 +142,12 @@ final class HasManyFoldEmitter {
     String parentAccVar,
     Map<String, ClassInfo> classInfos,
   ) {
-    final child = classInfos[edge.childClass]!;
-    final childPk = child.pkColumnExpr!;
+    final child = requirePresent(
+      classInfos[edge.childClass],
+      'the registered ClassInfo for ${edge.childClass}',
+    );
+    final childPk =
+        requirePresent(child.pkColumnExpr, 'the child primary-key column');
     final src = '${child.tableMarker}.table.aliased(\'$aliasPath\')';
     final childPkSel = '$src.col($childPk)';
     final reader = '${child.className}Query.fromRow';

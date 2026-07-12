@@ -55,17 +55,17 @@ Aggregate<int> countAll() =>
     switch (operand) {
       final TableColumn<int, Object?> c => (
           c.node,
-          const IntOrNullSqlType(),
+          const NullableSqlType<int>(IntSqlType()),
           c.name
         ),
       final TableColumn<double, Object?> c => (
           c.node,
-          const DoubleOrNullSqlType(),
+          const NullableSqlType<double>(DoubleSqlType()),
           c.name
         ),
       final Expression<num, Object?> e => (
           e.node,
-          const DoubleOrNullSqlType(),
+          const NullableSqlType<double>(DoubleSqlType()),
           null
         ),
       _ => throw ArgumentError.value(
@@ -133,7 +133,7 @@ Aggregate<double?> avg(Object operand, {String? as}) {
     'AVG',
     node,
     _aggregateAlias('AVG', as, columnName),
-    const DoubleOrNullSqlType(),
+    const NullableSqlType<double>(DoubleSqlType()),
   );
 }
 

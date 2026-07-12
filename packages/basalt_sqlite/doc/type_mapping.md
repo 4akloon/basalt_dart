@@ -6,15 +6,26 @@ SQLite-specific caveats on top of the core codec model in `basalt` **Types**.
 
 SQLite has no native boolean or timestamp type. As a result:
 
-- A `bool` column is declared `INTEGER`; introspection (`generate-schema`)
-  can't distinguish it from a plain integer, so a generated boolean-ish column
-  comes back as `int` (`active` in the example app). You can still use
-  `BooleanSqlType()` when you hand-write or adjust the schema.
-- `DateTime` is stored as `INTEGER` epoch milliseconds by `DateTimeSqlType()`.
+- A `bool` column is typically declared `INTEGER` and stored as `0`/`1`;
+  `DateTime` is stored as `INTEGER` epoch milliseconds by `DateTimeSqlType()`.
+- Introspection can't distinguish a bare `INTEGER` from a boolean or a
+  timestamp, so such columns generate as `int` (`active` in the example app).
 
 `SqliteDialect.encodeParam` maps canonical Dart values to driver form:
 `bool`→`int`, `DateTime`→epoch-ms. Decoders in `SqlType` are lenient and
 accept either representation.
+
+### The declared-type preset
+
+The declared column type *does* survive introspection (in `rawType`), so
+`SqliteAdapter`'s always-on `generate-schema` preset restores fidelity for
+columns you declare explicitly: `BOOLEAN`/`BOOL` emit `bool`
+(`BooleanSqlType`), `DATETIME`/`TIMESTAMP` emit `DateTime` (`DateTimeSqlType`)
+— nullable columns get the `NullableSqlType(...)` wrapping. The preset uses
+core types only, so the generated schema stays backend-portable; declare your
+migrations with `BOOLEAN`/`DATETIME` (SQLite treats them as `INTEGER` affinity
+anyway) to opt in. A user `types:` override in `basalt.yaml` always wins over
+the preset.
 
 ## Cross-backend portability
 
