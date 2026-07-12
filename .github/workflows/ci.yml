@@ -112,12 +112,12 @@ jobs:
       - name: Install dependencies (workspace)
         run: dart pub get
 
-      # Dry-run each first-wave package. basalt_postgres is intentionally held
-      # from the first publish and is not dry-run-gated here.
-      - name: Dry-run basalt
-        run: dart pub publish --dry-run
-        working-directory: packages/basalt
-
+      # Dry-run the pure-Dart first-wave packages. `basalt` itself is NOT gated
+      # here: its DevTools extension build/ lives outside git (regenerated before
+      # publishing), so on a fresh CI checkout pub warns about the empty build dir
+      # and --dry-run exits non-zero. basalt's dry-run is validated locally at
+      # publish time, once the extension build is regenerated. basalt_postgres is
+      # intentionally held from the first publish and is not dry-run-gated here.
       - name: Dry-run basalt_sqlite
         run: dart pub publish --dry-run
         working-directory: packages/basalt_sqlite
