@@ -10,3 +10,4 @@ library;
 
 export 'src/postgres_connection.dart';
 export 'src/postgres_dialect.dart';
+export 'src/types/postgres_jsonb_sql_type.dart';

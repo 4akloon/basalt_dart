@@ -30,6 +30,9 @@ dartdoc:
     annotations:
       markdown: doc/annotations.md
       displayName: Annotations & Codegen
+    tooling:
+      markdown: doc/tooling.md
+      displayName: CLI Adapters & Tooling
   categoryOrder:
     - getting-started
     - schema
@@ -41,4 +44,5 @@ dartdoc:
     - connection
     - migrations
     - annotations
+    - tooling
   showUndocumentedCategories: true

@@ -52,7 +52,7 @@ abstract final class Profiles {
   static const _t = 'profiles';
   static const id = PrimaryKey<int, Profiles>(_t, 'id', IntSqlType());
   static const bio =
-      ValueColumn<String?, Profiles>(_t, 'bio', StringOrNullSqlType());
+      ValueColumn<String?, Profiles>(_t, 'bio', NullableSqlType(StringSqlType()));
   static const table = TableRef<Profiles>(_t, [id, bio]);
 }
 

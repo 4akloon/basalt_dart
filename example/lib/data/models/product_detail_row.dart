@@ -29,7 +29,7 @@ class ProductDetailRow {
   final int categoryId;
   final int isActive;
 
-  /// Free-form JSON attributes, decoded by the custom `JsonMapOrNullSqlType`.
+  /// Free-form JSON attributes, decoded by the custom `JsonMapSqlType`.
   final Map<String, Object?>? metadata;
 
   @Relation(Products.categoryId)

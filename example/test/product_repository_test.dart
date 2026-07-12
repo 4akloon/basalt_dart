@@ -57,7 +57,7 @@ void main() {
     final all = await products.list();
 
     // Seeded with a JSON map — decoded back into a real Map by
-    // JsonMapOrNullSqlType (configured for products.metadata in basalt.yaml).
+    // JsonMapSqlType (configured for products.metadata in basalt.yaml).
     final laptop = all.firstWhere((p) => p.name == 'Laptop Pro 14');
     expect(laptop.metadata, isNotNull);
     expect(laptop.metadata!['warranty'], '2 years');

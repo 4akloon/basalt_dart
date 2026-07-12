@@ -12,11 +12,12 @@ executables:
 
 dependencies:
   basalt: ^0.0.1
-  basalt_sqlite: ^0.0.1
-  basalt_postgres: ^0.0.1
   args: ^2.5.0
   path: ^1.9.0
   yaml: ^3.1.2
 
 dev_dependencies:
+  # Backends are NOT runtime deps — the CLI reaches them through the generated
+  # bootstrap entrypoint. basalt_sqlite is only here for the package's tests.
+  basalt_sqlite: ^0.0.1
   test: ^1.26.3

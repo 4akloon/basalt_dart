@@ -83,9 +83,6 @@ final class RoleSqlType extends SqlType<Role> {
   const RoleSqlType();
 
   @override
-  String get sqlName => 'TEXT';
-
-  @override
   Object? encode(Role input) => input.name;
 
   @override

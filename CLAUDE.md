@@ -19,10 +19,10 @@ trivially unit-testable and makes new backends drop-in.
 
 | Path | Package | Role |
 |---|---|---|
-| `packages/basalt` | `basalt` | Dialect-agnostic core: types, schema, expressions, query/write builders, serializer, `Connection`/`SqlDialect` interfaces, annotations. No driver dep. Also provides the **DevTools inspector runtime** as a separate entrypoint `package:basalt/devtools.dart` (registry + `InspectorService` over `ext.basalt.*`; `lib/src/devtools/`) and ships the DevTools extension (`extension/devtools/`). |
-| `packages/basalt_sqlite` | `basalt_sqlite` | SQLite backend: `SqliteConnection` + `SqliteDialect` (on `package:sqlite3`). |
-| `packages/basalt_postgres` | `basalt_postgres` | Postgres backend: `PostgresConnection` + `PostgresDialect` (on `package:postgres`), with `information_schema` introspection. |
-| `packages/basalt_cli` | `basalt_cli` | `basalt` executable: migrations + `generate-schema`. |
+| `packages/basalt` | `basalt` | Dialect-agnostic core: types, schema, expressions, query/write builders, serializer, `Connection`/`SqlDialect` interfaces, annotations. No driver dep. Extra entrypoints: `package:basalt/tooling.dart` (**CLI adapter seam** — `BasaltAdapter` + `SchemaTypeOverrides`/`TypeOverride`; `lib/src/tooling/`) and `package:basalt/devtools.dart` (**DevTools inspector runtime**: registry + `InspectorService` over `ext.basalt.*`; `lib/src/devtools/`); also ships the DevTools extension (`extension/devtools/`). |
+| `packages/basalt_sqlite` | `basalt_sqlite` | SQLite backend: `SqliteConnection` + `SqliteDialect` (on `package:sqlite3`) + `SqliteAdapter` (CLI adapter, `lib/adapter.dart`). |
+| `packages/basalt_postgres` | `basalt_postgres` | Postgres backend: `PostgresConnection` + `PostgresDialect` (on `package:postgres`), `information_schema` introspection, `PostgresAdapter`/`PostgresEndpoint` (CLI adapter, `lib/adapter.dart`), native `PostgresJsonbSqlType`. |
+| `packages/basalt_cli` | `basalt_cli` | `basalt` executable: migrations + `generate-schema`. **Backend-agnostic** — no dep on any backend package; `bin/basalt.dart` bootstraps a generated entrypoint (`.dart_tool/basalt/`) that imports the `backend:` package from `basalt.yaml` (build_runner model). |
 | `packages/basalt_codegen` | `basalt_codegen` | `build_runner`/`source_gen` derives for the annotations. |
 | `packages/basalt_devtools_extension` | `basalt_devtools_extension` | Flutter web UI for the DevTools "basalt" tab. Under `packages/` but **not** a Dart-workspace member (Flutter app; resolve with `flutter pub get`); compiled into `basalt/extension/devtools/build/`. |
 | `example/` | `basalt_example` | End-to-end **Flutter** shop app (products/categories/customers/orders/reviews) with clean architecture + cubit — showcases complex relations, transactions, aggregates and raw-SQL analytics. Like the DevTools extension it is **not** a Dart-workspace member (Flutter app; resolve with `flutter pub get`; uses `dependency_overrides` to point the basalt packages at their local paths). |
@@ -62,6 +62,19 @@ Dart SDK constraint: `>=3.5.0 <4.0.0`.
 - **GOTCHA: chained `.where().where()` REPLACES the predicate (last wins), it does not AND.** Combine with
   `&` (`q.where(a.eq(1) & b.isNotNull())`), or use `.filter()` — the basalt-style method that ANDs repeated
   calls. (`Query.where` does `_copy(whereNode: ...)`; `filter` ANDs onto the existing `whereNode`.)
+- **`basalt_cli` never imports backend packages.** Backend access goes through `BasaltAdapter`
+  (`package:basalt/tooling.dart`): the bootstrapper (`bin/basalt.dart` → `src/bootstrap/`) generates
+  `.dart_tool/basalt/entrypoint.dart` importing `package:<backend>/adapter.dart` (top-level `const adapter`
+  by convention) and spawns it. The `database:` map from `basalt.yaml` is passed to the adapter **as-is** —
+  option keys are adapter-defined, there is no url in the contract. **`backend:` is required — there is no
+  default backend** (`BackendResolver`/`BasaltConfig.load` throw if it's absent; a Postgres-looking
+  `database.url` only changes the *suggested* value in the error).
+- **Nullable column types wrap, they don't duplicate:** `NullableSqlType(XSqlType())` is the only nullable
+  variant — never add `*OrNullSqlType` codec copies. In a `SqlType<Object?>`-typed context spell the type
+  argument explicitly (`NullableSqlType<int>(...)`) or inference degrades to `<Object>`. **Type overrides
+  register the non-nullable base only** — a nullable column derives its variant via `TypeOverride.asNullable`
+  (there is no separate nullable registration, no `nullable:` YAML sub-key). Layer sets with
+  `SchemaTypeOverrides.overlay` (receiver wins per key); parsing lives in `SchemaTypeOverridesParser`.
 - **Avoid `!`** — prefer `if (x case final y?)` / pattern matching for null handling (project style).
 - **One class per file; sealed hierarchies use `part`s.** Each class/DTO lives in its own file. A `sealed`
   hierarchy can't span libraries, so its entry file (`sql_node.dart` / `table.dart` / `write.dart`) is a
@@ -79,12 +92,16 @@ Dart SDK constraint: `>=3.5.0 <4.0.0`.
 - AST nodes: `ast/sql_node.dart`
 - Serializer + scope validation: `serialize/query_builder.dart`; dialect seam: `serialize/sql_dialect.dart`
 - `Connection`: `connection.dart`; introspection model: `schema/introspection.dart`
+- CLI adapter seam (`BasaltAdapter`/`SchemaTypeOverrides`/`TypeOverride`): `tooling/` (entrypoint `lib/tooling.dart`)
 - Annotations: `annotations/{queryable,insertable,as_changeset,column,relation}.dart`
 
 ## How to extend
 
-- **New backend:** implement `Connection` + `SqlDialect` + `introspect()` in a new `basalt_<db>` package,
-  then wire it into `ConnectionFactory.open` by URL scheme. No command/core changes needed.
+- **New backend:** in a new `basalt_<db>` package implement `Connection` + `SqlDialect` + `introspect()`,
+  plus a `BasaltAdapter` (`open`/`reset` over the raw `database:` options map, optional
+  `typeOverrides`/`nativeTypeOverrides` presets for `generate-schema`), and expose
+  `lib/adapter.dart` with a top-level `const BasaltAdapter adapter;`. Users select it with
+  `backend: basalt_<db>` in `basalt.yaml` — **zero CLI/core changes needed**.
 - **New annotation/derive:** add the annotation in `packages/basalt/lib/src/annotations/`, a `TypeChecker` +
   parsing in `edge_analyzer.dart`, a pure emitter, a `GeneratorForAnnotation` (see `write_generator.dart`),
   and register it in `builder.dart`'s `SharedPartBuilder`.
@@ -99,7 +116,7 @@ per category) + `///` doc comments in `lib/`.
 
 | Package | Guides (`doc/`) |
 |---|---|
-| `basalt` | getting_started, schema, types, expressions, queries, writes, serialization, connection, annotations |
+| `basalt` | getting_started, schema, types, expressions, queries, writes, serialization, connection, annotations, tooling |
 | `basalt_cli` | getting_started, migrations |
 | `basalt_codegen` | getting_started |
 | `basalt_sqlite` | getting_started, type_mapping |
@@ -127,8 +144,12 @@ Generate HTML locally: `cd packages/<pkg> && dart doc .` (output in `doc/api/`, 
 ## Test map
 
 - Serializer (SQL/params, scope validation, joins): `packages/basalt/test/serializer_test.dart`
-- SQLite round-trips, joins, transactions, nullable: `packages/basalt_sqlite/test/integration_test.dart`
-- Migrations + generate-schema/introspection: `packages/basalt_cli/test/{migrations_test,generate_schema_test}.dart`
+- Tooling (preset layering, `NullableSqlType`): `packages/basalt/test/{tooling,types}/*`
+- SQLite round-trips, joins, transactions, nullable: `packages/basalt_sqlite/test/integration_test.dart`;
+  adapter options/reset/preset: `packages/basalt_sqlite/test/sqlite_adapter_test.dart`
+- Postgres endpoint parsing + jsonb codec (no server needed): `packages/basalt_postgres/test/*`
+- Migrations + generate-schema/introspection + presets: `packages/basalt_cli/test/{migrations_test,generate_schema_test}.dart`
+- Bootstrap (backend resolution, entrypoint codegen, fingerprint, real spawn): `packages/basalt_cli/test/bootstrap_test.dart`
 - Codegen emitters + generate + relation tree: `packages/basalt_codegen/test/*`
 - End-to-end: `example/` Flutter app (`flutter pub get`, `dart run build_runner build`, then `flutter run`);
   repository-layer tests under `example/test/` run against an in-memory `SqliteConnection`

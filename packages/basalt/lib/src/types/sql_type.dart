@@ -3,33 +3,26 @@
 /// [SqlType] is a [Codec]: [Codec.encode] turns a Dart value into a
 /// driver-ready parameter, [Codec.decode] turns a raw value returned by the
 /// driver back into `T`. Built-in types live one-per-file under `sql_types/`
-/// (e.g. [IntSqlType], [IntOrNullSqlType]) and are re-exported here. Their
-/// `const` constructors are what let columns be `static const` and therefore
-/// usable inside annotations later. Custom types are added the same way — by
-/// subclassing (see `doc/types.md`), not by passing callbacks.
+/// (e.g. [IntSqlType]) and are re-exported here; nullable variants wrap any
+/// type in [NullableSqlType]. Their `const` constructors are what let columns
+/// be `static const` and therefore usable inside annotations later. Custom
+/// types are added the same way — by subclassing (see `doc/types.md`), not by
+/// passing callbacks.
 library;
 
 import 'dart:convert';
 
-export 'sql_types/blob_or_null_sql_type.dart';
 export 'sql_types/blob_sql_type.dart';
-export 'sql_types/boolean_or_null_sql_type.dart';
 export 'sql_types/boolean_sql_type.dart';
-export 'sql_types/date_time_or_null_sql_type.dart';
 export 'sql_types/date_time_sql_type.dart';
-export 'sql_types/double_or_null_sql_type.dart';
 export 'sql_types/double_sql_type.dart';
-export 'sql_types/int_or_null_sql_type.dart';
 export 'sql_types/int_sql_type.dart';
-export 'sql_types/string_or_null_sql_type.dart';
+export 'sql_types/nullable_sql_type.dart';
 export 'sql_types/string_sql_type.dart';
 
 /// {@category types}
 abstract base class SqlType<T> extends Codec<T, Object?> {
   const SqlType();
-
-  /// SQLite storage class / column type keyword (`INTEGER`, `TEXT`, ...).
-  String get sqlName;
 
   @override
   Object? encode(T input);

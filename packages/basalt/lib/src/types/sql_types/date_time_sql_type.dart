@@ -7,9 +7,6 @@ final class DateTimeSqlType extends SqlType<DateTime> {
   const DateTimeSqlType();
 
   @override
-  String get sqlName => 'INTEGER';
-
-  @override
   Object? encode(DateTime input) => input;
 
   @override

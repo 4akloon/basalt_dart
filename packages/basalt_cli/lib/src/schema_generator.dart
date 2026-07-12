@@ -1,8 +1,7 @@
 import 'dart:io';
 
 import 'package:basalt/basalt.dart';
-
-import 'schema_type_overrides.dart';
+import 'package:basalt/tooling.dart';
 
 /// Emits a Dart `schema.dart` from an introspected schema — **tables and
 /// columns only** (the `generate-schema` analog). Data classes are intentionally
@@ -163,22 +162,20 @@ final class SchemaGenerator {
   /// dialect-agnostic, since each backend already normalized its native types
   /// during introspection.
   (String, String) _mapType(ColumnType type, bool nullable) {
-    final (String base, String cls, String orNullCls) = switch (type) {
-      ColumnType.integer => ('int', 'IntSqlType', 'IntOrNullSqlType'),
-      ColumnType.text => ('String', 'StringSqlType', 'StringOrNullSqlType'),
-      ColumnType.real => ('double', 'DoubleSqlType', 'DoubleOrNullSqlType'),
-      ColumnType.boolean => ('bool', 'BooleanSqlType', 'BooleanOrNullSqlType'),
-      ColumnType.blob => ('List<int>', 'BlobSqlType', 'BlobOrNullSqlType'),
-      ColumnType.dateTime => (
-          'DateTime',
-          'DateTimeSqlType',
-          'DateTimeOrNullSqlType'
-        ),
+    final (String base, String cls) = switch (type) {
+      ColumnType.integer => ('int', 'IntSqlType'),
+      ColumnType.text => ('String', 'StringSqlType'),
+      ColumnType.real => ('double', 'DoubleSqlType'),
+      ColumnType.boolean => ('bool', 'BooleanSqlType'),
+      ColumnType.blob => ('List<int>', 'BlobSqlType'),
+      ColumnType.dateTime => ('DateTime', 'DateTimeSqlType'),
     };
     // No `const` prefix: the column is emitted into a `static const` field, so
     // the constructor is already a const context — an explicit `const` here
     // trips `unnecessary_const` in lint-enabled projects (e.g. flutter_lints).
-    return nullable ? ('$base?', '$orNullCls()') : (base, '$cls()');
+    return nullable
+        ? ('$base?', 'NullableSqlType($cls())')
+        : (base, '$cls()');
   }
 
   String _pascal(String s) => s

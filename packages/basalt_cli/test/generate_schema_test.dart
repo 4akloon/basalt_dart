@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:basalt/basalt.dart';
 import 'package:basalt_cli/basalt_cli.dart';
+import 'package:basalt_sqlite/adapter.dart';
 import 'package:basalt_sqlite/basalt_sqlite.dart';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
@@ -55,7 +56,7 @@ void main() {
     expect(
       source,
       contains(
-        "static const bio = ValueColumn<String?, Users>('users', 'bio', StringOrNullSqlType());",
+        "static const bio = ValueColumn<String?, Users>('users', 'bio', NullableSqlType(StringSqlType()));",
       ),
     );
     expect(source, contains('abstract final class Posts {'));
@@ -84,7 +85,9 @@ void main() {
     final schemaPath = p.join(tmp.path, 'out', 'schema.dart');
     final configPath = p.join(tmp.path, 'basalt.yaml');
     File(configPath).writeAsStringSync('''
-database_url: $dbPath
+backend: basalt_sqlite
+database:
+  path: $dbPath
 schema_output: $schemaPath
 ''');
 
@@ -94,7 +97,7 @@ schema_output: $schemaPath
         'name TEXT NOT NULL)');
     await fileDb.close();
 
-    final code = await const CliRunner().build().run([
+    final code = await const CliRunner(SqliteAdapter()).build().run([
       '--config',
       configPath,
       'generate-schema',
@@ -121,7 +124,7 @@ schema_output: $schemaPath
         typeOverrides: SchemaTypeOverrides(
           byColumn: {
             'users.bio': TypeOverride(
-              dartType: 'Html?',
+              dartType: 'Html',
               sqlType: 'HtmlSqlType()',
               import: 'package:x/html.dart',
             ),
@@ -129,10 +132,12 @@ schema_output: $schemaPath
         ),
       ).generate(await db.introspect());
 
+      // bio is nullable, so the override is wrapped automatically.
       expect(
         source,
         contains(
-          "static const bio = ValueColumn<Html?, Users>('users', 'bio', HtmlSqlType());",
+          "static const bio = ValueColumn<Html?, Users>('users', 'bio', "
+          'NullableSqlType(HtmlSqlType()));',
         ),
       );
       expect(
@@ -226,15 +231,12 @@ schema_output: $schemaPath
       );
     });
 
-    test('nullable columns use the nullable variant', () async {
+    test('nullable columns derive the wrapped variant from one override',
+        () async {
       final source = const SchemaGenerator(
         typeOverrides: SchemaTypeOverrides(
           byNative: {
             'text': TypeOverride(dartType: 'Slug', sqlType: 'SlugSqlType()'),
-          },
-          byNativeNullable: {
-            'text':
-                TypeOverride(dartType: 'Slug?', sqlType: 'SlugOrNullSqlType()'),
           },
         ),
       ).generate(await db.introspect());
@@ -248,7 +250,8 @@ schema_output: $schemaPath
       expect(
         source,
         contains(
-          "static const bio = ValueColumn<Slug?, Users>('users', 'bio', SlugOrNullSqlType());",
+          "static const bio = ValueColumn<Slug?, Users>('users', 'bio', "
+          'NullableSqlType(SlugSqlType()));',
         ),
       );
     });
@@ -302,4 +305,142 @@ schema_output: $schemaPath
       );
     });
   });
+
+  group('adapter type presets through the CLI', () {
+    late Directory tmp;
+    late String configPath;
+    late String schemaPath;
+
+    setUp(() async {
+      tmp = Directory.systemTemp.createTempSync('basalt_preset_test');
+      addTearDown(() => tmp.deleteSync(recursive: true));
+      schemaPath = p.join(tmp.path, 'schema.dart');
+      configPath = p.join(tmp.path, 'basalt.yaml');
+
+      // Declared BOOLEAN/DATETIME collapse to INTEGER affinity, but the
+      // declared type survives in rawType — which the sqlite preset keys on.
+      final fileDb = SqliteConnection.open(p.join(tmp.path, 'test.db'));
+      await fileDb.executeSql('CREATE TABLE events ('
+          'id INTEGER NOT NULL PRIMARY KEY, '
+          'active BOOLEAN NOT NULL, '
+          'starts_at DATETIME NOT NULL, '
+          'ends_at DATETIME)');
+      await fileDb.close();
+    });
+
+    Future<String> generate(String config) async {
+      File(configPath).writeAsStringSync(config);
+      final code = await const CliRunner(SqliteAdapter())
+          .build()
+          .run(['--config', configPath, 'generate-schema']);
+      expect(code, 0);
+      return File(schemaPath).readAsStringSync();
+    }
+
+    test('sqlite preset restores bool/DateTime from declared types', () async {
+      final source = await generate('''
+backend: basalt_sqlite
+database:
+  path: ${p.join(tmp.path, 'test.db')}
+schema_output: $schemaPath
+''');
+      expect(
+        source,
+        contains("ValueColumn<bool, Events>('events', 'active', "
+            'BooleanSqlType());'),
+      );
+      expect(
+        source,
+        contains("ValueColumn<DateTime, Events>('events', 'starts_at', "
+            'DateTimeSqlType());'),
+      );
+      // Nullable column gets the wrapped variant.
+      expect(
+        source,
+        contains("ValueColumn<DateTime?, Events>('events', 'ends_at', "
+            'NullableSqlType(DateTimeSqlType()));'),
+      );
+    });
+
+    test('user types: override beats the preset', () async {
+      final source = await generate('''
+backend: basalt_sqlite
+database:
+  path: ${p.join(tmp.path, 'test.db')}
+schema_output: $schemaPath
+types:
+  native:
+    boolean: { dart_type: "MyFlag", sql_type: "MyFlagSqlType()" }
+''');
+      expect(source, contains("'active', MyFlagSqlType());"));
+      // The preset still applies where the user didn't override.
+      expect(source, contains("'starts_at', DateTimeSqlType());"));
+    });
+
+    test('native_types: true layers the native tier over the portable one',
+        () async {
+      // SqliteAdapter's native tier is empty, so exercise the gate with the
+      // postgres-style shape: a stub adapter whose native tier retypes
+      // DATETIME differently from its portable tier.
+      final baseConfig = '''
+backend: basalt_sqlite
+database:
+  path: ${p.join(tmp.path, 'test.db')}
+schema_output: $schemaPath
+''';
+
+      File(configPath).writeAsStringSync(baseConfig);
+      final code = await const CliRunner(_NativeTierAdapter())
+          .build()
+          .run(['--config', configPath, 'generate-schema']);
+      expect(code, 0);
+      final withoutOptIn = File(schemaPath).readAsStringSync();
+      expect(withoutOptIn, contains("'starts_at', PortableSqlType());"));
+
+      File(configPath).writeAsStringSync('${baseConfig}native_types: true\n');
+      final optedIn = await const CliRunner(_NativeTierAdapter())
+          .build()
+          .run(['--config', configPath, 'generate-schema']);
+      expect(optedIn, 0);
+      final withOptIn = File(schemaPath).readAsStringSync();
+      expect(withOptIn, contains("'starts_at', NativeSqlType());"));
+    });
+  });
+}
+
+/// Stub adapter with distinct portable and native preset tiers, to verify the
+/// `native_types:` gate and tier precedence end-to-end.
+final class _NativeTierAdapter extends BasaltAdapter {
+  const _NativeTierAdapter();
+
+  @override
+  String get name => 'stub';
+
+  @override
+  Future<Connection> open(Map<String, Object?> options) =>
+      const SqliteAdapter().open(options);
+
+  @override
+  Future<void> reset(Map<String, Object?> options) =>
+      const SqliteAdapter().reset(options);
+
+  @override
+  SchemaTypeOverrides get typeOverrides => const SchemaTypeOverrides(
+        byNative: {
+          'datetime': TypeOverride(
+            dartType: 'Portable',
+            sqlType: 'PortableSqlType()',
+          ),
+        },
+      );
+
+  @override
+  SchemaTypeOverrides get nativeTypeOverrides => const SchemaTypeOverrides(
+        byNative: {
+          'datetime': TypeOverride(
+            dartType: 'Native',
+            sqlType: 'NativeSqlType()',
+          ),
+        },
+      );
 }

@@ -9,9 +9,6 @@ final class BooleanSqlType extends SqlType<bool> {
   const BooleanSqlType();
 
   @override
-  String get sqlName => 'INTEGER';
-
-  @override
   Object? encode(bool input) => input;
 
   @override

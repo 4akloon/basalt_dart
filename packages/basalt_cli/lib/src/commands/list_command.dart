@@ -3,6 +3,8 @@ import 'dart:io';
 import 'db_command.dart';
 
 final class ListCommand extends DbCommand {
+  ListCommand(super.adapter);
+
   @override
   final name = 'list';
   @override

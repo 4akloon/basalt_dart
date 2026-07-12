@@ -26,13 +26,47 @@ Dart SDK: `>=3.5.0 <4.0.0`.
 Create `basalt.yaml` in the directory you'll run the CLI from:
 
 ```yaml
-database_url: app.db        # SQLite file path (or sqlite:/file: URL; ':memory:' is passed through)
+backend: basalt_sqlite      # required — the backend package (no default)
+database:
+  path: app.db              # SQLite: a file path, or ':memory:'
 migrations_dir: migrations
+# native_types: true        # opt into the backend's native type presets (see §4)
 # types:                    # optional — customize generated column types (see §4)
 ```
 
-Alternatively set `DATABASE_URL` in the environment (it takes precedence over
-`basalt.yaml`).
+The CLI itself has **no dependency on any database backend**. `backend:` is
+required — naming the backend package is an explicit decision, there is no
+default. On first run the CLI generates a small entrypoint under
+`.dart_tool/basalt/` that imports that package's adapter and re-runs itself
+through it (the `build_runner` model), so the backend must be in your
+`dev_dependencies`. It is regenerated automatically when the backend or the
+package graph changes. Run the CLI from the project root (where
+`.dart_tool/package_config.json` lives).
+
+The keys under `database:` are **adapter-specific**:
+
+```yaml
+# SQLite (backend: basalt_sqlite)
+database:
+  path: app.db          # or ':memory:'
+
+# Postgres (backend: basalt_postgres) — a URL...
+database:
+  url: postgres://user:secret@localhost:5432/shop?sslmode=disable
+
+# ...or manual keys
+database:
+  host: localhost       # default: localhost
+  port: 5432            # default: 5432
+  database: shop        # required
+  username: postgres    # default: postgres
+  password: secret      # default: empty
+  ssl: false            # default: true
+```
+
+If `DATABASE_URL` is set in the environment it overrides `database.url` —
+handy for CI with Postgres. Writing a new backend? See `basalt`
+**CLI Adapters & Tooling**.
 
 ## 3. Create and apply a migration
 
@@ -84,23 +118,33 @@ abstract final class Users {
   static const name = ValueColumn<String, Users>('users', 'name', StringSqlType());
   static const age = ValueColumn<int, Users>('users', 'age', IntSqlType());
   static const active = ValueColumn<int, Users>('users', 'active', IntSqlType());
-  static const managerId =
-      Ref<int?, Users, Users>('users', 'manager_id', IntOrNullSqlType(), references: Users.id);
+  static const managerId = Ref<int?, Users, Users>('users', 'manager_id',
+      NullableSqlType(IntSqlType()), references: Users.id);
   static const table = TableRef<Users>('users', [id, name, age, active, managerId]);
 }
 ```
 
-> SQLite has no native boolean or timestamp, so `active` may come back as `int`.
-> See `basalt_sqlite` **Type Mapping** for SQLite-specific caveats, and
-> `basalt` **Types** for the codec model.
+> SQLite has no native boolean or timestamp, so a column declared bare
+> `INTEGER` comes back as `int`. Columns *declared* `BOOLEAN`/`DATETIME` are
+> restored to `bool`/`DateTime` by the SQLite adapter's built-in preset — see
+> `basalt_sqlite` **Type Mapping** for the details, and `basalt` **Types** for
+> the codec model.
 
 ### Customizing column types
 
-By default each column maps to a built-in `SqlType`. To emit a **custom**
-`SqlType` (e.g. an enum codec, or a JSON type) instead of editing the generated
-file by hand, add an optional `types:` block to `basalt.yaml`. Overrides are
+By default each column maps to a built-in `SqlType`, adjusted by the backend
+adapter's **type presets**: a portable tier that always applies (e.g. SQLite's
+declared-`BOOLEAN`/`DATETIME` fix), and a backend-native tier that applies only
+with `native_types: true` (e.g. Postgres `json`/`jsonb` →
+`Map<String, Object?>` via `PostgresJsonbSqlType` — note the generated schema
+then imports the backend package and is no longer backend-portable).
+
+To emit your own **custom** `SqlType` (e.g. an enum codec, or a JSON type)
+instead of editing the generated file by hand, add an optional `types:` block
+to `basalt.yaml` — it always wins over the adapter's presets. Overrides are
 matched per column with the precedence **specific column > native type >
-canonical type**, each falling back to the built-in mapping:
+canonical type**, each falling back to the presets and then the built-in
+mapping:
 
 ```yaml
 types:
@@ -121,7 +165,7 @@ types:
       import: "package:my_app/db/json_map_sql_type.dart"
       nullable:                          # used for NULLable columns
         dart_type: "Map<String, Object?>?"
-        sql_type: "JsonMapOrNullSqlType()"
+        sql_type: "NullableSqlType(JsonMapSqlType())"
 
   # By a single column — key is "table.column" (highest precedence).
   columns:

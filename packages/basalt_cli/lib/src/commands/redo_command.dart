@@ -3,6 +3,8 @@ import 'dart:io';
 import 'db_command.dart';
 
 final class RedoCommand extends DbCommand {
+  RedoCommand(super.adapter);
+
   @override
   final name = 'redo';
   @override

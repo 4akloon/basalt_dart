@@ -48,7 +48,7 @@ class SeedData {
 
       // ---- Products -------------------------------------------------------
       // The trailing record field is the JSON `metadata` map (or null) — it
-      // round-trips through the custom `JsonMapOrNullSqlType` codec.
+      // round-trips through the custom `JsonMapSqlType` codec.
       for (final (name, desc, price, stock, cat, metadata)
           in const <(String, String, double, int, int, Map<String, Object?>?)>[
         (

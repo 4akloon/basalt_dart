@@ -3,6 +3,8 @@ import 'dart:io';
 import 'db_command.dart';
 
 final class RunCommand extends DbCommand {
+  RunCommand(super.adapter);
+
   @override
   final name = 'run';
   @override

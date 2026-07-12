@@ -13,18 +13,22 @@ For the engine API (`MigrationRunner`, `MigrationSource`, tracking table), see
 
 ## Configuration
 
-`BasaltConfig` resolves the database from `DATABASE_URL` (environment, takes
-precedence) with `basalt.yaml` as a fallback:
+`BasaltConfig` reads `basalt.yaml`; the `database:` section is handed to the
+backend adapter as-is (its keys are adapter-specific — see **Getting Started**
+§2). If `DATABASE_URL` is set in the environment it overrides `database.url`.
 
 ```yaml
 # basalt.yaml
-database_url: app.db        # SQLite path; sqlite:/sqlite://file: schemes are stripped
+backend: basalt_sqlite      # required — the backend package (no default)
+database:
+  path: app.db              # SQLite: file path or ':memory:'
 migrations_dir: migrations  # default: migrations
 schema_output: lib/schema.dart
 ```
 
-The backend is chosen by URL scheme in `ConnectionFactory`: `postgres://` /
-`postgresql://` open Postgres; anything else is a SQLite path.
+The backend is chosen by the required `backend:` key; the CLI bootstraps a
+generated entrypoint under `.dart_tool/basalt/` that imports that package's
+adapter, so it must be in the project's `dev_dependencies`.
 
 ## Commands
 

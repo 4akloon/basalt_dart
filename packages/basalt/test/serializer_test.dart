@@ -492,7 +492,7 @@ void main() {
         'SELECT MIN("posts"."views") AS "min_views", '
         'MAX("posts"."views") AS "max_views" FROM "posts"',
       );
-      expect(lowest.type, const IntOrNullSqlType());
+      expect(lowest.type, const NullableSqlType(IntSqlType()));
     });
 
     test('mismatched aggregate type argument throws ArgumentError', () {
@@ -524,7 +524,7 @@ void main() {
         from(Posts.table).select([units]).map(_ignore),
       );
       expect(sql, 'SELECT SUM("posts"."views") AS "units_sold" FROM "posts"');
-      expect(units.type, const IntOrNullSqlType());
+      expect(units.type, const NullableSqlType(IntSqlType()));
     });
 
     test('COUNT(DISTINCT col)', () {

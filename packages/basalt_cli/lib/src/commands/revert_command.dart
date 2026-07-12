@@ -3,6 +3,8 @@ import 'dart:io';
 import 'db_command.dart';
 
 final class RevertCommand extends DbCommand {
+  RevertCommand(super.adapter);
+
   @override
   final name = 'revert';
   @override

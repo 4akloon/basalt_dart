@@ -5,9 +5,6 @@ final class IntSqlType extends SqlType<int> {
   const IntSqlType();
 
   @override
-  String get sqlName => 'INTEGER';
-
-  @override
   Object? encode(int input) => input;
 
   @override
