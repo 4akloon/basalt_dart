@@ -38,6 +38,16 @@ jobs:
         with:
           sdk: stable
 
+      # example/ and packages/basalt_devtools_extension are Flutter apps, NOT Dart
+      # workspace members. `dart pub get` still descends into every nested pubspec
+      # in the tree and fails on their `sdk: flutter` deps without a Flutter SDK.
+      # Hide their pubspecs so the Dart-only workspace resolves cleanly (the CI
+      # checkout is ephemeral, so no restore needed).
+      - name: Exclude Flutter apps from workspace resolution
+        run: |
+          mv example/pubspec.yaml example/pubspec.yaml.ci-hidden
+          mv packages/basalt_devtools_extension/pubspec.yaml packages/basalt_devtools_extension/pubspec.yaml.ci-hidden
+
       - name: Install dependencies (workspace)
         run: dart pub get
 
@@ -88,6 +98,16 @@ jobs:
       - uses: dart-lang/setup-dart@v1
         with:
           sdk: stable
+
+      # example/ and packages/basalt_devtools_extension are Flutter apps, NOT Dart
+      # workspace members. `dart pub get` still descends into every nested pubspec
+      # in the tree and fails on their `sdk: flutter` deps without a Flutter SDK.
+      # Hide their pubspecs so the Dart-only workspace resolves cleanly (the CI
+      # checkout is ephemeral, so no restore needed).
+      - name: Exclude Flutter apps from workspace resolution
+        run: |
+          mv example/pubspec.yaml example/pubspec.yaml.ci-hidden
+          mv packages/basalt_devtools_extension/pubspec.yaml packages/basalt_devtools_extension/pubspec.yaml.ci-hidden
 
       - name: Install dependencies (workspace)
         run: dart pub get
