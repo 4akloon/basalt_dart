@@ -16,6 +16,7 @@ end-to-end against **Postgres 16**.
 - [Opening a connection](#opening-a-connection)
 - [Dialect](#dialect)
 - [Introspection & the CLI](#introspection--the-cli)
+- [Native types](#native-types)
 - [Running the tests](#running-the-tests)
 
 ## Status
@@ -26,7 +27,7 @@ end-to-end against **Postgres 16**.
 | ✅ | `PostgresConnection` — the full `Connection` interface (`fetch`, `execute`, `executeReturning`, `executeSql`, `queryRaw`, `transaction` with savepoints, `introspect`, `close`) |
 | ✅ | Introspection via `information_schema` (tables, columns, nullability, primary & foreign keys) for `generate-schema` |
 | ✅ | CLI `postgres://` wiring + cross-backend codecs (`int`/`text`/`real`/`bool`/`DateTime`) |
-| ⬜ | Advanced PG types (`uuid`, `json`/`jsonb`, `numeric`, arrays) |
+| ✅ | Native PG type codecs (`json`/`jsonb`, `uuid`, `numeric`, arrays) via the adapter's `native_types` preset |
 
 ## Install
 
@@ -77,6 +78,33 @@ and `timestamp`), while decoders stay lenient so the same Dart types round-trip 
 # basalt.yaml
 database_url: postgres://postgres:postgres@localhost:5432/app?sslmode=disable
 ```
+
+## Native types
+
+Beyond the cross-backend codecs (`int`/`text`/`real`/`bool`/`DateTime`), the adapter ships
+Postgres-native codecs, opted into per project with `native_types: true` in the `types:` block of
+`basalt.yaml`. With it enabled, `generate-schema` maps native columns to:
+
+| Postgres | Dart | Codec |
+|---|---|---|
+| `json` / `jsonb` | `Map<String, Object?>` | `PostgresJsonbSqlType` |
+| `uuid` | `String` | `PostgresUuidSqlType` |
+| `numeric` / `decimal` | `String` (exact, not a lossy `double`) | `PostgresNumericSqlType` |
+| `integer[]` / `bigint[]` | `List<int>` | `PostgresArraySqlType<int>` |
+| `double precision[]` / `real[]` | `List<double>` | `PostgresArraySqlType<double>` |
+| `boolean[]` | `List<bool>` | `PostgresArraySqlType<bool>` |
+| `text[]` / `varchar[]` / `uuid[]` / `numeric[]` | `List<String>` | `PostgresArraySqlType<String>` |
+
+```dart
+// hand-written or generated with `native_types: true`
+static const tags =
+    ValueColumn<List<String>, Posts>('posts', 'tags', PostgresArraySqlType<String>());
+static const amount =
+    ValueColumn<String, Posts>('posts', 'amount', PostgresNumericSqlType());
+```
+
+A schema using these codecs imports `package:basalt_postgres` and is no longer backend-portable.
+Without the preset, `uuid` falls back to `String`, `numeric` to `double`, and arrays are unmapped.
 
 ## Running the tests
 

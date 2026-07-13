@@ -53,12 +53,67 @@ final class PostgresAdapter extends BasaltAdapter {
         byNative: {
           'json': _jsonOverride,
           'jsonb': _jsonOverride,
+          'uuid': _uuidOverride,
+          'numeric': _numericOverride,
+          'decimal': _numericOverride,
+          // Arrays: `information_schema` reports `data_type = ARRAY`, so
+          // introspection keys array columns by their `udt_name` (the element
+          // type with a leading underscore, e.g. `_int4` for `integer[]`).
+          '_int2': _intArrayOverride,
+          '_int4': _intArrayOverride,
+          '_int8': _intArrayOverride,
+          '_float4': _doubleArrayOverride,
+          '_float8': _doubleArrayOverride,
+          '_bool': _boolArrayOverride,
+          '_text': _stringArrayOverride,
+          '_varchar': _stringArrayOverride,
+          '_bpchar': _stringArrayOverride,
+          '_uuid': _stringArrayOverride,
+          '_numeric': _stringArrayOverride,
         },
       );
+
+  static const _import = 'package:basalt_postgres/basalt_postgres.dart';
 
   static const _jsonOverride = TypeOverride(
     dartType: 'Map<String, Object?>',
     sqlType: 'PostgresJsonbSqlType()',
-    import: 'package:basalt_postgres/basalt_postgres.dart',
+    import: _import,
+  );
+
+  static const _uuidOverride = TypeOverride(
+    dartType: 'String',
+    sqlType: 'PostgresUuidSqlType()',
+    import: _import,
+  );
+
+  static const _numericOverride = TypeOverride(
+    dartType: 'String',
+    sqlType: 'PostgresNumericSqlType()',
+    import: _import,
+  );
+
+  static const _intArrayOverride = TypeOverride(
+    dartType: 'List<int>',
+    sqlType: 'PostgresArraySqlType<int>()',
+    import: _import,
+  );
+
+  static const _doubleArrayOverride = TypeOverride(
+    dartType: 'List<double>',
+    sqlType: 'PostgresArraySqlType<double>()',
+    import: _import,
+  );
+
+  static const _boolArrayOverride = TypeOverride(
+    dartType: 'List<bool>',
+    sqlType: 'PostgresArraySqlType<bool>()',
+    import: _import,
+  );
+
+  static const _stringArrayOverride = TypeOverride(
+    dartType: 'List<String>',
+    sqlType: 'PostgresArraySqlType<String>()',
+    import: _import,
   );
 }

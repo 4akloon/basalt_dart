@@ -8,9 +8,9 @@ Initial development release of the Postgres backend for basalt_dart.
   identifiers.
 - `PostgresConnection` — an async `Connection` over `package:postgres` with transactions and
   nested `SAVEPOINT` support.
-- `information_schema` introspection for the CLI's `generate-schema`.
+- `information_schema` introspection (tables, columns, nullability, primary & foreign keys;
+  arrays keyed by `udt_name`) for the CLI's `generate-schema`.
 - `PostgresAdapter` / `PostgresEndpoint` (`lib/adapter.dart`) — the `BasaltAdapter` CLI seam.
-- Native `PostgresJsonbSqlType`.
-
-> **Status:** the driver-backed `Connection` and introspection are a work in progress; some
-> native types (uuid, json, numeric, arrays) are not yet mapped.
+- Native PG type codecs, emitted by the adapter's `native_types` preset: `PostgresJsonbSqlType`
+  (`json`/`jsonb`), `PostgresUuidSqlType` (`uuid`), `PostgresNumericSqlType` (exact decimal as
+  `String`), and `PostgresArraySqlType<E>` (`integer[]`/`text[]`/`double[]`/`boolean[]`, …).

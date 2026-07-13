@@ -73,7 +73,7 @@ abstract class _PgSession implements Connection {
       final tableName = tableRow[0] as String;
 
       final columnRows = await _session.execute(
-        'SELECT column_name, data_type, is_nullable '
+        'SELECT column_name, data_type, is_nullable, udt_name '
         'FROM information_schema.columns '
         r'WHERE table_schema = $1 AND table_name = $2 ORDER BY ordinal_position',
         parameters: ['public', tableName],
@@ -111,18 +111,36 @@ abstract class _PgSession implements Connection {
       tables.add(
         IntrospectedTable(tableName, [
           for (final c in columnRows)
-            IntrospectedColumn(
-              name: c[0] as String,
-              rawType: c[1] as String,
-              type: _columnType(c[1] as String),
-              isNullable: (c[2] as String) == 'YES',
-              isPrimaryKey: pks.contains(c[0] as String),
-              foreignKey: fkByColumn[c[0] as String],
-            ),
+            _toColumn(c, pks: pks, fkByColumn: fkByColumn),
         ]),
       );
     }
     return tables;
+  }
+
+  /// Builds an [IntrospectedColumn] from an `information_schema.columns` row
+  /// (`column_name, data_type, is_nullable, udt_name`).
+  ///
+  /// Array columns report `data_type = 'ARRAY'`, which loses the element type,
+  /// so they are keyed by `udt_name` (the element type prefixed with `_`, e.g.
+  /// `_int4` for `integer[]`) — letting the `native_types` preset map each array
+  /// element type to its own codec.
+  static IntrospectedColumn _toColumn(
+    List<Object?> c, {
+    required Set<String> pks,
+    required Map<String, ForeignKey> fkByColumn,
+  }) {
+    final name = c[0] as String;
+    final dataType = c[1] as String;
+    final udtName = c[3] as String;
+    return IntrospectedColumn(
+      name: name,
+      rawType: dataType == 'ARRAY' ? udtName : dataType,
+      type: _columnType(dataType),
+      isNullable: (c[2] as String) == 'YES',
+      isPrimaryKey: pks.contains(name),
+      foreignKey: fkByColumn[name],
+    );
   }
 
   /// Postgres `data_type` → canonical [ColumnType].

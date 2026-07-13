@@ -1,8 +1,8 @@
-// The Postgres backend currently ships the dialect-level piece: `PostgresDialect`
-// serializes the same typed AST as every other backend, using numbered `$N`
-// placeholders and quoted identifiers. This example needs no server — it shows
-// the pure `(sql, params)` output. The driver-backed `Connection` + introspection
-// are WIP; when ready they implement the same `Connection` interface as SQLite.
+// `PostgresDialect` serializes the same typed AST as every other backend, using
+// numbered `$N` placeholders and quoted identifiers. This example needs no server
+// — it shows the pure `(sql, params)` output. To run against a real database use
+// `PostgresConnection.open(...)`, which implements the same `Connection` interface
+// (transactions, savepoints, introspection) as the SQLite backend.
 import 'package:basalt/basalt.dart';
 import 'package:basalt_postgres/basalt_postgres.dart';
 
