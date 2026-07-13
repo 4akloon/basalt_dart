@@ -1,4 +1,4 @@
-import 'package:basalt_example/domain/entities/views/order_summary.dart';
+import 'package:basalt_example/domain/entities/views/order_list_item.dart';
 import 'package:basalt_example/presentation/common/load_status.dart';
 import 'package:equatable/equatable.dart';
 
@@ -11,12 +11,12 @@ class OrdersState extends Equatable {
   });
 
   final LoadStatus status;
-  final List<OrderSummary> orders;
+  final List<OrderListItem> orders;
   final String? error;
 
   OrdersState copyWith({
     LoadStatus? status,
-    List<OrderSummary>? orders,
+    List<OrderListItem>? orders,
     String? error,
   }) {
     return OrdersState(

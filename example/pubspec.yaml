@@ -39,6 +39,12 @@ dependencies:
   # Money / date formatting in the UI.
   intl: ^0.20.3
 
+  # Drift — the *second*, parallel database backend. Runs against its own
+  # database instance (see lib/main_drift.dart); shares the native SQLite
+  # library above via `package:drift/native.dart` (NativeDatabase), so no extra
+  # native lib is linked.
+  drift: ^2.34.1
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -51,6 +57,8 @@ dev_dependencies:
     path: ../packages/basalt_codegen
   build_runner: ^2.4.0
   flutter_lints: ^6.0.0
+  # Drift's code generator (runs in the same build_runner pass as basalt_codegen).
+  drift_dev: ^2.34.3
 
 # The monorepo packages declare `basalt: ^0.0.1` as a *hosted* dependency (they
 # rely on the Dart pub workspace to resolve it). This Flutter app lives outside

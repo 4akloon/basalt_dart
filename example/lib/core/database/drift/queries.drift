@@ -1,0 +1,67 @@
+-- Aggregate / GROUP BY reads for the drift backend, written as SQL and turned
+-- into typed methods + result classes by drift's generator. These are the
+-- drift counterpart of basalt's typed `sum(...)` / `countDistinct(...)`
+-- `@Queryable` aggregate views — instead of hand-reading columns by string from
+-- `customSelect`, the generator emits a `RevenueByCategoryResult` etc.
+--
+-- Tables live in Dart (`shop_drift_database.dart`); importing it here lets these
+-- queries reference them by their SQL names.
+import 'shop_drift_database.dart';
+
+-- Revenue and units sold rolled up per category.
+revenueByCategory:
+  SELECT
+    c.name AS category_name,
+    CAST(SUM(oi.quantity * oi.unit_price) AS REAL) AS revenue,
+    CAST(SUM(oi.quantity) AS INT) AS units_sold
+  FROM order_items oi
+  JOIN products p ON p.id = oi.product_id
+  JOIN categories c ON c.id = p.category_id
+  GROUP BY c.name
+  ORDER BY revenue DESC;
+
+-- Customers ranked by lifetime spend.
+topCustomers:
+  SELECT
+    cu.id AS id,
+    cu.name AS name,
+    cu.email AS email,
+    cu.loyalty_tier AS loyalty_tier,
+    cu.created_at AS created_at,
+    CAST(SUM(oi.quantity * oi.unit_price) AS REAL) AS total_spent,
+    COUNT(DISTINCT o.id) AS order_count
+  FROM customers cu
+  JOIN orders o ON o.customer_id = cu.id
+  JOIN order_items oi ON oi.order_id = o.id
+  GROUP BY cu.id
+  ORDER BY total_spent DESC
+  LIMIT :limit;
+
+-- Number of products sitting directly in each category (for the category tree).
+productCountsByCategory:
+  SELECT category_id, COUNT(*) AS n
+  FROM products
+  GROUP BY category_id;
+
+-- Orders list: header + customer + summed totals, newest first, WITHOUT the
+-- line items (the list only shows the count and total). A single GROUP BY.
+recentOrders:
+  SELECT
+    o.id AS id,
+    o.customer_id AS customer_id,
+    o.status AS status,
+    o.shipping_address_id AS shipping_address_id,
+    o.created_at AS created_at,
+    cu.id AS customer_pk,
+    cu.name AS customer_name,
+    cu.email AS customer_email,
+    cu.loyalty_tier AS customer_tier,
+    cu.created_at AS customer_created_at,
+    CAST(COALESCE(SUM(oi.quantity * oi.unit_price), 0) AS REAL) AS total,
+    CAST(COALESCE(SUM(oi.quantity), 0) AS INT) AS item_count
+  FROM orders o
+  JOIN customers cu ON cu.id = o.customer_id
+  LEFT JOIN order_items oi ON oi.order_id = o.id
+  GROUP BY o.id
+  ORDER BY o.created_at DESC
+  LIMIT :limit;

@@ -1,11 +1,15 @@
 import 'package:basalt/basalt.dart';
 import 'package:basalt_example/core/database/schema.dart';
+import 'package:basalt_example/data/mappers/address_mapper.dart';
 import 'package:basalt_example/data/mappers/customer_mapper.dart';
-import 'package:basalt_example/data/mappers/customer_profile_mapper.dart';
-import 'package:basalt_example/data/models/customer_profile_row.dart';
+import 'package:basalt_example/data/mappers/order_item_mapper.dart';
+import 'package:basalt_example/data/mappers/order_mapper.dart';
+import 'package:basalt_example/data/models/address_row.dart';
 import 'package:basalt_example/data/models/customer_row.dart';
+import 'package:basalt_example/data/models/order_row.dart';
 import 'package:basalt_example/domain/entities/customer.dart';
 import 'package:basalt_example/domain/entities/views/customer_profile.dart';
+import 'package:basalt_example/domain/entities/views/order_summary.dart';
 import 'package:basalt_example/domain/repositories/customer_repository.dart';
 
 /// SQLite-backed [CustomerRepository].
@@ -22,7 +26,33 @@ class CustomerRepositoryImpl implements CustomerRepository {
 
   @override
   Future<CustomerProfile?> profile(int id) async {
-    final row = await CustomerProfileRowQuery().findBy(Customers.id, id).optional(_db);
-    return row?.toDomain();
+    // Load the two child collections in *separate* queries instead of one
+    // `CustomerProfileRow` fold. A single query would join the two independent
+    // one-to-manys (addresses × orders × items) into a cartesian product and
+    // re-join the profile's own customer once per child; splitting keeps each
+    // read linear. Addresses are read straight off their table (no `customer`
+    // self-join), orders reuse `OrderRowQuery` (its own items fold).
+    final customer =
+        await CustomerRowQuery().findBy(Customers.id, id).optional(_db);
+    if (customer == null) return null;
+
+    final addresses = await from(Addresses.table)
+        .where(Addresses.customerId.eq(id))
+        .mapWith(AddressRowQuery.mapper)
+        .load(_db);
+    final orders =
+        await OrderRowQuery().filter(Orders.customerId.eq(id)).load(_db);
+
+    return CustomerProfile(
+      customer: customer.toDomain(),
+      addresses: [for (final a in addresses) a.toDomain()],
+      orders: [
+        for (final o in orders)
+          OrderSummary(
+            order: o.toDomain(),
+            items: [for (final i in o.items) i.toDomain()],
+          ),
+      ],
+    );
   }
 }
