@@ -1,7 +1,6 @@
 import 'package:basalt/basalt.dart';
 import 'package:basalt_example/core/database/schema.dart';
-import 'package:basalt_example/data/mappers/category_mapper.dart';
-import 'package:basalt_example/data/models/category_row.dart';
+import 'package:basalt_example/data/models/category_list_row.dart';
 import 'package:basalt_example/domain/entities/category.dart';
 import 'package:basalt_example/domain/entities/views/category_node.dart';
 import 'package:basalt_example/domain/repositories/category_repository.dart';
@@ -14,8 +13,14 @@ class CategoryRepositoryImpl implements CategoryRepository {
 
   @override
   Future<List<Category>> all() async {
-    final rows = await CategoryRowQuery().orderBy(Categories.name.asc()).load(_db);
-    return [for (final row in rows) row.toDomain()];
+    // `CategoryListRow` carries no `parent` relation, so this is a plain
+    // single-table select (no self-join).
+    final rows =
+        await CategoryListRowQuery().orderBy(Categories.name.asc()).load(_db);
+    return [
+      for (final row in rows)
+        Category(id: row.id, name: row.name, parentId: row.parentId),
+    ];
   }
 
   @override

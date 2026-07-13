@@ -1,7 +1,7 @@
 import 'package:basalt/basalt.dart';
 import 'package:basalt_example/core/database/schema.dart';
 import 'package:basalt_example/data/models/category_row.dart';
-import 'package:basalt_example/data/models/review_row.dart';
+import 'package:basalt_example/data/models/product_review_row.dart';
 
 part 'product_detail_row.g.dart';
 
@@ -36,5 +36,5 @@ class ProductDetailRow {
   final CategoryRow? category;
 
   @HasMany(Reviews.productId)
-  final List<ReviewRow> reviews;
+  final List<ProductReviewRow> reviews;
 }

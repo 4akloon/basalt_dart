@@ -4,6 +4,7 @@ import 'package:basalt_example/data/repositories/drift/drift_order_loader.dart';
 import 'package:basalt_example/domain/entities/customer.dart';
 import 'package:basalt_example/domain/entities/views/customer_profile.dart';
 import 'package:basalt_example/domain/repositories/customer_repository.dart';
+import 'package:drift/drift.dart';
 
 /// Drift-backed [CustomerRepository], using drift's generated manager API.
 class DriftCustomerRepository implements CustomerRepository {
@@ -13,8 +14,11 @@ class DriftCustomerRepository implements CustomerRepository {
 
   @override
   Future<List<Customer>> all() async {
-    final rows =
-        await _db.managers.customers.orderBy((o) => o.name.asc()).get();
+    // Core select (not the manager API) — the same single "SELECT ... ORDER BY
+    // name" that basalt issues, so the two are compared on equal footing.
+    final rows = await (_db.select(_db.customers)
+          ..orderBy([(t) => OrderingTerm.asc(t.name)]))
+        .get();
     return [for (final c in rows) customerToDomain(c)];
   }
 
@@ -28,7 +32,7 @@ class DriftCustomerRepository implements CustomerRepository {
     final addresses = await _db.managers.addresses
         .filter((f) => f.customerId.id.equals(id))
         .get();
-    final orders = await loadOrderSummaries(_db, customerId: id);
+    final orders = await loadCustomerOrders(_db, id);
 
     return CustomerProfile(
       customer: customerToDomain(customer),

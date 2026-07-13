@@ -72,3 +72,35 @@ Future<List<OrderSummary>> loadOrderSummaries(
       ),
   ];
 }
+
+/// Lean loader for a customer's orders on the profile screen: order headers plus
+/// their line-item amounts, with **no** joins (no customer, shipping address,
+/// product or category). `total` / `itemCount` still fold from the amounts; the
+/// unused relations stay null.
+Future<List<OrderSummary>> loadCustomerOrders(
+  ShopDriftDatabase db,
+  int customerId,
+) async {
+  final orderRows = await (db.select(db.orders)
+        ..where((o) => o.customerId.equals(customerId))
+        ..orderBy([(o) => OrderingTerm.desc(o.createdAt)]))
+      .get();
+  if (orderRows.isEmpty) return const [];
+
+  final ids = [for (final o in orderRows) o.id];
+  final itemRows = await (db.select(db.orderItems)
+        ..where((i) => i.orderId.isIn(ids)))
+      .get();
+  final itemsByOrder = <int, List<OrderItem>>{};
+  for (final i in itemRows) {
+    (itemsByOrder[i.orderId] ??= []).add(orderItemToDomain(i));
+  }
+
+  return [
+    for (final o in orderRows)
+      OrderSummary(
+        order: orderToDomain(o),
+        items: itemsByOrder[o.id] ?? const [],
+      ),
+  ];
+}

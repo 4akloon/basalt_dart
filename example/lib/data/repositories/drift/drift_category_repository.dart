@@ -3,6 +3,7 @@ import 'package:basalt_example/data/repositories/drift/drift_mappers.dart';
 import 'package:basalt_example/domain/entities/category.dart';
 import 'package:basalt_example/domain/entities/views/category_node.dart';
 import 'package:basalt_example/domain/repositories/category_repository.dart';
+import 'package:drift/drift.dart';
 
 /// Drift-backed [CategoryRepository], using drift's generated manager API for
 /// the flat read and the `queries.drift` aggregate for the per-category counts.
@@ -13,22 +14,12 @@ class DriftCategoryRepository implements CategoryRepository {
 
   @override
   Future<List<Category>> all() async {
-    final rows =
-        await _db.managers.categories.orderBy((o) => o.name.asc()).get();
-    // Resolve each category's immediate parent from the same list (the basalt
-    // `CategoryRowQuery` does this with a self-join).
-    final byId = {for (final c in rows) c.id: c};
-    Category map(DriftCategory c) => categoryToDomain(
-          c,
-          parent: switch (c.parentId) {
-            final id? => switch (byId[id]) {
-                final parent? => categoryToDomain(parent),
-                null => null,
-              },
-            null => null,
-          },
-        );
-    return [for (final c in rows) map(c)];
+    // Core select (not the manager API) — the same single "SELECT ... ORDER BY
+    // name" that basalt issues, so the two are compared on equal footing.
+    final rows = await (_db.select(_db.categories)
+          ..orderBy([(t) => OrderingTerm.asc(t.name)]))
+        .get();
+    return [for (final c in rows) categoryToDomain(c)];
   }
 
   @override

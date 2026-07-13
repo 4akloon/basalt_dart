@@ -1,22 +1,25 @@
 import 'package:basalt/basalt.dart';
 import 'package:basalt_example/core/database/schema.dart';
 import 'package:basalt_example/data/models/customer_row.dart';
-import 'package:basalt_example/data/models/product_row.dart';
 
-part 'review_row.g.dart';
+part 'product_review_row.g.dart';
 
-/// **Read** model for `reviews` (write model: `ReviewWrite`). Belongs to both a
-/// [product] and a [customer], so `ReviewRowQuery` joins two parents at once.
+/// Lean read model for a product's reviews: the review columns plus its author
+/// ([customer]) only.
+///
+/// Unlike `ReviewRow` (which declares belongs-to relations to *both* the product
+/// and the customer), this omits the `product` relation — the product-detail
+/// view already has the product it is showing, so joining it back per review is
+/// wasted work.
 @Queryable(Reviews.table)
-class ReviewRow {
-  const ReviewRow({
+class ProductReviewRow {
+  const ProductReviewRow({
     required this.id,
     required this.productId,
     required this.customerId,
     required this.rating,
     required this.createdAt,
     this.comment,
-    this.product,
     this.customer,
   });
 
@@ -26,9 +29,6 @@ class ReviewRow {
   final int rating;
   final int createdAt;
   final String? comment;
-
-  @Relation(Reviews.productId)
-  final ProductRow? product;
 
   @Relation(Reviews.customerId)
   final CustomerRow? customer;

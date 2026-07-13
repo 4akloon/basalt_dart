@@ -2,14 +2,12 @@ import 'package:basalt/basalt.dart';
 import 'package:basalt_example/core/database/schema.dart';
 import 'package:basalt_example/data/mappers/address_mapper.dart';
 import 'package:basalt_example/data/mappers/customer_mapper.dart';
-import 'package:basalt_example/data/mappers/order_item_mapper.dart';
-import 'package:basalt_example/data/mappers/order_mapper.dart';
+import 'package:basalt_example/data/mappers/customer_order_mapper.dart';
 import 'package:basalt_example/data/models/address_row.dart';
+import 'package:basalt_example/data/models/customer_order_row.dart';
 import 'package:basalt_example/data/models/customer_row.dart';
-import 'package:basalt_example/data/models/order_row.dart';
 import 'package:basalt_example/domain/entities/customer.dart';
 import 'package:basalt_example/domain/entities/views/customer_profile.dart';
-import 'package:basalt_example/domain/entities/views/order_summary.dart';
 import 'package:basalt_example/domain/repositories/customer_repository.dart';
 
 /// SQLite-backed [CustomerRepository].
@@ -40,19 +38,14 @@ class CustomerRepositoryImpl implements CustomerRepository {
         .where(Addresses.customerId.eq(id))
         .mapWith(AddressRowQuery.mapper)
         .load(_db);
-    final orders =
-        await OrderRowQuery().filter(Orders.customerId.eq(id)).load(_db);
+    final orders = await CustomerOrderRowQuery()
+        .filter(Orders.customerId.eq(id))
+        .load(_db);
 
     return CustomerProfile(
       customer: customer.toDomain(),
       addresses: [for (final a in addresses) a.toDomain()],
-      orders: [
-        for (final o in orders)
-          OrderSummary(
-            order: o.toDomain(),
-            items: [for (final i in o.items) i.toDomain()],
-          ),
-      ],
+      orders: [for (final o in orders) o.toDomain()],
     );
   }
 }

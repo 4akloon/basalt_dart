@@ -1,5 +1,5 @@
 import 'package:basalt_example/data/mappers/product_mapper.dart';
-import 'package:basalt_example/data/mappers/review_mapper.dart';
+import 'package:basalt_example/data/mappers/product_review_mapper.dart';
 import 'package:basalt_example/data/models/product_detail_row.dart';
 import 'package:basalt_example/data/models/product_row.dart';
 import 'package:basalt_example/domain/entities/views/product_with_stats.dart';
