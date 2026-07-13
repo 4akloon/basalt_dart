@@ -115,8 +115,7 @@ jobs:
       - name: Install dependencies (workspace)
         run: dart pub get
 
-      # Dry-run each first-wave package. basalt_postgres is intentionally held
-      # from the first publish and is not dry-run-gated here.
+      # Dry-run each publishable package.
       - name: Dry-run basalt
         run: dart pub publish --dry-run
         working-directory: packages/basalt
@@ -124,6 +123,10 @@ jobs:
       - name: Dry-run basalt_sqlite
         run: dart pub publish --dry-run
         working-directory: packages/basalt_sqlite
+
+      - name: Dry-run basalt_postgres
+        run: dart pub publish --dry-run
+        working-directory: packages/basalt_postgres
 
       - name: Dry-run basalt_cli
         run: dart pub publish --dry-run

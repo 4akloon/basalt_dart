@@ -1,5 +1,8 @@
 name: basalt_postgres
-description: Postgres backend for the Basalt Dart ORM — dialect now; driver-backed Connection + introspection are WIP.
+description: >-
+  Postgres backend for the Basalt Dart ORM — a driver-backed Connection +
+  SqlDialect on package:postgres, with introspection and json/uuid/numeric/array
+  codecs.
 version: 0.0.1
 repository: https://github.com/4akloon/basalt_dart
 homepage: https://github.com/4akloon/basalt_dart
