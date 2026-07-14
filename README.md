@@ -1,4 +1,6 @@
-# basalt_dart
+<p align="center">
+  <img src="assets/banner.png" alt="basalt — a type-safe, migration-first ORM for Dart" width="720">
+</p>
 
 ![Dart](https://img.shields.io/badge/Dart-%3E%3D3.5-0175C2?logo=dart&logoColor=white)
 ![Backends](https://img.shields.io/badge/backends-SQLite%20%7C%20Postgres-informational)
