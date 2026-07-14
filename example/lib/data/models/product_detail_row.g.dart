@@ -14,7 +14,6 @@ final class ProductDetailRowQuery extends FoldMappedQuery<ProductDetailRow> {
   static Query<Object?> _build() {
     final category = Categories.table.aliased('category');
     final reviews = Reviews.table.aliased('reviews');
-    final reviewsProduct = Products.table.aliased('reviews_product');
     final reviewsCustomer = Customers.table.aliased('reviews_customer');
     return from(Products.table)
         .innerJoin(
@@ -24,12 +23,6 @@ final class ProductDetailRowQuery extends FoldMappedQuery<ProductDetailRow> {
         .leftJoin(
           reviews,
           on: reviews.col(Reviews.productId).eqColumn(Products.id),
-        )
-        .leftJoin(
-          reviewsProduct,
-          on: reviews
-              .col(Reviews.productId)
-              .eqColumn(reviewsProduct.col(Products.id)),
         )
         .leftJoin(
           reviewsCustomer,
@@ -84,7 +77,7 @@ final class ProductDetailRowQuery extends FoldMappedQuery<ProductDetailRow> {
         final childPk = r.get(Reviews.table.aliased('reviews').col(Reviews.id));
         acc.reviews.putIfAbsent(
             childPk,
-            () => ReviewRowQuery.fromRow(
+            () => ProductReviewRowQuery.fromRow(
                   r,
                   Reviews.table.aliased('reviews'),
                   'reviews_',
@@ -99,7 +92,7 @@ final class ProductDetailRowQuery extends FoldMappedQuery<ProductDetailRow> {
 final class _ProductDetailRowFoldAcc {
   _ProductDetailRowFoldAcc(this.base);
   final ProductDetailRow base;
-  final reviews = <int, ReviewRow>{};
+  final reviews = <int, ProductReviewRow>{};
 
   ProductDetailRow build() => ProductDetailRow(
         id: base.id,

@@ -1,11 +1,13 @@
 import 'package:basalt_example/domain/entities/new_order.dart';
 import 'package:basalt_example/domain/entities/order_status.dart';
+import 'package:basalt_example/domain/entities/views/order_list_item.dart';
 import 'package:basalt_example/domain/entities/views/order_summary.dart';
 
 /// Read/write access to orders.
 abstract interface class OrderRepository {
-  /// Most recent orders (header + customer), newest first.
-  Future<List<OrderSummary>> recent({int limit = 50});
+  /// Most recent orders (header + customer + totals, no line items), newest
+  /// first.
+  Future<List<OrderListItem>> recent({int limit = 50});
 
   /// A single order with its line items (each item carrying its product), or
   /// null if not found.

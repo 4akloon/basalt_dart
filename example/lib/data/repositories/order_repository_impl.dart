@@ -1,12 +1,16 @@
 import 'package:basalt/basalt.dart';
 import 'package:basalt_example/core/database/schema.dart';
+import 'package:basalt_example/data/mappers/customer_mapper.dart';
 import 'package:basalt_example/data/mappers/order_mapper.dart';
 import 'package:basalt_example/data/mappers/order_item_mapper.dart';
+import 'package:basalt_example/data/models/customer_row.dart';
 import 'package:basalt_example/data/models/order_item_write.dart';
 import 'package:basalt_example/data/models/order_row.dart';
 import 'package:basalt_example/data/models/order_write.dart';
 import 'package:basalt_example/domain/entities/new_order.dart';
+import 'package:basalt_example/domain/entities/order.dart';
 import 'package:basalt_example/domain/entities/order_status.dart';
+import 'package:basalt_example/domain/entities/views/order_list_item.dart';
 import 'package:basalt_example/domain/entities/views/order_summary.dart';
 import 'package:basalt_example/domain/repositories/order_repository.dart';
 
@@ -17,18 +21,62 @@ class OrderRepositoryImpl implements OrderRepository {
   final Connection _db;
 
   @override
-  Future<List<OrderSummary>> recent({int limit = 50}) async {
-    final orders = await OrderRowQuery()
-        .orderBy(Orders.createdAt.desc())
-        .limit(limit)
-        .load(_db);
-    return [
-      for (final order in orders)
-        OrderSummary(
-          order: order.toDomain(),
-          items: [for (final i in order.items) i.toDomain()],
-        ),
-    ];
+  Future<List<OrderListItem>> recent({int limit = 50}) {
+    // A single GROUP BY aggregate: order header + customer + summed totals, with
+    // no line-item/product/category joins (the list doesn't render them). Being
+    // a plain select — not a `@HasMany` fold with a parent-limit subquery — the
+    // `ORDER BY created_at DESC` is honoured, so this is genuinely newest-first.
+    final Aggregate<double?> total =
+        sum(OrderItems.quantity * OrderItems.unitPrice, as: 'total');
+    final Aggregate<int?> itemCount =
+        sum(OrderItems.quantity, as: 'item_count');
+    return _db.fetch(
+      from(Orders.table)
+          .innerJoin(Customers.table, onFk: Orders.customerId)
+          .leftJoin(OrderItems.table,
+              on: OrderItems.orderId.eqColumn(Orders.id))
+          .select([
+            Orders.id,
+            Orders.customerId,
+            Orders.status,
+            Orders.shippingAddressId,
+            Orders.createdAt,
+            Customers.id,
+            Customers.name,
+            Customers.email,
+            Customers.loyaltyTier,
+            Customers.createdAt,
+            total,
+            itemCount,
+          ])
+          .groupBy([
+            Orders.id,
+            Orders.customerId,
+            Orders.status,
+            Orders.shippingAddressId,
+            Orders.createdAt,
+            Customers.id,
+            Customers.name,
+            Customers.email,
+            Customers.loyaltyTier,
+            Customers.createdAt,
+          ])
+          .orderBy(Orders.createdAt.desc())
+          .limit(limit)
+          .map((r) => OrderListItem(
+                order: Order(
+                  id: r.get(Orders.id),
+                  customerId: r.get(Orders.customerId),
+                  status: OrderStatus.values.byName(r.get(Orders.status)),
+                  placedAt: DateTime.fromMillisecondsSinceEpoch(
+                      r.get(Orders.createdAt)),
+                  shippingAddressId: r.get(Orders.shippingAddressId),
+                  customer: CustomerRowQuery.fromRow(r).toDomain(),
+                ),
+                total: r.get(total) ?? 0,
+                itemCount: r.get(itemCount) ?? 0,
+              )),
+    );
   }
 
   @override

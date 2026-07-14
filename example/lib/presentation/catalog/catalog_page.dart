@@ -1,4 +1,4 @@
-import 'package:basalt_example/core/database/app_database.dart';
+import 'package:basalt_example/core/backend/app_backend.dart';
 import 'package:basalt_example/core/di/injector.dart';
 import 'package:basalt_example/presentation/cart/cart_cubit.dart';
 import 'package:basalt_example/presentation/catalog/catalog_cubit.dart';
@@ -41,7 +41,7 @@ class _CatalogView extends StatelessWidget {
               onPressed: () async {
                 final messenger = ScaffoldMessenger.of(context);
                 final cubit = context.read<CatalogCubit>();
-                await AppDatabase.reset();
+                await getIt<AppBackend>().reset();
                 await cubit.load();
                 messenger.showSnackBar(
                   const SnackBar(

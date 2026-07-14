@@ -1,10 +1,4 @@
-import 'package:basalt/basalt.dart';
-import 'package:basalt_example/data/repositories/analytics_repository_impl.dart';
-import 'package:basalt_example/data/repositories/category_repository_impl.dart';
-import 'package:basalt_example/data/repositories/customer_repository_impl.dart';
-import 'package:basalt_example/data/repositories/order_repository_impl.dart';
-import 'package:basalt_example/data/repositories/product_repository_impl.dart';
-import 'package:basalt_example/data/repositories/review_repository_impl.dart';
+import 'package:basalt_example/core/backend/app_backend.dart';
 import 'package:basalt_example/domain/repositories/analytics_repository.dart';
 import 'package:basalt_example/domain/repositories/category_repository.dart';
 import 'package:basalt_example/domain/repositories/customer_repository.dart';
@@ -14,24 +8,24 @@ import 'package:basalt_example/domain/repositories/review_repository.dart';
 import 'package:get_it/get_it.dart';
 
 /// Global service locator. Cubits resolve their repository interfaces from here;
-/// the presentation layer never sees a concrete implementation or `basalt`.
+/// the presentation layer never sees a concrete implementation, a driver, or
+/// which backend ([AppBackend]) is actually running.
 final getIt = GetIt.instance;
 
-/// Registers the open [db] and every repository. Call once, after the database
-/// is opened.
-void configureDependencies(Connection db) {
+/// Opens [backend]'s database instance and registers it plus every repository
+/// it serves. Call once at startup — the chosen [backend] (basalt or drift)
+/// determines which implementations the whole app runs against.
+Future<void> configureDependencies(AppBackend backend) async {
+  await backend.open();
   getIt
-    ..registerSingleton<Connection>(db)
+    ..registerSingleton<AppBackend>(backend)
     ..registerLazySingleton<CategoryRepository>(
-        () => CategoryRepositoryImpl(getIt()))
-    ..registerLazySingleton<ProductRepository>(
-        () => ProductRepositoryImpl(getIt()))
+        () => backend.categoryRepository)
+    ..registerLazySingleton<ProductRepository>(() => backend.productRepository)
     ..registerLazySingleton<CustomerRepository>(
-        () => CustomerRepositoryImpl(getIt()))
-    ..registerLazySingleton<OrderRepository>(
-        () => OrderRepositoryImpl(getIt()))
-    ..registerLazySingleton<ReviewRepository>(
-        () => ReviewRepositoryImpl(getIt()))
+        () => backend.customerRepository)
+    ..registerLazySingleton<OrderRepository>(() => backend.orderRepository)
+    ..registerLazySingleton<ReviewRepository>(() => backend.reviewRepository)
     ..registerLazySingleton<AnalyticsRepository>(
-        () => AnalyticsRepositoryImpl(getIt()));
+        () => backend.analyticsRepository);
 }
