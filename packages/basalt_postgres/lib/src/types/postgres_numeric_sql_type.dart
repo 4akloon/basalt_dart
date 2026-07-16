@@ -1,5 +1,7 @@
 import 'package:basalt/basalt.dart';
 
+import 'postgres_typed_sql_type.dart';
+
 /// Postgres-native `numeric`/`decimal` codec that preserves full precision by
 /// representing the value as an exact decimal `String` — the form
 /// `package:postgres` returns for `numeric` columns (decoding to `double` would
@@ -11,8 +13,12 @@ import 'package:basalt/basalt.dart';
 /// (lossy) `double`. Wrap in `NullableSqlType` for nullable columns.
 ///
 /// {@category getting-started}
-final class PostgresNumericSqlType extends SqlType<String> {
+final class PostgresNumericSqlType extends SqlType<String>
+    implements PostgresTypedSqlType {
   const PostgresNumericSqlType();
+
+  @override
+  String? get postgresType => 'numeric';
 
   @override
   Object? encode(String input) => input;

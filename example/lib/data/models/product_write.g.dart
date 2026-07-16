@@ -16,3 +16,25 @@ extension ProductWriteInsert on ProductWrite {
       .value(Products.isActive.set(isActive))
       .value(Products.metadata.set(metadata));
 }
+
+extension ProductWriteBatchInsert on Iterable<ProductWrite> {
+  InsertStatement<Products> toInsert() {
+    final rows = [
+      for (final row in this)
+        [
+          Products.name.set(row.name),
+          Products.description.set(row.description),
+          Products.price.set(row.price),
+          Products.stock.set(row.stock),
+          Products.categoryId.set(row.categoryId),
+          Products.isActive.set(row.isActive),
+          Products.metadata.set(row.metadata),
+        ],
+    ];
+    if (rows.isEmpty) {
+      throw ArgumentError('toInsert() on an empty Iterable<ProductWrite>: '
+          'an INSERT needs at least one row.');
+    }
+    return insertInto(Products.table).values(rows);
+  }
+}

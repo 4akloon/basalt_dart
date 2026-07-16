@@ -95,7 +95,8 @@ sealed class TableColumn<T, Tbl> implements Selection<T> {
   /// Produces a typed assignment for INSERT/UPDATE, e.g. `Users.age.set(31)`.
   /// The value type is pinned by this column's static type (no inference), so
   /// `TableColumn<int>.set('x')` is a compile error.
-  ColumnValue<Tbl> set(T value) => ColumnValue(name, type.encode(value));
+  ColumnValue<Tbl> set(T value) =>
+      ColumnValue(name, type.encode(value), type: type);
 
   /// RHS expression for UPDATE, e.g. `stock = stock - ?`.
   ColumnValue<Tbl> setExpr(Expression<Object?, Tbl> value) =>

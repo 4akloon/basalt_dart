@@ -32,7 +32,7 @@ A class may carry several annotations; each generator contributes its own
 | Annotation | Level | Generates |
 |---|---|---|
 | `@Queryable(table)` | class | an `XQuery` companion class that **is** the query (`extends MappedQuery`/`FoldMappedQuery`; join query when the class has `@Relation`s/`@HasMany`, otherwise a select-narrowing subset query) and carries `static X fromRow(…)`, `static const mapper = RowMapper<X>(fromRow)` and (for `@HasMany` roots) `static fold` |
-| `@Insertable(table)` | class | `extension XInsert { InsertStatement<T> toInsert() }` |
+| `@Insertable(table)` | class | `extension XInsert { InsertStatement<T> toInsert() }` + `extension XBatchInsert on Iterable<X>` with a multi-row `toInsert()` |
 | `@AsChangeset(table)` | class | `extension XChangeset { UpdateStatement<T> toUpdate() }` (SET only) |
 | `@Column(col, {readOnly, writeOnly})` | field | column mapping + read/write direction |
 | `@Relation(fk, {depth})` | field | a joined, nested related object (read-side) |
@@ -185,7 +185,11 @@ class User { /* … */ }
 ```dart
 await db.execute(user.toInsert());
 await db.execute(user.toUpdate().where(Users.id.eq(user.id)));
+
+// @Insertable also generates toInsert() on Iterable<User> — one multi-row
+// INSERT ... VALUES (...), (...) for the whole list (throws on an empty one).
+await db.execute(users.toInsert());
 ```
 
 `toUpdate()` builds only the `SET` clause; append `.where(...)` yourself.
-Both skip `readOnly` columns and `@Relation` fields.
+All of them skip `readOnly` columns and `@Relation` fields.

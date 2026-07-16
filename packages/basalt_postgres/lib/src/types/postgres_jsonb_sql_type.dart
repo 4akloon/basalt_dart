@@ -2,6 +2,8 @@ import 'dart:convert';
 
 import 'package:basalt/basalt.dart';
 
+import 'postgres_typed_sql_type.dart';
+
 /// Postgres-native `json`/`jsonb` codec for JSON-object columns.
 ///
 /// Encodes to a JSON string parameter (the server infers `json`/`jsonb` from
@@ -14,8 +16,12 @@ import 'package:basalt/basalt.dart';
 /// backend-portable.
 ///
 /// {@category getting-started}
-final class PostgresJsonbSqlType extends SqlType<Map<String, Object?>> {
+final class PostgresJsonbSqlType extends SqlType<Map<String, Object?>>
+    implements PostgresTypedSqlType {
   const PostgresJsonbSqlType();
+
+  @override
+  String? get postgresType => 'jsonb';
 
   @override
   Object? encode(Map<String, Object?> input) => jsonEncode(input);

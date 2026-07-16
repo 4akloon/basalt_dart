@@ -3,13 +3,16 @@ import 'package:basalt/basalt.dart';
 import 'package:build/build.dart';
 import 'package:source_gen/source_gen.dart';
 
+import 'queryable/batch_insert_emitter.dart';
 import 'queryable/changeset_emitter.dart';
 import 'queryable/edge_analyzer.dart';
 import 'queryable/insert_emitter.dart';
 import 'queryable/require_present.dart';
 
-/// Emits a `toInsert()` extension for each `@Insertable` data class. Independent
-/// of `@Queryable`, so a write-only DTO works on its own.
+/// Emits a `toInsert()` extension for each `@Insertable` data class — on the
+/// class itself (single-row insert) and on `Iterable` of it (one multi-row
+/// batch `INSERT`). Independent of `@Queryable`, so a write-only DTO works on
+/// its own.
 ///
 /// {@category getting-started}
 class InsertableGenerator extends GeneratorForAnnotation<Insertable> {
@@ -35,11 +38,19 @@ class InsertableGenerator extends GeneratorForAnnotation<Insertable> {
         element: element,
       );
     }
+    final className =
+        requirePresent(element.name, 'the @Insertable class name');
+    final columnArgs = analyzer.writeColumnArgs(element, marker);
     return [
       const InsertEmitter().emit(
-        className: requirePresent(element.name, 'the @Insertable class name'),
+        className: className,
         tableMarker: marker,
-        columnArgs: analyzer.writeColumnArgs(element, marker),
+        columnArgs: columnArgs,
+      ),
+      const BatchInsertEmitter().emit(
+        className: className,
+        tableMarker: marker,
+        columnArgs: columnArgs,
       ),
     ];
   }

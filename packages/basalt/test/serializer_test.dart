@@ -21,6 +21,10 @@ final class _TestDialect implements SqlDialect {
     if (value is DateTime) return value.millisecondsSinceEpoch;
     return value;
   }
+
+  // Mirrors SQLite: dynamic typing, no casts.
+  @override
+  String? castType(SqlType<Object?> type) => null;
 }
 
 CompiledQuery compileSelect(SelectQuery<dynamic> s) =>
@@ -206,6 +210,147 @@ void main() {
         'INSERT INTO "users" ("name") VALUES (?) RETURNING "id", "name"',
       );
       expect(params, ['Bob']);
+    });
+
+    test('INSERT with no rows throws', () {
+      expect(() => compileWrite(insertInto(Users.table)), throwsStateError);
+    });
+  });
+
+  group('updateAll serialization', () {
+    test('batch UPDATE joins a VALUES CTE on the key', () {
+      final (sql, params) = compileWrite(
+        updateAll(Users.table).keyedBy(Users.id).values([
+          [Users.id.set(1), Users.name.set('A'), Users.age.set(10)],
+          [Users.id.set(2), Users.name.set('B'), Users.age.set(20)],
+        ]),
+      );
+      expect(
+        sql,
+        'WITH "__basalt_values"("id", "name", "age") '
+        'AS (VALUES (?, ?, ?), (?, ?, ?)) '
+        'UPDATE "users" SET "name" = "__basalt_values"."name", '
+        '"age" = "__basalt_values"."age" '
+        'FROM "__basalt_values" '
+        'WHERE "users"."id" = "__basalt_values"."id"',
+      );
+      expect(params, [1, 'A', 10, 2, 'B', 20]);
+    });
+
+    test('composite key ANDs one join condition per keyedBy', () {
+      final (sql, params) = compileWrite(
+        updateAll(Posts.table)
+            .keyedBy(Posts.id)
+            .keyedBy(Posts.authorId)
+            .values([
+          [Posts.id.set(1), Posts.authorId.set(7), Posts.title.set('t')],
+        ]),
+      );
+      expect(
+        sql,
+        'WITH "__basalt_values"("id", "author_id", "title") '
+        'AS (VALUES (?, ?, ?)) '
+        'UPDATE "posts" SET "title" = "__basalt_values"."title" '
+        'FROM "__basalt_values" '
+        'WHERE "posts"."id" = "__basalt_values"."id" '
+        'AND "posts"."author_id" = "__basalt_values"."author_id"',
+      );
+      expect(params, [1, 7, 't']);
+    });
+
+    test('extra where is ANDed onto the key join', () {
+      final (sql, params) = compileWrite(
+        updateAll(Users.table).keyedBy(Users.id).values([
+          [Users.id.set(1), Users.age.set(10)],
+        ]).where(Users.active.eq(true)),
+      );
+      expect(
+        sql,
+        'WITH "__basalt_values"("id", "age") AS (VALUES (?, ?)) '
+        'UPDATE "users" SET "age" = "__basalt_values"."age" '
+        'FROM "__basalt_values" '
+        'WHERE "users"."id" = "__basalt_values"."id" '
+        'AND ("users"."active" = ?)',
+      );
+      expect(params, [1, 10, 1]);
+    });
+
+    test('composes with RETURNING', () {
+      final rq = updateAll(Users.table).keyedBy(Users.id).values([
+        [Users.id.set(1), Users.age.set(10)],
+      ]).returning([Users.id]).map((r) => r.get(Users.id));
+      final (sql, params) = QueryBuilder(const _TestDialect())
+          .buildWrite(rq.statement, returning: rq.returning);
+      expect(
+        sql,
+        'WITH "__basalt_values"("id", "age") AS (VALUES (?, ?)) '
+        'UPDATE "users" SET "age" = "__basalt_values"."age" '
+        'FROM "__basalt_values" '
+        'WHERE "users"."id" = "__basalt_values"."id" '
+        // Qualified: the VALUES table exposes the same column names, so a bare
+        // "id" would be ambiguous on Postgres.
+        'RETURNING "users"."id"',
+      );
+      expect(params, [1, 10]);
+    });
+
+    test('without keyedBy throws', () {
+      expect(
+        () => compileWrite(
+          updateAll(Users.table).values([
+            [Users.id.set(1), Users.age.set(10)],
+          ]),
+        ),
+        throwsStateError,
+      );
+    });
+
+    test('with no rows throws', () {
+      expect(
+        () => compileWrite(updateAll(Users.table).keyedBy(Users.id)),
+        throwsStateError,
+      );
+    });
+
+    test('key column missing from the rows throws', () {
+      expect(
+        () => compileWrite(
+          updateAll(Users.table).keyedBy(Users.id).values([
+            [Users.name.set('A'), Users.age.set(10)],
+          ]),
+        ),
+        throwsStateError,
+      );
+    });
+
+    test('rows setting only key columns throw', () {
+      expect(
+        () => compileWrite(
+          updateAll(Users.table).keyedBy(Users.id).values([
+            [Users.id.set(1)],
+          ]),
+        ),
+        throwsStateError,
+      );
+    });
+
+    test('setExpr in a row throws (VALUES are literals)', () {
+      expect(
+        () => updateAll(Users.table).keyedBy(Users.id).values([
+          [Users.id.set(1), Users.age.setExpr(Users.age - 1)],
+        ]),
+        throwsArgumentError,
+      );
+    });
+
+    test('row with a different column count throws', () {
+      expect(
+        () => updateAll(Users.table).keyedBy(Users.id).values([
+          [Users.id.set(1), Users.name.set('A'), Users.age.set(10)],
+          [Users.id.set(2), Users.name.set('B')],
+        ]),
+        throwsArgumentError,
+      );
     });
   });
 

@@ -13,3 +13,22 @@ extension OrderItemWriteInsert on OrderItemWrite {
       .value(OrderItems.quantity.set(quantity))
       .value(OrderItems.unitPrice.set(unitPrice));
 }
+
+extension OrderItemWriteBatchInsert on Iterable<OrderItemWrite> {
+  InsertStatement<OrderItems> toInsert() {
+    final rows = [
+      for (final row in this)
+        [
+          OrderItems.orderId.set(row.orderId),
+          OrderItems.productId.set(row.productId),
+          OrderItems.quantity.set(row.quantity),
+          OrderItems.unitPrice.set(row.unitPrice),
+        ],
+    ];
+    if (rows.isEmpty) {
+      throw ArgumentError('toInsert() on an empty Iterable<OrderItemWrite>: '
+          'an INSERT needs at least one row.');
+    }
+    return insertInto(OrderItems.table).values(rows);
+  }
+}

@@ -1,10 +1,12 @@
 # Writes
 
-`WriteStatement` is the `sealed` base for the three write builders:
+`WriteStatement` is the `sealed` base for the four write builders:
 
 - `InsertStatement` — `insertInto(Table).value(...)` / `.values([...])`, with
   `OnConflict` for upserts.
 - `UpdateStatement` — `update(Table).set(...).where(...)`.
+- `UpdateAllStatement` — `updateAll(Table).keyedBy(...).values([...])`, a batch
+  update: many rows, per-row values, one statement.
 - `DeleteStatement` — `deleteFrom(Table).where(...)`.
 
 Values go through `column.set(value)`, whose type is pinned by the column —
@@ -36,7 +38,52 @@ await db.execute(insertInto(Users.table).values([
 ]));
 ```
 
-Composes with RETURNING to get one row back per inserted row.
+Composes with RETURNING to get one row back per inserted row. `@Insertable`
+also generates this form for whole lists — `myUserWrites.toInsert()` on any
+`Iterable` of the annotated class builds one multi-row insert.
+
+## Batch update
+
+`updateAll` updates many rows with *different* values in a single statement:
+it joins the table against a `VALUES` list on the key column(s), so a
+1000-row update is one round-trip, not 1000.
+
+```dart
+final affected = await db.execute(
+  updateAll(Products.table).keyedBy(Products.id).values([
+    for (final p in restocked)
+      [Products.id.set(p.id), Products.stock.set(p.stock)],
+  ]),
+);
+```
+
+which serializes to
+
+```sql
+WITH "__basalt_values"("id", "stock") AS (VALUES (?, ?), (?, ?), ...)
+UPDATE "products" SET "stock" = "__basalt_values"."stock"
+FROM "__basalt_values"
+WHERE "products"."id" = "__basalt_values"."id"
+```
+
+- Every row must include the key column(s); the remaining columns become the
+  `SET` clause. `keyedBy` can be called repeatedly for a composite key.
+- Key values must be unique within one batch — SQL leaves it undefined which
+  `VALUES` row wins when several match the same target row.
+- Rows whose key matches nothing update nothing; the affected count covers
+  matched rows only.
+- `.where(...)` adds an extra predicate on top of the key join (e.g. only
+  touch rows that are still `active`).
+- Values are literals (`column.set(v)`); `setExpr`/`setToExcluded` don't fit a
+  `VALUES` tuple and throw.
+- Composes with RETURNING like any other write.
+
+Backend notes: needs SQLite ≥ 3.33 (`UPDATE ... FROM`, 2020) — anything
+`package:sqlite3` ships qualifies. On Postgres the first `VALUES` row is
+emitted with `CAST`s so the statement's parameter types stay inferable (see
+`SqlDialect.castType` in **Serialization**). One statement binds
+`rows × columns` parameters and the Postgres wire protocol caps a statement at
+65 535 — chunk truly huge batches.
 
 ## RETURNING
 

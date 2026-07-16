@@ -8,6 +8,7 @@ library;
 import '../ast/sql_node.dart';
 import '../expression/expression.dart';
 import '../schema/table.dart';
+import '../types/sql_type.dart';
 import 'query.dart';
 import 'row_reader.dart';
 
@@ -16,6 +17,7 @@ part 'writes/insert_statement.dart';
 part 'writes/on_conflict.dart';
 part 'writes/returning.dart';
 part 'writes/returning_query.dart';
+part 'writes/update_all_statement.dart';
 part 'writes/update_statement.dart';
 part 'writes/write_returning.dart';
 

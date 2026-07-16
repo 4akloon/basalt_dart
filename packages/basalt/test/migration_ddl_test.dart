@@ -22,4 +22,6 @@ final class _QuoteDialect implements SqlDialect {
   String placeholder(int index) => '?';
   @override
   Object? encodeParam(Object? value) => value;
+  @override
+  String? castType(SqlType<Object?> type) => null;
 }

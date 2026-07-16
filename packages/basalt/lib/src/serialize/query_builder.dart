@@ -1,6 +1,7 @@
 import '../ast/sql_node.dart';
 import '../query/query.dart';
 import '../query/write.dart';
+import '../types/sql_type.dart';
 import 'sql_dialect.dart';
 
 /// A serialized statement: the SQL text and its ordered bound parameters.
@@ -220,10 +221,16 @@ final class QueryBuilder {
         _writeInsert(stmt);
       case UpdateStatement():
         _writeUpdate(stmt);
+      case UpdateAllStatement():
+        _writeUpdateAll(stmt);
       case DeleteStatement():
         _writeDelete(stmt);
     }
     if (returning.isNotEmpty) {
+      // updateAll's VALUES table shares its column names with the target, so
+      // its RETURNING columns must be table-qualified to stay unambiguous;
+      // everywhere else they are unqualified, as SQLite requires.
+      final qualify = stmt is UpdateAllStatement;
       _sql.write(' RETURNING ');
       var first = true;
       for (final p in returning) {
@@ -231,7 +238,9 @@ final class QueryBuilder {
         first = false;
         final expr = p.expression;
         if (expr is ColumnNode) {
-          _sql.write(dialect.quoteIdentifier(expr.name));
+          _sql.write(
+            qualify ? _column(expr) : dialect.quoteIdentifier(expr.name),
+          );
         } else {
           _writeNode(expr);
         }
@@ -246,6 +255,12 @@ final class QueryBuilder {
   }
 
   void _writeInsert(InsertStatement stmt) {
+    if (stmt.rows.isEmpty) {
+      throw StateError(
+        'INSERT into "${stmt.table}" has no rows — add .value(...) or '
+        '.values(...) with at least one row.',
+      );
+    }
     final cols = stmt.columns.map(dialect.quoteIdentifier).join(', ');
     final tuples = [
       for (final row in stmt.rows) '(${row.map(_bind).join(', ')})',
@@ -301,6 +316,86 @@ final class QueryBuilder {
       _sql.write(' WHERE ');
       _writeNode(where);
     }
+  }
+
+  /// The CTE alias the batch update joins against; prefixed so it can't
+  /// plausibly collide with a user table name.
+  static const _valuesAlias = '__basalt_values';
+
+  /// `WITH v(cols) AS (VALUES ...) UPDATE t SET c = v.c FROM v WHERE t.k = v.k`.
+  ///
+  /// The CTE form (rather than `(VALUES ...) AS v(cols)`) is what SQLite can
+  /// name columns on; Postgres runs it unchanged. First-row values are wrapped
+  /// in ANSI `CAST(...)` when the dialect asks for one — a bare-`VALUES` table
+  /// gives Postgres no context to infer parameter types, and the first row is
+  /// enough because column type resolution propagates to the other rows.
+  void _writeUpdateAll(UpdateAllStatement stmt) {
+    if (stmt.rows.isEmpty) {
+      throw StateError(
+        'updateAll on "${stmt.table}" has no rows — add .values(...) with at '
+        'least one row.',
+      );
+    }
+    if (stmt.keyColumns.isEmpty) {
+      throw StateError(
+        'updateAll on "${stmt.table}" has no key — call .keyedBy(column) so '
+        'the VALUES rows can be matched to table rows.',
+      );
+    }
+    for (final key in stmt.keyColumns) {
+      if (!stmt.columns.contains(key)) {
+        throw StateError(
+          'updateAll on "${stmt.table}": key column "$key" is missing from '
+          'the rows — every row must set it.',
+        );
+      }
+    }
+    final setColumns = [
+      for (final c in stmt.columns)
+        if (!stmt.keyColumns.contains(c)) c,
+    ];
+    if (setColumns.isEmpty) {
+      throw StateError(
+        'updateAll on "${stmt.table}" sets only key columns — add at least '
+        'one non-key column to update.',
+      );
+    }
+
+    final alias = dialect.quoteIdentifier(_valuesAlias);
+    final table = dialect.quoteIdentifier(stmt.table);
+    final cols = stmt.columns.map(dialect.quoteIdentifier).join(', ');
+    final tuples = [
+      for (final (rowIndex, row) in stmt.rows.indexed)
+        '(${[
+          for (final (colIndex, value) in row.indexed)
+            _bindCast(value, rowIndex == 0 ? stmt.columnTypes[colIndex] : null),
+        ].join(', ')})',
+    ].join(', ');
+    _sql.write('WITH $alias($cols) AS (VALUES $tuples) UPDATE $table SET ');
+    _sql.write([
+      for (final c in setColumns)
+        '${dialect.quoteIdentifier(c)} = $alias.${dialect.quoteIdentifier(c)}',
+    ].join(', '));
+    _sql.write(' FROM $alias WHERE ');
+    _sql.write([
+      for (final k in stmt.keyColumns.map(dialect.quoteIdentifier))
+        '$table.$k = $alias.$k',
+    ].join(' AND '));
+    if (stmt.whereNode case final where?) {
+      _sql.write(' AND ');
+      _writeNode(where);
+    }
+  }
+
+  /// [_bind], wrapped in `CAST(... AS castType)` when the dialect maps [type]
+  /// to a native type name.
+  String _bindCast(Object? value, SqlType<Object?>? type) {
+    final placeholder = _bind(value);
+    if (type == null) return placeholder;
+    if (dialect.castType(type) case final cast?) {
+      return 'CAST($placeholder AS $cast)';
+    }
+    return placeholder;
   }
 
   void _writeDelete(DeleteStatement stmt) {

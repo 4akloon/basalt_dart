@@ -28,6 +28,13 @@ final rows = await db.fetch(
 
 await db.execute(user.toInsert());
 
+// Batch writes are single statements: a multi-row INSERT from a list, and
+// updateAll for many-row updates with per-row values (SQLite ≥ 3.33).
+await db.execute(users.toInsert());
+await db.execute(updateAll(Users.table).keyedBy(Users.id).values([
+  for (final u in users) [Users.id.set(u.id), Users.age.set(u.age)],
+]));
+
 await db.transaction((tx) async {
   await tx.execute(/* … */);
 });

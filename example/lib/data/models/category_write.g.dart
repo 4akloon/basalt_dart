@@ -11,3 +11,20 @@ extension CategoryWriteInsert on CategoryWrite {
       .value(Categories.name.set(name))
       .value(Categories.parentId.set(parentId));
 }
+
+extension CategoryWriteBatchInsert on Iterable<CategoryWrite> {
+  InsertStatement<Categories> toInsert() {
+    final rows = [
+      for (final row in this)
+        [
+          Categories.name.set(row.name),
+          Categories.parentId.set(row.parentId),
+        ],
+    ];
+    if (rows.isEmpty) {
+      throw ArgumentError('toInsert() on an empty Iterable<CategoryWrite>: '
+          'an INSERT needs at least one row.');
+    }
+    return insertInto(Categories.table).values(rows);
+  }
+}

@@ -16,4 +16,5 @@ export 'src/postgres_dialect.dart';
 export 'src/types/postgres_array_sql_type.dart';
 export 'src/types/postgres_jsonb_sql_type.dart';
 export 'src/types/postgres_numeric_sql_type.dart';
+export 'src/types/postgres_typed_sql_type.dart';
 export 'src/types/postgres_uuid_sql_type.dart';

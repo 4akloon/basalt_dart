@@ -48,6 +48,25 @@ extension CustomerRowInsert on CustomerRow {
       .value(Customers.createdAt.set(createdAt));
 }
 
+extension CustomerRowBatchInsert on Iterable<CustomerRow> {
+  InsertStatement<Customers> toInsert() {
+    final rows = [
+      for (final row in this)
+        [
+          Customers.name.set(row.name),
+          Customers.email.set(row.email),
+          Customers.loyaltyTier.set(row.loyaltyTier),
+          Customers.createdAt.set(row.createdAt),
+        ],
+    ];
+    if (rows.isEmpty) {
+      throw ArgumentError('toInsert() on an empty Iterable<CustomerRow>: '
+          'an INSERT needs at least one row.');
+    }
+    return insertInto(Customers.table).values(rows);
+  }
+}
+
 // **************************************************************************
 // AsChangesetGenerator
 // **************************************************************************

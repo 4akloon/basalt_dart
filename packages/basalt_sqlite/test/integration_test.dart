@@ -554,6 +554,108 @@ void main() {
     expect(names, ['A', 'B', 'C', 'D']);
   });
 
+  test('updateAll updates many rows with per-row values in one statement',
+      () async {
+    await seed(); // Bob 30 / Alice 17 / Carol 42
+
+    final affected = await db.execute(
+      updateAll(Users.table).keyedBy(Users.id).values([
+        [Users.id.set(1), Users.name.set('Bobby'), Users.age.set(31)],
+        [Users.id.set(3), Users.name.set('Caroline'), Users.age.set(43)],
+        // No user 99: matches nothing, updates nothing.
+        [Users.id.set(99), Users.name.set('Nobody'), Users.age.set(0)],
+      ]),
+    );
+    expect(affected, 2);
+
+    final rows = await from(Users.table)
+        .order(Users.id.asc())
+        .map((r) => (r.get(Users.name), r.get(Users.age)))
+        .load(db);
+    expect(rows, [('Bobby', 31), ('Alice', 17), ('Caroline', 43)]);
+  });
+
+  test('updateAll with extra where only touches matching rows', () async {
+    await seed(); // Bob/Carol active, Alice not
+
+    final affected = await db.execute(
+      updateAll(Users.table).keyedBy(Users.id).values([
+        [Users.id.set(1), Users.age.set(100)],
+        [Users.id.set(2), Users.age.set(100)],
+      ]).where(Users.active.eq(true)),
+    );
+    expect(affected, 1); // Alice (id 2) is filtered out by the predicate
+
+    final ages = await from(Users.table)
+        .order(Users.id.asc())
+        .map((r) => r.get(Users.age))
+        .load(db);
+    expect(ages, [100, 17, 42]);
+  });
+
+  test('updateAll composes with RETURNING and transactions', () async {
+    await seed();
+
+    final returned = await db.executeReturning(
+      updateAll(Users.table).keyedBy(Users.id).values([
+        [Users.id.set(1), Users.age.set(31)],
+        [Users.id.set(2), Users.age.set(18)],
+      ]).returning([Users.id, Users.age]).map(
+        (r) => (r.get(Users.id), r.get(Users.age)),
+      ),
+    );
+    expect(returned.toSet(), {(1, 31), (2, 18)});
+
+    // A rolled-back transaction discards the batch update.
+    await expectLater(
+      db.transaction((tx) async {
+        await tx.execute(
+          updateAll(Users.table).keyedBy(Users.id).values([
+            [Users.id.set(1), Users.age.set(0)],
+          ]),
+        );
+        throw StateError('boom');
+      }),
+      throwsStateError,
+    );
+    expect(
+      await from(Users.table)
+          .findBy(Users.id, 1)
+          .map((r) => r.get(Users.age))
+          .first(db),
+      31,
+    );
+  });
+
+  test('updateAll round-trips custom and bool/DateTime column types',
+      () async {
+    await db.executeSql(
+        'CREATE TABLE events (id INTEGER PRIMARY KEY, done INTEGER NOT NULL, '
+        'at INTEGER NOT NULL)');
+    final before = DateTime.utc(2024, 1, 1);
+    final after = DateTime.utc(2025, 6, 30, 8, 15);
+    await db.execute(
+      insertInto(Events.table).values([
+        [Events.id.set(1), Events.done.set(false), Events.at.set(before)],
+        [Events.id.set(2), Events.done.set(true), Events.at.set(before)],
+      ]),
+    );
+
+    final affected = await db.execute(
+      updateAll(Events.table).keyedBy(Events.id).values([
+        [Events.id.set(1), Events.done.set(true), Events.at.set(after)],
+        [Events.id.set(2), Events.done.set(false), Events.at.set(after)],
+      ]),
+    );
+    expect(affected, 2);
+
+    final rows = await from(Events.table)
+        .order(Events.id.asc())
+        .map((r) => (r.get(Events.done), r.get(Events.at).toUtc()))
+        .load(db);
+    expect(rows, [(true, after), (false, after)]);
+  });
+
   test('upsert: ON CONFLICT DO NOTHING / DO UPDATE', () async {
     await db.execute(
       insertInto(Users.table)

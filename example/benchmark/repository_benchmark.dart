@@ -144,24 +144,28 @@ ShopDriftDatabase _buildDrift() =>
 
 Future<void> _amplifyBasalt(Connection db) async {
   await db.transaction((tx) async {
-    for (var i = 0; i < extraProducts; i++) {
-      await tx.execute(ProductWrite(
-        name: 'Bench Product $i',
-        description: 'benchmark filler',
-        price: 10.0 + i,
-        stock: 100,
-        categoryId: (i % 5) + 1,
-        isActive: 1,
-      ).toInsert());
-    }
-    for (var i = 0; i < extraReviewsOnP1; i++) {
-      await tx.execute(ReviewWrite(
-        productId: 1,
-        customerId: (i % 4) + 1,
-        rating: (i % 5) + 1,
-        createdAt: i,
-      ).toInsert());
-    }
+    // Batch inserts (one multi-row statement each) — mirrors Drift's
+    // `insertAll` below for a fair comparison.
+    await tx.execute([
+      for (var i = 0; i < extraProducts; i++)
+        ProductWrite(
+          name: 'Bench Product $i',
+          description: 'benchmark filler',
+          price: 10.0 + i,
+          stock: 100,
+          categoryId: (i % 5) + 1,
+          isActive: 1,
+        ),
+    ].toInsert());
+    await tx.execute([
+      for (var i = 0; i < extraReviewsOnP1; i++)
+        ReviewWrite(
+          productId: 1,
+          customerId: (i % 4) + 1,
+          rating: (i % 5) + 1,
+          createdAt: i,
+        ),
+    ].toInsert());
     for (var i = 0; i < extraOrders; i++) {
       final orderId = (await tx.executeReturning(OrderWrite(
         customerId: (i % 4) + 1,

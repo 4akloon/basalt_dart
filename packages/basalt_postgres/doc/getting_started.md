@@ -58,6 +58,11 @@ final rows = await db.fetch(
   from(Users.table).where(Users.age > 18).mapWith(UserQuery.mapper),
 );
 
+// Batch update: one statement, per-row values, one round-trip.
+await db.execute(updateAll(Users.table).keyedBy(Users.id).values([
+  for (final u in users) [Users.id.set(u.id), Users.age.set(u.age)],
+]));
+
 await db.close();
 ```
 
@@ -69,6 +74,21 @@ difference the serializer needs — proof that `QueryBuilder` is backend-agnosti
 
 `encodeParam` passes `bool` and `DateTime` through natively (no int/epoch
 remapping). See `basalt` **Types** for the cross-backend codec model.
+
+`castType` names the native type of each column codec so a batch `updateAll`
+stays preparable: the first `VALUES` row is emitted as `CAST($1 AS bigint)`
+etc., which is the only context where Postgres can't infer parameter types on
+its own. Core types map out of the box; a custom codec opts in by implementing
+`PostgresTypedSqlType`:
+
+```dart
+final class PointSqlType extends SqlType<Point>
+    implements PostgresTypedSqlType {
+  @override
+  String? get postgresType => 'point';
+  // encode/decode …
+}
+```
 
 ## Introspection
 

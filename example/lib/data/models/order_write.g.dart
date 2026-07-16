@@ -14,6 +14,25 @@ extension OrderWriteInsert on OrderWrite {
       .value(Orders.shippingAddressId.set(shippingAddressId));
 }
 
+extension OrderWriteBatchInsert on Iterable<OrderWrite> {
+  InsertStatement<Orders> toInsert() {
+    final rows = [
+      for (final row in this)
+        [
+          Orders.customerId.set(row.customerId),
+          Orders.status.set(row.status),
+          Orders.createdAt.set(row.createdAt),
+          Orders.shippingAddressId.set(row.shippingAddressId),
+        ],
+    ];
+    if (rows.isEmpty) {
+      throw ArgumentError('toInsert() on an empty Iterable<OrderWrite>: '
+          'an INSERT needs at least one row.');
+    }
+    return insertInto(Orders.table).values(rows);
+  }
+}
+
 // **************************************************************************
 // AsChangesetGenerator
 // **************************************************************************

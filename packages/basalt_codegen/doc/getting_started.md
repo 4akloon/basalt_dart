@@ -59,7 +59,7 @@ dart run build_runner build
 | Annotation | Generator | Output |
 |---|---|---|
 | `@Queryable` | `QueryableGenerator` | `XQuery` companion class — *is* the query (`extends MappedQuery`/`FoldMappedQuery`) and carries `static fromRow`, `static const mapper` and (for `@HasMany`) `static fold` |
-| `@Insertable` | `InsertableGenerator` | `toInsert()` extension |
+| `@Insertable` | `InsertableGenerator` | `toInsert()` extension on the class + a multi-row `toInsert()` extension on `Iterable` of it (one batch `INSERT`) |
 | `@AsChangeset` | `AsChangesetGenerator` | `toUpdate()` extension |
 
 For annotation semantics, field mapping, `@Relation` join behavior, and

@@ -29,6 +29,9 @@ final class AnsiDialect implements SqlDialect {
 
   @override
   Object? encodeParam(Object? value) => value;
+
+  @override
+  String? castType(SqlType<Object?> type) => null;
 }
 
 int _ignore(RowReader _) => 0;

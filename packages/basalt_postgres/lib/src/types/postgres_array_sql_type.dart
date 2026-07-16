@@ -1,5 +1,7 @@
 import 'package:basalt/basalt.dart';
 
+import 'postgres_typed_sql_type.dart';
+
 /// Postgres-native array codec for a column of element type [E]
 /// (e.g. `integer[]` → `PostgresArraySqlType<int>`, `text[]` →
 /// `PostgresArraySqlType<String>`).
@@ -14,8 +16,20 @@ import 'package:basalt/basalt.dart';
 /// array element types; a schema using it imports `package:basalt_postgres`.
 ///
 /// {@category getting-started}
-final class PostgresArraySqlType<E extends Object> extends SqlType<List<E>> {
+final class PostgresArraySqlType<E extends Object> extends SqlType<List<E>>
+    implements PostgresTypedSqlType {
   const PostgresArraySqlType();
+
+  /// Array type for the common element types; `null` for an element type this
+  /// codec has no name for (such a column then can't be cast in `updateAll`).
+  @override
+  String? get postgresType => switch (E) {
+        const (int) => 'bigint[]',
+        const (String) => 'text[]',
+        const (double) => 'double precision[]',
+        const (bool) => 'boolean[]',
+        _ => null,
+      };
 
   @override
   Object? encode(List<E> input) => input;

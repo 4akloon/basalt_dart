@@ -11,6 +11,17 @@ string and params — no database required. See
 `packages/basalt/test/serializer_test.dart` for the full suite (SQL/params,
 scope validation, joins).
 
+## Dialect parameter casts
+
+`SqlDialect.castType(SqlType)` returns the dialect's native type name for a
+column codec, or `null` when no cast is needed. The serializer uses it in the
+one place SQL gives the server no context to infer a parameter's type: the
+`VALUES` table of a batch `updateAll`, where the first row is emitted as
+`CAST(? AS type)` per column. SQLite's dynamic typing never needs it
+(`SqliteDialect` returns `null`); `PostgresDialect` maps the core types
+(`IntSqlType` → `bigint`, `DateTimeSqlType` → `timestamptz`, …) and lets
+custom codecs opt in via its `PostgresTypedSqlType` interface.
+
 ## Scope validation
 
 Before emitting SQL, the builder validates that every table referenced by a

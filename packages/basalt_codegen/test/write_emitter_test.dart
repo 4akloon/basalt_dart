@@ -1,3 +1,4 @@
+import 'package:basalt_codegen/src/queryable/batch_insert_emitter.dart';
 import 'package:basalt_codegen/src/queryable/changeset_emitter.dart';
 import 'package:basalt_codegen/src/queryable/column_arg.dart';
 import 'package:basalt_codegen/src/queryable/insert_emitter.dart';
@@ -6,6 +7,7 @@ import 'package:test/test.dart';
 
 void main() {
   const insertEmitter = InsertEmitter();
+  const batchInsertEmitter = BatchInsertEmitter();
   const changesetEmitter = ChangesetEmitter();
   const readerEmitter = ReaderEmitter();
 
@@ -53,6 +55,36 @@ void main() {
 
     test('omits readOnly columns from the INSERT', () {
       expect(code, isNot(contains('Users.id.set')));
+    });
+  });
+
+  group('BatchInsertEmitter', () {
+    final code = batchInsertEmitter.emit(
+      className: 'User',
+      tableMarker: 'Users',
+      columnArgs: columns,
+    );
+
+    test('emits a toInsert() extension on Iterable<User>', () {
+      expect(code, contains('extension UserBatchInsert on Iterable<User> {'));
+      expect(code, contains('InsertStatement<Users> toInsert() {'));
+      expect(code, contains('return insertInto(Users.table).values(rows);'));
+    });
+
+    test('sets every writable column (incl. writeOnly) from the iterated row',
+        () {
+      expect(code, contains('Users.name.set(row.name),'));
+      expect(code, contains('Users.age.set(row.age),'));
+      expect(code, contains('Users.token.set(row.token),'));
+    });
+
+    test('omits readOnly columns from the INSERT', () {
+      expect(code, isNot(contains('Users.id.set')));
+    });
+
+    test('guards against an empty iterable', () {
+      expect(code, contains('if (rows.isEmpty) {'));
+      expect(code, contains('throw ArgumentError('));
     });
   });
 

@@ -121,6 +121,79 @@ void main() {
     );
   });
 
+  test('updateAll updates many rows with per-row values in one statement',
+      () async {
+    if (skip()) return;
+    await db.execute(
+      insertInto(Widgets.table).values([
+        [Widgets.id.set(1), Widgets.name.set('a'), Widgets.qty.set(1)],
+        [Widgets.id.set(2), Widgets.name.set('b'), Widgets.qty.set(2)],
+        [Widgets.id.set(3), Widgets.name.set('c'), Widgets.qty.set(3)],
+      ]),
+    );
+
+    final affected = await db.execute(
+      updateAll(Widgets.table).keyedBy(Widgets.id).values([
+        [Widgets.id.set(1), Widgets.name.set('A'), Widgets.qty.set(10)],
+        [Widgets.id.set(3), Widgets.name.set('C'), Widgets.qty.set(30)],
+        // No widget 99: matches nothing, updates nothing.
+        [Widgets.id.set(99), Widgets.name.set('X'), Widgets.qty.set(0)],
+      ]),
+    );
+    expect(affected, 2);
+
+    final rows = await from(Widgets.table)
+        .order(Widgets.id.asc())
+        .map((r) => (r.get(Widgets.name), r.get(Widgets.qty)))
+        .load(db);
+    expect(rows, [('A', 10), ('b', 2), ('C', 30)]);
+  });
+
+  test('updateAll composes with RETURNING', () async {
+    if (skip()) return;
+    await db.execute(
+      insertInto(Widgets.table).values([
+        [Widgets.id.set(1), Widgets.name.set('a'), Widgets.qty.set(1)],
+        [Widgets.id.set(2), Widgets.name.set('b'), Widgets.qty.set(2)],
+      ]),
+    );
+    final returned = await db.executeReturning(
+      updateAll(Widgets.table).keyedBy(Widgets.id).values([
+        [Widgets.id.set(1), Widgets.qty.set(10)],
+        [Widgets.id.set(2), Widgets.qty.set(20)],
+      ]).returning([Widgets.id, Widgets.qty]).map(
+        (r) => (r.get(Widgets.id), r.get(Widgets.qty)),
+      ),
+    );
+    expect(returned.toSet(), {(1, 10), (2, 20)});
+  });
+
+  test('updateAll casts native bool + timestamp VALUES columns', () async {
+    if (skip()) return;
+    final before = DateTime.utc(2024, 1, 1);
+    final after = DateTime.utc(2025, 6, 30, 8, 15);
+    await db.execute(
+      insertInto(Flags.table).values([
+        [Flags.id.set(1), Flags.active.set(false), Flags.createdAt.set(before)],
+        [Flags.id.set(2), Flags.active.set(true), Flags.createdAt.set(before)],
+      ]),
+    );
+
+    final affected = await db.execute(
+      updateAll(Flags.table).keyedBy(Flags.id).values([
+        [Flags.id.set(1), Flags.active.set(true), Flags.createdAt.set(after)],
+        [Flags.id.set(2), Flags.active.set(false), Flags.createdAt.set(after)],
+      ]),
+    );
+    expect(affected, 2);
+
+    final rows = await from(Flags.table)
+        .order(Flags.id.asc())
+        .map((r) => (r.get(Flags.active), r.get(Flags.createdAt).toUtc()))
+        .load(db);
+    expect(rows, [(true, after), (false, after)]);
+  });
+
   test('RETURNING surfaces columns', () async {
     if (skip()) return;
     final rows = await db.executeReturning(

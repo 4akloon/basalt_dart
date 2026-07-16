@@ -18,4 +18,8 @@ final class SqliteDialect implements SqlDialect {
     if (value is DateTime) return value.millisecondsSinceEpoch;
     return value;
   }
+
+  /// SQLite is dynamically typed — parameters never need a `CAST`.
+  @override
+  String? castType(SqlType<Object?> type) => null;
 }
