@@ -64,7 +64,8 @@ final class UpdateAllStatement<Tbl> extends WriteStatement {
   /// Adds rows: each element is one row's assignments (key included). Columns
   /// are taken from the first row; every row must use the same columns in the
   /// same order.
-  UpdateAllStatement<Tbl> values(Iterable<Iterable<ColumnValue<Tbl>>> valueRows) {
+  UpdateAllStatement<Tbl> values(
+      Iterable<Iterable<ColumnValue<Tbl>>> valueRows) {
     for (final row in valueRows) {
       final encoded = <Object?>[];
       final recordColumns = columns.isEmpty && rows.isEmpty;

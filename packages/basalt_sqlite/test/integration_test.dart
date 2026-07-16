@@ -627,8 +627,7 @@ void main() {
     );
   });
 
-  test('updateAll round-trips custom and bool/DateTime column types',
-      () async {
+  test('updateAll round-trips custom and bool/DateTime column types', () async {
     await db.executeSql(
         'CREATE TABLE events (id INTEGER PRIMARY KEY, done INTEGER NOT NULL, '
         'at INTEGER NOT NULL)');
