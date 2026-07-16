@@ -9,3 +9,6 @@ devtools_options.yaml
 #   cd packages/basalt_devtools_extension && dart run devtools_extensions \
 #     build_and_copy --source=. --dest=../diesel/extension/devtools
 packages/basalt/extension/devtools/build/
+
+# Blog post drafts — kept local, not part of the published repo.
+blog/
