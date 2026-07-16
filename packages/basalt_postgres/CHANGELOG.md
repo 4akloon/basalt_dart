@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.0.2
+
+- `PostgresDialect.castType` — implements the new `SqlDialect` seam, mapping the core types to
+  native Postgres names (`IntSqlType` → `bigint`, `DateTimeSqlType` → `timestamptz`, ...) so the
+  `VALUES` table of a batch `updateAll` stays preparable; unwraps `NullableSqlType`.
+- `PostgresTypedSqlType` — new opt-in interface for custom codecs to name their native type;
+  implemented by `PostgresJsonbSqlType` (`jsonb`), `PostgresUuidSqlType` (`uuid`),
+  `PostgresNumericSqlType` (`numeric`) and `PostgresArraySqlType` (common element types).
+- Requires `basalt >=0.0.2 <0.1.0`.
+
 ## 0.0.1
 
 Initial development release of the Postgres backend for basalt_dart.

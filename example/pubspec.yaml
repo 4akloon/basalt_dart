@@ -60,10 +60,10 @@ dev_dependencies:
   # Drift's code generator (runs in the same build_runner pass as basalt_codegen).
   drift_dev: ^2.34.3
 
-# The monorepo packages declare `basalt: ^0.0.1` as a *hosted* dependency (they
-# rely on the Dart pub workspace to resolve it). This Flutter app lives outside
-# that workspace, so we override every basalt package to its local path to make
-# the whole graph resolve against the sources in this repo.
+# The monorepo packages declare `basalt` as a *hosted* dependency (they rely on
+# the Dart pub workspace to resolve it). This Flutter app lives outside that
+# workspace, so we override every basalt package to its local path to make the
+# whole graph resolve against the sources in this repo.
 dependency_overrides:
   # path_provider_foundation 2.6.0 bundles objective_c as a native asset; on
   # macOS debug that framework is dlopen'd twice and objc warns about duplicate

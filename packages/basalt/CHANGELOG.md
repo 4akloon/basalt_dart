@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.0.2
+
+Single-statement batch writes.
+
+- `updateAll(table).keyedBy(col).values([...])` — a new `UpdateAllStatement` that updates many
+  rows with per-row values in one statement (`WITH ... AS (VALUES ...) UPDATE ... FROM`), with
+  composite keys (repeated `keyedBy`), an optional extra `.where(...)`, and `RETURNING` support
+  (columns are table-qualified there to stay unambiguous next to the `VALUES` table).
+- `SqlDialect.castType(SqlType)` — new dialect seam naming the native type to `CAST` a bound
+  parameter to where SQL gives the server no inference context (the `VALUES` table of
+  `updateAll`); dialects that don't need casts return `null`.
+- `ColumnValue` now carries the column's `SqlType` (set by `TableColumn.set`) so serialization
+  can emit those casts.
+- A zero-row `INSERT` (no `.value(...)`/`.values(...)`) now throws `StateError` at build time
+  instead of emitting invalid SQL.
+- `@Insertable` doc updated for the new generated batch extension (see `basalt_codegen` 0.0.2).
+
 ## 0.0.1
 
 Initial development release of the basalt_dart core.

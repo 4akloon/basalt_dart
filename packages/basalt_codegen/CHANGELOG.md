@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.0.2
+
+- `@Insertable` now also generates a batch extension on `Iterable` of the annotated class:
+  `rows.toInsert()` builds one multi-row `INSERT ... VALUES (...), (...)` (throws
+  `ArgumentError` on an empty iterable). Skips `readOnly` columns like the single-row form.
+- Requires `basalt >=0.0.2 <0.1.0`.
+
 ## 0.0.1
 
 Initial development release of the basalt_dart `build_runner` code generator.

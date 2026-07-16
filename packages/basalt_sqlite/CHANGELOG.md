@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.0.2
+
+- `SqliteDialect.castType` — implements the new `SqlDialect` seam; SQLite is dynamically typed,
+  so it never asks for a cast (`null`).
+- Supports the core's new batch `updateAll` statement (`UPDATE ... FROM`, needs SQLite ≥ 3.33).
+- Requires `basalt >=0.0.2 <0.1.0`.
+
 ## 0.0.1
 
 Initial development release of the SQLite backend for basalt_dart.
