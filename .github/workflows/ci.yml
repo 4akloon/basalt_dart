@@ -32,7 +32,7 @@ jobs:
       BASALT_PG_PORT: 5432
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - uses: dart-lang/setup-dart@v1
         with:
@@ -93,7 +93,7 @@ jobs:
     name: Publish dry-run
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       # basalt ships the compiled DevTools extension, which is a Flutter web app
       # kept out of git — so this job needs Flutter to regenerate it before the
