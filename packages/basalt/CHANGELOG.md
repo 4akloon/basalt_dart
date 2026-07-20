@@ -1,5 +1,28 @@
 # Changelog
 
+## 0.0.3
+
+Shared DevTools inspector client — one host + client + DTO layer behind the
+`ext.basalt.*` protocol, so the DevTools extension and the `basalt_mcp` server
+stop re-implementing it.
+
+- New `package:basalt/devtools_client.dart` entrypoint (kept separate from the
+  host `package:basalt/devtools.dart`): a transport-agnostic `InspectorClient`
+  plus an `InspectorTransport` seam and the shared DTOs. Consumers implement
+  only the transport (VM service, DevTools `serviceManager`, ...).
+- `BasaltExtension` — enum of the `ext.basalt.*` method names, the single source
+  of truth for host registration and every client (exported from both
+  entrypoints).
+- DTO `fromJson` factories now parse real `jsonDecode` output (previously the
+  blind `as List<...>` casts threw); `SqlResultDto.fromJson` restores
+  `truncated`; `RegisteredInstance.fromJson` added.
+- **Breaking (dev-only):** `RegisteredInstance.backend` removed — the inspector
+  no longer infers a backend name. `InspectorService` now takes placeholders,
+  identifier quoting, and value encoding from `Connection.dialect` (this also
+  fixes `DateTime` encoding on the raw-SQL path). `lib/src/devtools/` was
+  reorganized into `protocol/` · `dto/` · `host/` · `client/` (internal), and
+  `InspectorService` was split into focused collaborators.
+
 ## 0.0.2
 
 Single-statement batch writes.
