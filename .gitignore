@@ -12,3 +12,6 @@ packages/basalt/extension/devtools/build/
 
 # Blog post drafts — kept local, not part of the published repo.
 blog/
+
+# Cursor MCP config — holds a machine-specific absolute cwd, per-developer.
+.cursor/mcp.json
