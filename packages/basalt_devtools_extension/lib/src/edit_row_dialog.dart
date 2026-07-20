@@ -1,15 +1,15 @@
+import 'package:basalt/devtools_client.dart';
 import 'package:flutter/material.dart';
 
-import 'models/column_info.dart';
-import 'models/row_edit.dart';
-import 'models/table_info.dart';
+import 'row_edit.dart';
+import 'schema_x.dart';
 import 'value_coerce.dart';
 
 /// Dialog to edit one row. Primary-key fields are read-only and form the WHERE
 /// key; the rest are editable. Pops a [RowEdit] with only the changed columns,
 /// or null on cancel / when nothing changed.
 class EditRowDialog extends StatefulWidget {
-  final TableInfo table;
+  final TableDto table;
   final List<String> columns;
   final List<Object?> row;
 
@@ -53,7 +53,7 @@ class _EditRowDialogState extends State<EditRowDialog> {
 
   Set<String> get _pks => widget.table.primaryKeys;
 
-  ColumnInfo _info(String name) =>
+  ColumnDto _info(String name) =>
       widget.table.columns.firstWhere((c) => c.name == name);
 
   @override
@@ -100,8 +100,7 @@ class _EditRowDialogState extends State<EditRowDialog> {
       final text = _controllers[name]?.text ?? '';
       if (text == _original[name]) continue;
       final col = _info(name);
-      changes[name] =
-          coerceValue(col.type, text, emptyIsNull: col.isNullable);
+      changes[name] = coerceValue(col.type, text, emptyIsNull: col.isNullable);
     }
     if (changes.isEmpty) {
       Navigator.pop(context);

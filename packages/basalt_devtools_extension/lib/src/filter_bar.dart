@@ -1,13 +1,12 @@
+import 'package:basalt/devtools_client.dart';
 import 'package:flutter/material.dart';
 
 import 'add_filter_dialog.dart';
-import 'models/column_filter.dart';
-import 'models/table_info.dart';
 import 'value_coerce.dart';
 
 /// Shows active filters as removable chips plus an "Add filter" action.
 class FilterBar extends StatelessWidget {
-  final TableInfo table;
+  final TableDto table;
   final List<ColumnFilter> filters;
   final ValueChanged<List<ColumnFilter>> onChanged;
 
@@ -30,8 +29,7 @@ class FilterBar extends StatelessWidget {
           for (final f in filters)
             Chip(
               label: Text(_label(f)),
-              onDeleted: () =>
-                  onChanged([...filters]..remove(f)),
+              onDeleted: () => onChanged([...filters]..remove(f)),
             ),
           ActionChip(
             avatar: const Icon(Icons.add, size: 16),
@@ -58,6 +56,8 @@ class FilterBar extends StatelessWidget {
 
   String _label(ColumnFilter f) {
     final op = filterOps[f.op] ?? f.op;
-    return opNeedsValue(f.op) ? '${f.column} $op ${f.value}' : '${f.column} $op';
+    return opNeedsValue(f.op)
+        ? '${f.column} $op ${f.value}'
+        : '${f.column} $op';
   }
 }

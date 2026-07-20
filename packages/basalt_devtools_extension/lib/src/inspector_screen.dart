@@ -1,17 +1,13 @@
+import 'package:basalt/devtools_client.dart';
 import 'package:devtools_extensions/devtools_extensions.dart';
 import 'package:flutter/material.dart';
 
 import 'data_grid.dart';
 import 'edit_row_dialog.dart';
 import 'filter_bar.dart';
-import 'inspector_client.dart';
-import 'models/column_filter.dart';
-import 'models/instance_info.dart';
-import 'models/row_edit.dart';
-import 'models/schema_info.dart';
-import 'models/sql_result.dart';
-import 'models/table_info.dart';
-import 'models/table_page.dart';
+import 'row_edit.dart';
+import 'schema_x.dart';
+import 'service_manager_transport.dart';
 
 class InspectorScreen extends StatefulWidget {
   const InspectorScreen({super.key});
@@ -23,15 +19,15 @@ class InspectorScreen extends StatefulWidget {
 enum _Mode { data, sql }
 
 class _InspectorScreenState extends State<InspectorScreen> {
-  final _client = InspectorClient();
+  final _client = const InspectorClient(ServiceManagerTransport());
   final _sqlController = TextEditingController();
 
-  List<InstanceInfo> _instances = const [];
+  List<RegisteredInstance> _instances = const [];
   String? _instanceId;
-  SchemaInfo? _schema;
-  TableInfo? _table;
+  SchemaDto? _schema;
+  TableDto? _table;
 
-  TablePage? _page;
+  TablePageDto? _page;
   int _offset = 0;
   static const _limit = 50;
   String? _orderBy;
@@ -39,7 +35,7 @@ class _InspectorScreenState extends State<InspectorScreen> {
   List<ColumnFilter> _filters = const [];
 
   _Mode _mode = _Mode.data;
-  SqlResult? _sqlResult;
+  SqlResultDto? _sqlResult;
   bool _sqlRunning = false;
 
   String? _error;
@@ -80,38 +76,37 @@ class _InspectorScreenState extends State<InspectorScreen> {
   }
 
   Future<void> _loadInstances() => _guard(() async {
-        final instances = await _client.listInstances();
-        _instances = instances;
-        if (instances.isNotEmpty &&
-            !instances.any((i) => i.id == _instanceId)) {
-          await _selectInstance(instances.first.id);
-        } else {
-          setState(() {});
-        }
-      });
+    final instances = await _client.listInstances();
+    _instances = instances;
+    if (instances.isNotEmpty && !instances.any((i) => i.id == _instanceId)) {
+      await _selectInstance(instances.first.id);
+    } else {
+      setState(() {});
+    }
+  });
 
   Future<void> _selectInstance(String id) => _guard(() async {
-        _instanceId = id;
-        _schema = await _client.getSchema(id);
-        _table = null;
-        _page = null;
-        _sqlResult = null;
-        final tables = _schema?.tables ?? const [];
-        if (tables.isNotEmpty) {
-          await _openTable(tables.first);
-        } else {
-          setState(() {});
-        }
-      });
+    _instanceId = id;
+    _schema = await _client.getSchema(id);
+    _table = null;
+    _page = null;
+    _sqlResult = null;
+    final tables = _schema?.tables ?? const [];
+    if (tables.isNotEmpty) {
+      await _openTable(tables.first);
+    } else {
+      setState(() {});
+    }
+  });
 
-  Future<void> _openTable(TableInfo table) => _guard(() async {
-        _table = table;
-        _offset = 0;
-        _orderBy = null;
-        _desc = false;
-        _filters = const [];
-        await _loadPage();
-      });
+  Future<void> _openTable(TableDto table) => _guard(() async {
+    _table = table;
+    _offset = 0;
+    _orderBy = null;
+    _desc = false;
+    _filters = const [];
+    await _loadPage();
+  });
 
   Future<void> _loadPage() async {
     final id = _instanceId;
@@ -119,7 +114,7 @@ class _InspectorScreenState extends State<InspectorScreen> {
     if (id == null || table == null) return;
     _page = await _client.getTableData(
       id,
-      table.name,
+      table: table.name,
       limit: _limit,
       offset: _offset,
       orderBy: _orderBy,
@@ -130,10 +125,10 @@ class _InspectorScreenState extends State<InspectorScreen> {
   }
 
   void _applyFilters(List<ColumnFilter> filters) => _guard(() async {
-        _filters = filters;
-        _offset = 0;
-        await _loadPage();
-      });
+    _filters = filters;
+    _offset = 0;
+    await _loadPage();
+  });
 
   Future<void> _editRow(int index) async {
     final table = _table;
@@ -157,27 +152,31 @@ class _InspectorScreenState extends State<InspectorScreen> {
     final id = _instanceId;
     if (id == null) return;
     await _guard(() async {
-      await _client.updateRow(id, table.name,
-          key: edit.key, changes: edit.changes);
+      await _client.updateRow(
+        id,
+        table: table.name,
+        key: edit.key,
+        changes: edit.changes,
+      );
       await _loadPage();
     });
   }
 
   void _sortBy(String column) => _guard(() async {
-        if (_orderBy == column) {
-          _desc = !_desc;
-        } else {
-          _orderBy = column;
-          _desc = false;
-        }
-        _offset = 0;
-        await _loadPage();
-      });
+    if (_orderBy == column) {
+      _desc = !_desc;
+    } else {
+      _orderBy = column;
+      _desc = false;
+    }
+    _offset = 0;
+    await _loadPage();
+  });
 
   void _page$(int delta) => _guard(() async {
-        _offset = (_offset + delta).clamp(0, 1 << 30);
-        await _loadPage();
-      });
+    _offset = (_offset + delta).clamp(0, 1 << 30);
+    await _loadPage();
+  });
 
   Future<void> _runSql() async {
     final id = _instanceId;
@@ -209,16 +208,17 @@ class _InspectorScreenState extends State<InspectorScreen> {
         const Divider(height: 1),
         Expanded(
           child: _instances.isEmpty
-              ? _empty('No registered basalt connections.\n'
-                  'Call BasaltDevTools.register(conn) in your app.')
+              ? _empty(
+                  'No registered basalt connections.\n'
+                  'Call BasaltDevTools.register(conn) in your app.',
+                )
               : Row(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     SizedBox(width: 220, child: _tableList()),
                     const VerticalDivider(width: 1),
                     Expanded(
-                      child:
-                          _mode == _Mode.data ? _dataView() : _sqlConsole(),
+                      child: _mode == _Mode.data ? _dataView() : _sqlConsole(),
                     ),
                   ],
                 ),
@@ -240,10 +240,7 @@ class _InspectorScreenState extends State<InspectorScreen> {
               underline: const SizedBox.shrink(),
               items: [
                 for (final i in _instances)
-                  DropdownMenuItem(
-                    value: i.id,
-                    child: Text('${i.name}  ·  ${i.backend}'),
-                  ),
+                  DropdownMenuItem(value: i.id, child: Text(i.name)),
               ],
               onChanged: (id) {
                 if (id != null) _selectInstance(id);
@@ -304,11 +301,7 @@ class _InspectorScreenState extends State<InspectorScreen> {
     final shownTo = page.offset + page.rows.length;
     return Column(
       children: [
-        FilterBar(
-          table: table,
-          filters: _filters,
-          onChanged: _applyFilters,
-        ),
+        FilterBar(table: table, filters: _filters, onChanged: _applyFilters),
         const Divider(height: 1),
         Expanded(
           child: DataGrid(
@@ -399,9 +392,11 @@ class _InspectorScreenState extends State<InspectorScreen> {
       case 'error':
         return _errorBanner(result.error ?? 'Unknown error');
       case 'write':
-        return _empty(result.affected == null
-            ? 'Statement executed.'
-            : '${result.affected} row(s) affected.');
+        return _empty(
+          result.affected == null
+              ? 'Statement executed.'
+              : '${result.affected} row(s) affected.',
+        );
       default:
         return Column(
           children: [
@@ -413,7 +408,10 @@ class _InspectorScreenState extends State<InspectorScreen> {
                 child: const Text('Results truncated to 1000 rows'),
               ),
             Expanded(
-              child: DataGrid(columns: result.columns, rows: result.rows),
+              child: DataGrid(
+                columns: result.columns ?? const [],
+                rows: result.rows ?? const [],
+              ),
             ),
           ],
         );
@@ -421,20 +419,19 @@ class _InspectorScreenState extends State<InspectorScreen> {
   }
 
   Widget _errorBanner(String message) => Container(
-        width: double.infinity,
-        color: Theme.of(context).colorScheme.errorContainer,
-        padding: const EdgeInsets.all(10),
-        child: Text(
-          message,
-          style: TextStyle(
-              color: Theme.of(context).colorScheme.onErrorContainer),
-        ),
-      );
+    width: double.infinity,
+    color: Theme.of(context).colorScheme.errorContainer,
+    padding: const EdgeInsets.all(10),
+    child: Text(
+      message,
+      style: TextStyle(color: Theme.of(context).colorScheme.onErrorContainer),
+    ),
+  );
 
   Widget _empty(String message) => Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Text(message, textAlign: TextAlign.center),
-        ),
-      );
+    child: Padding(
+      padding: const EdgeInsets.all(24),
+      child: Text(message, textAlign: TextAlign.center),
+    ),
+  );
 }

@@ -1,13 +1,12 @@
+import 'package:basalt/devtools_client.dart';
 import 'package:flutter/material.dart';
 
-import 'models/column_filter.dart';
-import 'models/table_info.dart';
 import 'value_coerce.dart';
 
 /// Dialog that builds a single [ColumnFilter] for a table. Pops the built filter
 /// on "Add", or null on cancel.
 class AddFilterDialog extends StatefulWidget {
-  final TableInfo table;
+  final TableDto table;
   const AddFilterDialog(this.table, {super.key});
 
   @override
@@ -74,9 +73,7 @@ class _AddFilterDialogState extends State<AddFilterDialog> {
 
   void _submit() {
     final value = opNeedsValue(_op)
-        ? (_op == 'like'
-            ? _value.text
-            : coerceValue(_columnType, _value.text))
+        ? (_op == 'like' ? _value.text : coerceValue(_columnType, _value.text))
         : null;
     Navigator.pop(context, ColumnFilter(_column, _op, value));
   }

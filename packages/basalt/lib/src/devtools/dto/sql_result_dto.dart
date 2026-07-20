@@ -1,3 +1,5 @@
+import 'json_read.dart';
+
 /// Result of `InspectorService.runSql`: a `read` (columns+rows), a `write`
 /// (executed, optional affected count), or an `error`.
 final class SqlResultDto {
@@ -19,6 +21,19 @@ final class SqlResultDto {
         rows = null,
         affected = null,
         truncated = false;
+
+  factory SqlResultDto.fromJson(Map<String, Object?> json) =>
+      switch (json['kind']) {
+        'read' => SqlResultDto.read(
+            columns: asStringList(json['columns']),
+            rows: asRows(json['rows']),
+            truncated: json['truncated'] == true,
+          ),
+        'write' => SqlResultDto.write(affected: json['affected'] as int?),
+        'error' => SqlResultDto.error(json['error'] as String),
+        _ => throw ArgumentError.value(json['kind'], 'json', 'Invalid kind'),
+      };
+
   final List<String>? columns;
   final List<List<Object?>>? rows;
   final int? affected;

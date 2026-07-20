@@ -10,6 +10,19 @@ final class ColumnDto {
     required this.isPrimaryKey,
     this.foreignKey,
   });
+
+  factory ColumnDto.fromJson(Map<String, Object?> json) => ColumnDto(
+        name: json['name'] as String,
+        type: json['type'] as String,
+        rawType: json['rawType'] as String,
+        isNullable: json['isNullable'] as bool,
+        isPrimaryKey: json['isPrimaryKey'] as bool,
+        foreignKey: switch (json['foreignKey']) {
+          final fk? => ForeignKeyDto.fromJson(fk as Map<String, Object?>),
+          _ => null,
+        },
+      );
+
   final String name;
 
   /// Canonical [ColumnType] name (e.g. `integer`, `text`, `dateTime`).
