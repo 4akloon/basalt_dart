@@ -1,7 +1,7 @@
 name: basalt_devtools_extension
 description: DevTools extension UI for the basalt_dart inspector.
 publish_to: 'none'
-version: 1.0.0+1
+version: 1.0.0+2
 
 environment:
   sdk: ^3.12.2
@@ -11,6 +11,10 @@ dependencies:
     sdk: flutter
   devtools_extensions: ^0.5.0
   devtools_app_shared: ^0.5.0
+  # Shared inspector client + DTOs (see package:basalt/devtools_client.dart).
+  # Resolved from the monorepo; the extension is not a Dart-workspace member.
+  basalt:
+    path: ../basalt
 
 dev_dependencies:
   flutter_test:

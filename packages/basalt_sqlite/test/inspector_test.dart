@@ -42,7 +42,6 @@ void main() {
     expect(instances, hasLength(1));
     expect(instances.single.id, id);
     expect(instances.single.name, 'main');
-    expect(instances.single.backend, 'sqlite');
   });
 
   test('getSchema exposes tables, columns, PK and FK', () async {

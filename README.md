@@ -92,6 +92,7 @@ This repo is a Dart **pub workspace** (monorepo). Dart SDK: `>=3.5.0 <4.0.0`.
 | [`basalt_postgres`](packages/basalt_postgres) | **Postgres** backend — `PostgresConnection` + `PostgresDialect` (on [`postgres`](https://pub.dev/packages/postgres)). |
 | [`basalt_cli`](packages/basalt_cli) | The **`basalt`** executable: migrations + `generate-schema`. |
 | [`basalt_codegen`](packages/basalt_codegen) | **`build_runner`** derives for the annotations. |
+| [`basalt_mcp`](packages/basalt_mcp) | **`basalt_mcp`** MCP server: live DB inspection in a running debug app via VM service. |
 | [`basalt_devtools_extension`](packages/basalt_devtools_extension) | Flutter web UI for the DevTools "basalt" tab. |
 | [`example/`](example) | End-to-end demo (migrations → schema → models → queries). |
 
@@ -333,6 +334,10 @@ Opening the tab needs a Dart Tooling Daemon, so use the launcher:
 `dart run example/tool/inspect.dart`, then enable **basalt** in DevTools' Extensions menu. See
 [`packages/basalt/README.md`](packages/basalt/README.md#devtools-inspector).
 
+For AI agents (Cursor, Claude Code, etc.), use **[`basalt_mcp`](packages/basalt_mcp)** — an MCP
+server that connects to the same `ext.basalt.*` extensions over the app's VM service URI. See
+[`packages/basalt_mcp/doc/getting_started.md`](packages/basalt_mcp/doc/getting_started.md).
+
 ## basalt alignment
 
 basalt_dart deliberately mirrors basalt concepts (schema-first, migration compatibility, derive parity)
@@ -344,6 +349,7 @@ Per-package markdown guides (source for `dart doc`):
 
 - [Getting started](packages/basalt_cli/doc/getting_started.md) ·
   [Migrations](packages/basalt_cli/doc/migrations.md)
+- [Basalt MCP](packages/basalt_mcp/doc/getting_started.md) — AI agent DB inspection
 - [Query builder](packages/basalt/doc/queries.md) ·
   [Expressions](packages/basalt/doc/expressions.md) ·
   [Writes](packages/basalt/doc/writes.md)

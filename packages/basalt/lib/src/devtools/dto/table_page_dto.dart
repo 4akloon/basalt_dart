@@ -1,3 +1,5 @@
+import 'json_read.dart';
+
 /// One page of table rows.
 final class TablePageDto {
   const TablePageDto({
@@ -7,6 +9,15 @@ final class TablePageDto {
     required this.limit,
     required this.offset,
   });
+
+  factory TablePageDto.fromJson(Map<String, Object?> json) => TablePageDto(
+        columns: asStringList(json['columns']),
+        rows: asRows(json['rows']),
+        total: json['total'] as int,
+        limit: json['limit'] as int,
+        offset: json['offset'] as int,
+      );
+
   final List<String> columns;
   final List<List<Object?>> rows;
   final int total;

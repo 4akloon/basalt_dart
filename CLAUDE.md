@@ -19,10 +19,11 @@ trivially unit-testable and makes new backends drop-in.
 
 | Path | Package | Role |
 |---|---|---|
-| `packages/basalt` | `basalt` | Dialect-agnostic core: types, schema, expressions, query/write builders, serializer, `Connection`/`SqlDialect` interfaces, annotations. No driver dep. Extra entrypoints: `package:basalt/tooling.dart` (**CLI adapter seam** — `BasaltAdapter` + `SchemaTypeOverrides`/`TypeOverride`; `lib/src/tooling/`) and `package:basalt/devtools.dart` (**DevTools inspector runtime**: registry + `InspectorService` over `ext.basalt.*`; `lib/src/devtools/`); also ships the DevTools extension (`extension/devtools/`). |
+| `packages/basalt` | `basalt` | Dialect-agnostic core: types, schema, expressions, query/write builders, serializer, `Connection`/`SqlDialect` interfaces, annotations. No driver dep. Extra entrypoints: `package:basalt/tooling.dart` (**CLI adapter seam** — `BasaltAdapter` + `SchemaTypeOverrides`/`TypeOverride`; `lib/src/tooling/`) and the **DevTools inspector**, split into a host + client that share one DTO/protocol layer (`lib/src/devtools/`, organized as `protocol/` · `dto/` · `host/` · `client/`): `package:basalt/devtools.dart` is the **host** (`BasaltDevTools` registry + `InspectorService`, decomposed into `SchemaReader`/`TableReader`/`RowUpdater`/`SqlRunner`, registering `ext.basalt.*`), and `package:basalt/devtools_client.dart` is the transport-agnostic **client** (`InspectorClient` + `InspectorTransport` seam + shared DTOs) reused by both the MCP server and the DevTools extension; also ships the DevTools extension (`extension/devtools/`). |
 | `packages/basalt_sqlite` | `basalt_sqlite` | SQLite backend: `SqliteConnection` + `SqliteDialect` (on `package:sqlite3`) + `SqliteAdapter` (CLI adapter, `lib/adapter.dart`). |
 | `packages/basalt_postgres` | `basalt_postgres` | Postgres backend: `PostgresConnection` + `PostgresDialect` (on `package:postgres`), `information_schema` introspection, `PostgresAdapter`/`PostgresEndpoint` (CLI adapter, `lib/adapter.dart`), native `PostgresJsonbSqlType`. |
 | `packages/basalt_cli` | `basalt_cli` | `basalt` executable: migrations + `generate-schema`. **Backend-agnostic** — no dep on any backend package; `bin/basalt.dart` bootstraps a generated entrypoint (`.dart_tool/basalt/`) that imports the `backend:` package from `basalt.yaml` (build_runner model). |
+| `packages/basalt_mcp` | `basalt_mcp` | MCP server (`basalt_mcp` executable): connect to a running debug app's VM service and inspect live `BasaltDevTools.register`ed connections via `ext.basalt.*` tools. Depends on `basalt` for the shared client — supplies a `VmServiceTransport` (`package:vm_service`) to `package:basalt/devtools_client.dart`'s `InspectorClient` and exposes one `BasaltTool` class per MCP tool. No Flutter/backend runtime deps. |
 | `packages/basalt_codegen` | `basalt_codegen` | `build_runner`/`source_gen` derives for the annotations. |
 | `packages/basalt_devtools_extension` | `basalt_devtools_extension` | Flutter web UI for the DevTools "basalt" tab. Under `packages/` but **not** a Dart-workspace member (Flutter app; resolve with `flutter pub get`); compiled into `basalt/extension/devtools/build/`. |
 | `example/` | `basalt_example` | End-to-end **Flutter** shop app (products/categories/customers/orders/reviews) with clean architecture + cubit — showcases complex relations, transactions, aggregates and raw-SQL analytics. Like the DevTools extension it is **not** a Dart-workspace member (Flutter app; resolve with `flutter pub get`; uses `dependency_overrides` to point the basalt packages at their local paths). |
@@ -31,7 +32,7 @@ Dart SDK constraint: `>=3.5.0 <4.0.0`.
 
 ## Commands
 
-- **Analyze:** `dart analyze packages/basalt packages/basalt_sqlite packages/basalt_cli packages/basalt_codegen`
+- **Analyze:** `dart analyze packages/basalt packages/basalt_sqlite packages/basalt_cli packages/basalt_codegen packages/basalt_mcp`
   (the `example/` Flutter app resolves separately — analyze it with `cd example && flutter analyze`).
 - **Test a package:** `cd packages/<pkg> && dart test`
 - **CLI** (run from a directory containing `basalt.yaml`, e.g. `example/`): `dart run basalt_cli:basalt <command>`
@@ -118,6 +119,7 @@ per category) + `///` doc comments in `lib/`.
 |---|---|
 | `basalt` | getting_started, schema, types, expressions, queries, writes, serialization, connection, migrations, annotations, tooling |
 | `basalt_cli` | getting_started, migrations |
+| `basalt_mcp` | getting_started |
 | `basalt_codegen` | getting_started |
 | `basalt_sqlite` | getting_started, type_mapping |
 | `basalt_postgres` | getting_started |
@@ -145,6 +147,10 @@ Generate HTML locally: `cd packages/<pkg> && dart doc .` (output in `doc/api/`, 
 
 - Serializer (SQL/params, scope validation, joins): `packages/basalt/test/serializer_test.dart`
 - Tooling (preset layering, `NullableSqlType`): `packages/basalt/test/{tooling,types}/*`
+- DevTools inspector: DTO wire round-trips + `InspectorClient` arg-encoding/decoding (fake transport):
+  `packages/basalt/test/devtools/*`; host `InspectorService` against real SQLite (dialect-driven paging,
+  filters, update, run-sql): `packages/basalt_sqlite/test/inspector_test.dart`
+- MCP tools + transport guard (fake `InspectorTransport`): `packages/basalt_mcp/test/basalt_mcp_test.dart`
 - SQLite round-trips, joins, transactions, nullable: `packages/basalt_sqlite/test/integration_test.dart`;
   adapter options/reset/preset: `packages/basalt_sqlite/test/sqlite_adapter_test.dart`
 - Postgres endpoint parsing + jsonb codec (no server needed): `packages/basalt_postgres/test/*`

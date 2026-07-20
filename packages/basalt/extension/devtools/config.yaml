@@ -3,6 +3,6 @@
 # extension. So the tab reads "basalt" (a capitalized "Basalt" is not allowed).
 name: basalt
 issueTracker: https://github.com/4akloon/basalt_dart/issues
-version: 0.0.1
+version: 0.0.2
 materialIconCodePoint: "0xe63a"
 requiresConnection: true

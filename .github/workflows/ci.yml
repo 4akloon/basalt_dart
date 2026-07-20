@@ -59,6 +59,7 @@ jobs:
           packages/basalt_postgres
           packages/basalt_cli
           packages/basalt_codegen
+          packages/basalt_mcp
 
       - name: Analyze
         run: >-
@@ -68,6 +69,7 @@ jobs:
           packages/basalt_postgres
           packages/basalt_cli
           packages/basalt_codegen
+          packages/basalt_mcp
 
       - name: Test basalt
         run: dart test
@@ -88,6 +90,10 @@ jobs:
       - name: Test basalt_codegen
         run: dart test
         working-directory: packages/basalt_codegen
+
+      - name: Test basalt_mcp
+        run: dart test
+        working-directory: packages/basalt_mcp
 
   publish-dry-run:
     name: Publish dry-run
@@ -135,3 +141,7 @@ jobs:
       - name: Dry-run basalt_codegen
         run: dart pub publish --dry-run
         working-directory: packages/basalt_codegen
+
+      - name: Dry-run basalt_mcp
+        run: dart pub publish --dry-run
+        working-directory: packages/basalt_mcp

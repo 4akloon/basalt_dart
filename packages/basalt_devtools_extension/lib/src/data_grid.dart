@@ -54,9 +54,10 @@ class DataGrid extends StatelessWidget {
                           padding: EdgeInsets.only(right: 4),
                           child: Icon(Icons.vpn_key, size: 12),
                         ),
-                      Text(name,
-                          style:
-                              const TextStyle(fontWeight: FontWeight.bold)),
+                      Text(
+                        name,
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
                       if (sortColumn == name)
                         Icon(
                           sortDescending
@@ -71,12 +72,14 @@ class DataGrid extends StatelessWidget {
             rows: [
               for (var r = 0; r < rows.length; r++)
                 DataRow(
-                  onSelectChanged:
-                      onRowTap == null ? null : (_) => onRowTap!(r),
+                  onSelectChanged: onRowTap == null
+                      ? null
+                      : (_) => onRowTap!(r),
                   cells: [
                     for (var i = 0; i < columns.length; i++)
                       DataCell(
-                          _cell(theme, i < rows[r].length ? rows[r][i] : null)),
+                        _cell(theme, i < rows[r].length ? rows[r][i] : null),
+                      ),
                   ],
                 ),
             ],
@@ -88,10 +91,13 @@ class DataGrid extends StatelessWidget {
 
   Widget _cell(ThemeData theme, Object? value) {
     if (value == null) {
-      return Text('NULL',
-          style: TextStyle(
-              fontStyle: FontStyle.italic,
-              color: theme.disabledColor));
+      return Text(
+        'NULL',
+        style: TextStyle(
+          fontStyle: FontStyle.italic,
+          color: theme.disabledColor,
+        ),
+      );
     }
     return Text(
       '$value',

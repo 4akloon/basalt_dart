@@ -21,6 +21,7 @@ on:
       - 'basalt_postgres-v*'
       - 'basalt_cli-v*'
       - 'basalt_codegen-v*'
+      - 'basalt_mcp-v*'
 
 jobs:
   publish:
