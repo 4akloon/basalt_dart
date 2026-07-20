@@ -35,28 +35,28 @@ void printUsage(ArgParser argParser) {
     ..writeln(argParser.usage);
 }
 
-Future<int> main(List<String> arguments) async {
+Future<void> main(List<String> arguments) async {
   final argParser = buildParser();
   try {
     final results = argParser.parse(arguments);
 
     if (results.flag('help')) {
       printUsage(argParser);
-      return 0;
+      return;
     }
 
     final logLevel = (results.option('log-level') ?? 'INFO').toUpperCase();
     final logFile = results.option('log-file');
 
-    return await runMcpServer(logLevel: logLevel, logFile: logFile);
+    exitCode = await runMcpServer(logLevel: logLevel, logFile: logFile);
   } on FormatException catch (e) {
     stderr
       ..writeln(e.message)
       ..writeln();
     printUsage(argParser);
-    return 1;
+    exitCode = 1;
   } on Exception catch (e) {
     stderr.writeln(e.toString());
-    return 1;
+    exitCode = 1;
   }
 }
