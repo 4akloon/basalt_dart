@@ -89,20 +89,31 @@ final class RoleSqlType extends SqlType<Role> {
   Role decode(Object? encoded) => Role.values.byName(encoded as String);
 }
 
-abstract final class Accounts {
-  static const id = PrimaryKey<int, Accounts>('accounts', 'id', IntSqlType());
-  static const role =
-      ValueColumn<Role, Accounts>('accounts', 'role', RoleSqlType());
-  static const table = TableRef<Accounts>('accounts', [id, role]);
+final class Accounts extends TableRef<Accounts> {
+  const Accounts._() : super('accounts');
+
+  static const table = Accounts._();
+
+  static const id = PrimaryKey<int, Accounts>(table, 'id', IntSqlType());
+  static const role = ValueColumn<Role, Accounts>(table, 'role', RoleSqlType());
+
+  @override
+  List<TableColumn<Object?, Object?>> get columns => const [id, role];
 }
 
-abstract final class Events {
-  static const id = PrimaryKey<int, Events>('events', 'id', IntSqlType());
+final class Events extends TableRef<Events> {
+  const Events._() : super('events');
+
+  static const table = Events._();
+
+  static const id = PrimaryKey<int, Events>(table, 'id', IntSqlType());
   static const done =
-      ValueColumn<bool, Events>('events', 'done', BooleanSqlType());
+      ValueColumn<bool, Events>(table, 'done', BooleanSqlType());
   static const at =
-      ValueColumn<DateTime, Events>('events', 'at', DateTimeSqlType());
-  static const table = TableRef<Events>('events', [id, done, at]);
+      ValueColumn<DateTime, Events>(table, 'at', DateTimeSqlType());
+
+  @override
+  List<TableColumn<Object?, Object?>> get columns => const [id, done, at];
 }
 
 void main() {

@@ -3,12 +3,18 @@ import 'package:basalt_sqlite/basalt_sqlite.dart';
 
 /// Hand-written typed schema. In Stage 3 the CLI's `generate-schema` generates a
 /// file exactly like this from the migrated database.
-abstract final class Users {
-  static const _t = 'users';
-  static const id = PrimaryKey<int, Users>(_t, 'id', IntSqlType());
-  static const name = ValueColumn<String, Users>(_t, 'name', StringSqlType());
-  static const age = ValueColumn<int, Users>(_t, 'age', IntSqlType());
-  static const table = TableRef<Users>(_t, [id, name, age]);
+final class Users extends TableRef<Users> {
+  const Users._() : super('users');
+
+  static const table = Users._();
+
+  static const id = PrimaryKey<int, Users>(table, 'id', IntSqlType());
+  static const name =
+      ValueColumn<String, Users>(table, 'name', StringSqlType());
+  static const age = ValueColumn<int, Users>(table, 'age', IntSqlType());
+
+  @override
+  List<TableColumn<Object?, Object?>> get columns => const [id, name, age];
 }
 
 Future<void> main() async {

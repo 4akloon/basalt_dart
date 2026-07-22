@@ -98,9 +98,9 @@ Postgres-native codecs, opted into per project with `native_types: true` in the 
 ```dart
 // hand-written or generated with `native_types: true`
 static const tags =
-    ValueColumn<List<String>, Posts>('posts', 'tags', PostgresArraySqlType<String>());
+    ValueColumn<List<String>, Posts>(table, 'tags', PostgresArraySqlType<String>());
 static const amount =
-    ValueColumn<String, Posts>('posts', 'amount', PostgresNumericSqlType());
+    ValueColumn<String, Posts>(table, 'amount', PostgresNumericSqlType());
 ```
 
 A schema using these codecs imports `package:basalt_postgres` and is no longer backend-portable.

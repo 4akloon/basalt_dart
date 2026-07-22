@@ -5,8 +5,9 @@ Guidance for Claude Code (and humans) working in this repository.
 ## What this is
 
 **basalt_dart** is a type-safe ORM for Dart.
-It is a Dart **pub workspace** (monorepo) with a dialect-agnostic core and pluggable backends. Current
-backend: SQLite. Status: early/experimental, unpublished (all packages `0.0.1`, path/workspace deps).
+It is a Dart **pub workspace** (monorepo) with a dialect-agnostic core and pluggable backends (SQLite,
+Postgres). Status: early but **published on pub.dev** (0.1.0; per-package `<pkg>-vX.Y.Z` tags drive the
+publish workflow, inter-package constraints are wide ranges like `>=0.1.0 <0.2.0`).
 
 ## Core principle
 
@@ -45,8 +46,14 @@ Dart SDK constraint: `>=3.5.0 <4.0.0`.
 - **async-first `Connection`** — every method returns `Future`; `FutureOr` only on the `transaction`
   callback. SQLite runs synchronously and returns completed futures; this is what lets a future async backend
   (Postgres) implement the same interface unchanged. (`packages/basalt/lib/src/connection.dart`)
-- **Columns are `static const`** on an `abstract final class` table marker — the same `const TableColumn`
-  object is used by the query builder AND inside annotations (annotation args must be const).
+- **Table markers are `final class X extends TableRef<X>`** with a private const ctor;
+  `static const table = X._()` is the singleton instance, and columns are `static const` holding a typed
+  `owner` reference to it (`PrimaryKey<int, X>(table, 'id', ...)`). The marker overrides `columns` as a
+  **getter** — that lazy evaluation is what keeps `table` ⇄ columns free of const-initializer cycles.
+  Columns stay `static const` because the same object is used by the query builder AND inside annotations
+  (annotation args must be const). `QuerySource` exposes `tableName` (not `name`/`table`) — a static named
+  like an inherited instance member is a compile error, so those names (plus `alias`/`columns`/`col`/
+  `aliased`) are reserved column-field names; `generate-schema` guards them with a clear `StateError`.
 - **The core column type is `TableColumn<T, Tbl>`** (sealed: `ValueColumn` / `PrimaryKey` / `Ref`). The name
   **`Column` is the field annotation**, not the column type — don't confuse them
   (`schema/table.dart` vs `annotations/column.dart`).

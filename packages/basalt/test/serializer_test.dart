@@ -574,7 +574,7 @@ void main() {
 
     test('double-column aggregates use REAL', () {
       const rating =
-          ValueColumn<double, Posts>('posts', 'rating', DoubleSqlType());
+          ValueColumn<double, Posts>(Posts.table, 'rating', DoubleSqlType());
       final (sql, _) = compileSelect(
         from(Posts.table).select([rating.avg(), rating.max()]).map(_ignore),
       );

@@ -8,35 +8,55 @@ import 'package:basalt_postgres/basalt_postgres.dart';
 import 'package:test/test.dart';
 
 // int/text columns only: their codecs are identical across SQLite and Postgres.
-abstract final class Widgets {
-  static const id = PrimaryKey<int, Widgets>('widgets', 'id', IntSqlType());
+final class Widgets extends TableRef<Widgets> {
+  const Widgets._() : super('widgets');
+
+  static const table = Widgets._();
+
+  static const id = PrimaryKey<int, Widgets>(table, 'id', IntSqlType());
   static const name =
-      ValueColumn<String, Widgets>('widgets', 'name', StringSqlType());
-  static const qty = ValueColumn<int, Widgets>('widgets', 'qty', IntSqlType());
-  static const table = TableRef<Widgets>('widgets', [id, name, qty]);
+      ValueColumn<String, Widgets>(table, 'name', StringSqlType());
+  static const qty = ValueColumn<int, Widgets>(table, 'qty', IntSqlType());
+
+  @override
+  List<TableColumn<Object?, Object?>> get columns => const [id, name, qty];
 }
 
-abstract final class Parts {
-  static const id = PrimaryKey<int, Parts>('parts', 'id', IntSqlType());
+final class Parts extends TableRef<Parts> {
+  const Parts._() : super('parts');
+
+  static const table = Parts._();
+
+  static const id = PrimaryKey<int, Parts>(table, 'id', IntSqlType());
   static const widgetId = Ref<int, Parts, Widgets>(
-    'parts',
+    table,
     'widget_id',
     IntSqlType(),
     references: Widgets.id,
   );
   static const label =
-      ValueColumn<String, Parts>('parts', 'label', StringSqlType());
-  static const table = TableRef<Parts>('parts', [id, widgetId, label]);
+      ValueColumn<String, Parts>(table, 'label', StringSqlType());
+
+  @override
+  List<TableColumn<Object?, Object?>> get columns =>
+      const [id, widgetId, label];
 }
 
 // Native Postgres bool + timestamp — exercises the cross-backend codecs.
-abstract final class Flags {
-  static const id = PrimaryKey<int, Flags>('flags', 'id', IntSqlType());
+final class Flags extends TableRef<Flags> {
+  const Flags._() : super('flags');
+
+  static const table = Flags._();
+
+  static const id = PrimaryKey<int, Flags>(table, 'id', IntSqlType());
   static const active =
-      ValueColumn<bool, Flags>('flags', 'active', BooleanSqlType());
+      ValueColumn<bool, Flags>(table, 'active', BooleanSqlType());
   static const createdAt =
-      ValueColumn<DateTime, Flags>('flags', 'created_at', DateTimeSqlType());
-  static const table = TableRef<Flags>('flags', [id, active, createdAt]);
+      ValueColumn<DateTime, Flags>(table, 'created_at', DateTimeSqlType());
+
+  @override
+  List<TableColumn<Object?, Object?>> get columns =>
+      const [id, active, createdAt];
 }
 
 void main() {

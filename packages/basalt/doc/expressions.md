@@ -31,7 +31,7 @@ from(Users.table).where((Users.age > 28) & Users.active.eq(1));
 ## Scoping
 
 Every `Expression<T, Tbl>` is scoped to a table type `Tbl`. A single-table
-query (`from(Users)`) is a `Query<Users>`, so only `Users` columns type-check
+query (`from(Users.table)`) is a `Query<Users>`, so only `Users` columns type-check
 in `.where(...)`. After a join the scope relaxes to `Query<Object?>`, and
 `QueryBuilder` validates at build time that every referenced table is present
 in the `FROM`/`JOIN` clauses — see **Serialization**.

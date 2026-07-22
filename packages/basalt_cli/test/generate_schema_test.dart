@@ -7,6 +7,21 @@ import 'package:basalt_sqlite/basalt_sqlite.dart';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 
+/// The exact multi-line declaration `SchemaGenerator` emits for one column.
+String columnDecl(
+  String field,
+  String constructor,
+  String column,
+  String sqlType, {
+  String? references,
+}) =>
+    '  static const $field = $constructor(\n'
+    '    table,\n'
+    "    '$column',\n"
+    '    $sqlType,\n'
+    '${references == null ? '' : '    references: $references,\n'}'
+    '  );';
+
 void main() {
   late SqliteConnection db;
 
@@ -46,29 +61,39 @@ void main() {
     final source = const SchemaGenerator().generate(await db.introspect());
 
     expect(source, contains("import 'package:basalt/basalt.dart';"));
-    expect(source, contains('abstract final class Users {'));
+    expect(source, contains('final class Users extends TableRef<Users> {'));
+    expect(source, contains("const Users._() : super('users');"));
+    expect(source, contains('static const table = Users._();'));
     expect(
       source,
       contains(
-        "static const id = PrimaryKey<int, Users>('users', 'id', IntSqlType());",
-      ),
+          columnDecl('id', 'PrimaryKey<int, Users>', 'id', 'IntSqlType()')),
+    );
+    expect(
+      source,
+      contains(columnDecl(
+        'bio',
+        'ValueColumn<String?, Users>',
+        'bio',
+        'NullableSqlType(StringSqlType())',
+      )),
+    );
+    expect(source, contains('final class Posts extends TableRef<Posts> {'));
+    expect(
+      source,
+      contains(columnDecl(
+        'authorId',
+        'Ref<int, Posts, Users>',
+        'author_id',
+        'IntSqlType()',
+        references: 'Users.id',
+      )),
     );
     expect(
       source,
       contains(
-        "static const bio = ValueColumn<String?, Users>('users', 'bio', NullableSqlType(StringSqlType()));",
-      ),
-    );
-    expect(source, contains('abstract final class Posts {'));
-    expect(
-      source,
-      contains('static const authorId = Ref<int, Posts, Users>('
-          "'posts', 'author_id', IntSqlType(), references: Users.id);"),
-    );
-    expect(
-      source,
-      contains(
-        "static const table = TableRef<Posts>('posts', [id, authorId, title]);",
+        'List<TableColumn<Object?, Object?>> get columns => '
+        'const [id, authorId, title];',
       ),
     );
 
@@ -108,7 +133,7 @@ schema_output: $schemaPath
     expect(schema.existsSync(), isTrue);
     expect(
       schema.readAsStringSync(),
-      contains('abstract final class Widgets {'),
+      contains('final class Widgets extends TableRef<Widgets> {'),
     );
     expect(
       schema.readAsStringSync(),
@@ -135,10 +160,12 @@ schema_output: $schemaPath
       // bio is nullable, so the override is wrapped automatically.
       expect(
         source,
-        contains(
-          "static const bio = ValueColumn<Html?, Users>('users', 'bio', "
-          'NullableSqlType(HtmlSqlType()));',
-        ),
+        contains(columnDecl(
+          'bio',
+          'ValueColumn<Html?, Users>',
+          'bio',
+          'NullableSqlType(HtmlSqlType())',
+        )),
       );
       expect(
         source,
@@ -160,7 +187,8 @@ schema_output: $schemaPath
       expect(
         source,
         contains(
-          "static const name = ValueColumn<Slug, Users>('users', 'name', SlugSqlType());",
+          columnDecl(
+              'name', 'ValueColumn<Slug, Users>', 'name', 'SlugSqlType()'),
         ),
       );
       // Only the basalt import — the override supplied none.
@@ -180,20 +208,25 @@ schema_output: $schemaPath
       expect(
         source,
         contains(
-          "static const age = ValueColumn<Count, Users>('users', 'age', CountSqlType());",
+          columnDecl(
+              'age', 'ValueColumn<Count, Users>', 'age', 'CountSqlType()'),
         ),
       );
       expect(
         source,
         contains(
-          "static const id = PrimaryKey<Count, Users>('users', 'id', CountSqlType());",
+          columnDecl('id', 'PrimaryKey<Count, Users>', 'id', 'CountSqlType()'),
         ),
       );
       expect(
         source,
-        contains(
-          "static const authorId = Ref<Count, Posts, Users>('posts', 'author_id', CountSqlType(), references: Users.id);",
-        ),
+        contains(columnDecl(
+          'authorId',
+          'Ref<Count, Posts, Users>',
+          'author_id',
+          'CountSqlType()',
+          references: 'Users.id',
+        )),
       );
     });
 
@@ -218,16 +251,22 @@ schema_output: $schemaPath
 
       expect(
         source,
-        contains(
-          "static const name = ValueColumn<ColName, Users>('users', 'name', ColNameSqlType());",
-        ),
+        contains(columnDecl(
+          'name',
+          'ValueColumn<ColName, Users>',
+          'name',
+          'ColNameSqlType()',
+        )),
       );
       // title (text, no column override) falls through to the native override.
       expect(
         source,
-        contains(
-          "static const title = ValueColumn<NatText, Posts>('posts', 'title', NatTextSqlType());",
-        ),
+        contains(columnDecl(
+          'title',
+          'ValueColumn<NatText, Posts>',
+          'title',
+          'NatTextSqlType()',
+        )),
       );
     });
 
@@ -244,15 +283,18 @@ schema_output: $schemaPath
       expect(
         source,
         contains(
-          "static const name = ValueColumn<Slug, Users>('users', 'name', SlugSqlType());",
+          columnDecl(
+              'name', 'ValueColumn<Slug, Users>', 'name', 'SlugSqlType()'),
         ),
       );
       expect(
         source,
-        contains(
-          "static const bio = ValueColumn<Slug?, Users>('users', 'bio', "
-          'NullableSqlType(SlugSqlType()));',
-        ),
+        contains(columnDecl(
+          'bio',
+          'ValueColumn<Slug?, Users>',
+          'bio',
+          'NullableSqlType(SlugSqlType())',
+        )),
       );
     });
 
@@ -346,19 +388,31 @@ schema_output: $schemaPath
 ''');
       expect(
         source,
-        contains("ValueColumn<bool, Events>('events', 'active', "
-            'BooleanSqlType());'),
+        contains(columnDecl(
+          'active',
+          'ValueColumn<bool, Events>',
+          'active',
+          'BooleanSqlType()',
+        )),
       );
       expect(
         source,
-        contains("ValueColumn<DateTime, Events>('events', 'starts_at', "
-            'DateTimeSqlType());'),
+        contains(columnDecl(
+          'startsAt',
+          'ValueColumn<DateTime, Events>',
+          'starts_at',
+          'DateTimeSqlType()',
+        )),
       );
       // Nullable column gets the wrapped variant.
       expect(
         source,
-        contains("ValueColumn<DateTime?, Events>('events', 'ends_at', "
-            'NullableSqlType(DateTimeSqlType()));'),
+        contains(columnDecl(
+          'endsAt',
+          'ValueColumn<DateTime?, Events>',
+          'ends_at',
+          'NullableSqlType(DateTimeSqlType())',
+        )),
       );
     });
 
@@ -372,9 +426,9 @@ types:
   native:
     boolean: { dart_type: "MyFlag", sql_type: "MyFlagSqlType()" }
 ''');
-      expect(source, contains("'active', MyFlagSqlType());"));
+      expect(source, contains("'active',\n    MyFlagSqlType(),"));
       // The preset still applies where the user didn't override.
-      expect(source, contains("'starts_at', DateTimeSqlType());"));
+      expect(source, contains("'starts_at',\n    DateTimeSqlType(),"));
     });
 
     test('native_types: true layers the native tier over the portable one',
@@ -395,7 +449,7 @@ schema_output: $schemaPath
           .run(['--config', configPath, 'generate-schema']);
       expect(code, 0);
       final withoutOptIn = File(schemaPath).readAsStringSync();
-      expect(withoutOptIn, contains("'starts_at', PortableSqlType());"));
+      expect(withoutOptIn, contains("'starts_at',\n    PortableSqlType(),"));
 
       File(configPath).writeAsStringSync('${baseConfig}native_types: true\n');
       final optedIn = await const CliRunner(_NativeTierAdapter())
@@ -403,7 +457,7 @@ schema_output: $schemaPath
           .run(['--config', configPath, 'generate-schema']);
       expect(optedIn, 0);
       final withOptIn = File(schemaPath).readAsStringSync();
-      expect(withOptIn, contains("'starts_at', NativeSqlType());"));
+      expect(withOptIn, contains("'starts_at',\n    NativeSqlType(),"));
     });
   });
 }

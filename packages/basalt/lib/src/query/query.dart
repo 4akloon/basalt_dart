@@ -151,7 +151,10 @@ final class Query<Scope> {
     return Query<Object?>(
       fromTable: fromTable,
       fromAlias: fromAlias,
-      joins: [...joins, Join(kind, other.table, onNode, alias: other.alias)],
+      joins: [
+        ...joins,
+        Join(kind, other.tableName, onNode, alias: other.alias),
+      ],
       projection: [...projection, ...other.columns],
       isDistinct: isDistinct,
       whereNode: whereNode,
@@ -199,7 +202,7 @@ final class Query<Scope> {
 /// Start a query from [source] (a table or an alias). Single-table scope keeps
 /// `where` strictly typed.
 Query<Tbl> from<Tbl>(QuerySource<Tbl> source) => Query<Tbl>(
-      fromTable: source.table,
+      fromTable: source.tableName,
       fromAlias: source.alias,
       projection: [...source.columns],
     );

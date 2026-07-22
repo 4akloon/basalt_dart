@@ -37,14 +37,25 @@ part 'table_ref.dart';
 /// (`@Column(Users.name)`) — annotation arguments must be constants. A column is
 /// also a [Selection], so it can be read straight out of a row.
 ///
+/// A column holds a typed reference to its [owner] source (the marker's
+/// `static const table` singleton, or a [TableAlias] for rebound columns); the
+/// shared `Tbl` makes handing a column to the wrong table a compile error.
+///
 /// {@category schema}
 sealed class TableColumn<T, Tbl> implements Selection<T> {
   const TableColumn();
 
-  String get table;
+  /// The typed source this column is bound to: its table marker, or the
+  /// [TableAlias] it was rebound to.
+  QuerySource<Tbl> get owner;
+
   String get name;
   @override
   SqlType<T> get type;
+
+  /// The effective SQL qualifier — the owner's alias if it has one, otherwise
+  /// its table name.
+  String get table => owner.alias ?? owner.tableName;
 
   ColumnNode get node => ColumnNode(table, name);
 

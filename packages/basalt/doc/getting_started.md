@@ -12,13 +12,20 @@ a query from **executing** it:
 ## A minimal query
 
 ```dart
-abstract final class Users extends TableRef<Users> {
-  static const id = PrimaryKey<int, Users>('id');
-  static const name = ValueColumn<String, Users>('name');
+final class Users extends TableRef<Users> {
+  const Users._() : super('users');
+
+  static const table = Users._();
+
+  static const id = PrimaryKey<int, Users>(table, 'id', IntSqlType());
+  static const name = ValueColumn<String, Users>(table, 'name', StringSqlType());
+
+  @override
+  List<TableColumn<Object?, Object?>> get columns => const [id, name];
 }
 
-final rows = await connection.fetch(
-  from(Users).where(Users.name.eq('Ada')).select((u) => u.name),
+final users = await db.run(
+  from(Users.table).where(Users.name.eq('Ada')).mapWith(userQueryable),
 );
 ```
 
