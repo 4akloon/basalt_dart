@@ -3,7 +3,7 @@ description: >-
   Postgres backend for the Basalt Dart ORM — a driver-backed Connection +
   SqlDialect on package:postgres, with introspection and json/uuid/numeric/array
   codecs.
-version: 0.0.2
+version: 0.1.0
 repository: https://github.com/4akloon/basalt_dart
 homepage: https://github.com/4akloon/basalt_dart
 issue_tracker: https://github.com/4akloon/basalt_dart/issues
@@ -16,8 +16,8 @@ environment:
 resolution: workspace
 
 dependencies:
-  basalt: '>=0.0.2 <0.1.0'
-  postgres: ^3.0.0
+  basalt: '>=0.1.0 <0.2.0'
+  postgres: ^3.5.0
 
 dev_dependencies:
   test: ^1.26.3

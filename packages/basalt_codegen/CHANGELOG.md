@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.1.0
+
+- Table-marker resolution supports the new schema shape where the annotation
+  value's type is a non-generic `TableRef` subclass (`@Queryable(Users.table)`
+  with `final class Users extends TableRef<Users>`) — the marker is resolved
+  from the `TableRef<Tbl>` supertype. Plain `TableRef<X>` values keep working.
+- Widened the analyzer constraint to `>=8.0.0 <15.0.0`.
+- Requires `basalt >=0.1.0 <0.2.0`.
+
 ## 0.0.2
 
 - `@Insertable` now also generates a batch extension on `Iterable` of the annotated class:

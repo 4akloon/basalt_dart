@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.1.0
+
+- **Breaking:** `generate-schema` emits the new table-marker shape:
+  `final class X extends TableRef<X>` with a private const constructor,
+  a `static const table` singleton, columns holding a typed `table` reference
+  instead of a repeated name string, and a `columns` getter override as the
+  default projection.
+- Column declarations are emitted one argument per line with trailing commas,
+  so generated files stay diff-stable under `dart format`.
+- New guard: a column whose camelCase field name collides with an inherited
+  `TableRef`/`Object` member (`table`, `table_name`, `alias`, `columns`, `col`,
+  `aliased`, ...) fails generation with a clear error instead of emitting code
+  that won't compile.
+- Requires `basalt >=0.1.0 <0.2.0`.
+
 ## 0.0.2
 
 - Widened the core constraint to `basalt >=0.0.1 <0.1.0` so the CLI resolves alongside any

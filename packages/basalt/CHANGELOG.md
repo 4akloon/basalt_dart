@@ -1,5 +1,29 @@
 # Changelog
 
+## 0.1.0
+
+Schema model redesign: table markers are real objects, columns are typed to
+their table.
+
+- **Breaking:** a table marker is now a `final class X extends TableRef<X>`
+  with a private const constructor; `static const table = X._()` is the
+  singleton instance. Columns take that object as their first argument
+  (`PrimaryKey<int, Users>(table, 'id', IntSqlType())`) instead of repeating
+  the table-name string — handing a column another table's ref is a compile
+  error.
+- **Breaking:** `TableRef` is abstract and stores only `tableName`; the marker
+  overrides `columns` as a getter (lazy evaluation is what keeps
+  `table` ⇄ columns free of const-initializer cycles, FKs included).
+- **Breaking:** `QuerySource.table` renamed to `tableName`, and `TableRef.name`
+  merged into it — a static column named like an inherited instance member
+  would not compile, so `table`/`name` had to leave the instance surface.
+  `TableColumn.table` (the effective SQL qualifier string) is unchanged and now
+  derived as `owner.alias ?? owner.tableName`.
+- `TableColumn` gained `owner` (`QuerySource<Tbl>`); `TableAlias` rebinds
+  columns by passing itself as the owner.
+- Serialization, scope validation, and `RowReader` keys are byte-for-byte
+  unchanged — only the schema declaration surface moved.
+
 ## 0.0.3
 
 Shared DevTools inspector client — one host + client + DTO layer behind the

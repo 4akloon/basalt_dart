@@ -2,7 +2,7 @@ name: basalt_sqlite
 description: >-
   SQLite backend for the Basalt Dart ORM — a Connection + SqlDialect on
   package:sqlite3, plus the CLI adapter for migrations and schema generation.
-version: 0.0.2
+version: 0.1.0
 repository: https://github.com/4akloon/basalt_dart
 homepage: https://github.com/4akloon/basalt_dart
 issue_tracker: https://github.com/4akloon/basalt_dart/issues
@@ -12,10 +12,20 @@ topics: [orm, database, sqlite, sql]
 environment:
   sdk: ">=3.5.0 <4.0.0"
 
+# package:sqlite3's default entrypoint is FFI-based (dart:ffi), so web is out —
+# declaring the set explicitly avoids the partial supports-web-but-not-WASM
+# platform score on pub.dev.
+platforms:
+  android:
+  ios:
+  linux:
+  macos:
+  windows:
+
 resolution: workspace
 
 dependencies:
-  basalt: '>=0.0.2 <0.1.0'
+  basalt: '>=0.1.0 <0.2.0'
   sqlite3: ^3.0.0
 
 dev_dependencies:
