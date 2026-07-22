@@ -2,7 +2,7 @@ name: basalt_mcp
 description: >-
   MCP server that lets AI agents inspect live Basalt database connections in a
   running debug app — schema, table data, and SQL via VM service extensions.
-version: 0.0.1
+version: 0.1.0
 repository: https://github.com/4akloon/basalt_dart
 homepage: https://github.com/4akloon/basalt_dart
 issue_tracker: https://github.com/4akloon/basalt_dart/issues
@@ -19,7 +19,7 @@ executables:
 
 dependencies:
   args: ^2.5.0
-  basalt: '>=0.0.2 <0.1.0'
+  basalt: '>=0.1.0 <0.2.0'
   logging: ^1.3.0
   mcp_dart: ^2.1.0
   vm_service: ^15.0.0

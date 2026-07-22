@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.0
+
+- Requires `basalt >=0.1.0 <0.2.0` — the new table-marker shape
+  (`final class X extends TableRef<X>` with owner-linked columns).
+- Raised the driver lower bound to `postgres ^3.5.0` — the connection uses
+  `TxSession`, which older 3.x versions don't ship (fixes downgrade analysis).
+- No functional changes.
+
 ## 0.0.2
 
 - `PostgresDialect.castType` — implements the new `SqlDialect` seam, mapping the core types to

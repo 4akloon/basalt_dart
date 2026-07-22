@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.1.0
+
+- Requires `basalt >=0.1.0 <0.2.0` — the new table-marker shape
+  (`final class X extends TableRef<X>` with owner-linked columns).
+- Declares supported platforms explicitly (Android, iOS, Linux, macOS,
+  Windows): the `package:sqlite3` FFI entrypoint rules out the web target, and
+  the explicit set removes the partial web-without-WASM platform score.
+- No functional changes.
+
 ## 0.0.2
 
 - `SqliteDialect.castType` — implements the new `SqlDialect` seam; SQLite is dynamically typed,
