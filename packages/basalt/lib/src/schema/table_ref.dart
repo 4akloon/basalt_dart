@@ -1,18 +1,29 @@
 part of 'table.dart';
 
-/// Table descriptor: its name and full column list (the default projection for
-/// `from`/joins). Cycle-safe even with foreign keys because [Ref] points at a
-/// [PrimaryKey] leaf, not back at a `TableRef`.
+/// Table descriptor: a table marker extends `TableRef<Self>` and exposes a
+/// `static const table` singleton that its columns hold as their `owner`.
+///
+/// Cycle-safe by construction: the const constructor stores only [tableName],
+/// while [columns] (the default projection for `from`/joins) is an overriding
+/// *getter* the marker declares — getters are evaluated lazily at runtime, so
+/// `table` and the column constants never form a const-initializer cycle.
+///
+/// ```dart
+/// final class Users extends TableRef<Users> {
+///   const Users._() : super('users');
+///   static const table = Users._();
+///   static const id = PrimaryKey<int, Users>(table, 'id', IntSqlType());
+///   @override
+///   List<TableColumn<Object?, Object?>> get columns => const [id];
+/// }
+/// ```
 ///
 /// {@category schema}
-final class TableRef<Tbl> implements QuerySource<Tbl> {
-  const TableRef(this.name, this.columns);
-  final String name;
+abstract class TableRef<Tbl> implements QuerySource<Tbl> {
+  const TableRef(this.tableName);
   @override
-  final List<TableColumn<Object?, Object?>> columns;
+  final String tableName;
 
-  @override
-  String get table => name;
   @override
   String? get alias => null;
 

@@ -107,4 +107,4 @@ final class UpdateAllStatement<Tbl> extends WriteStatement {
 ///
 /// {@category writes}
 UpdateAllStatement<Tbl> updateAll<Tbl>(TableRef<Tbl> table) =>
-    UpdateAllStatement(table.name);
+    UpdateAllStatement(table.tableName);

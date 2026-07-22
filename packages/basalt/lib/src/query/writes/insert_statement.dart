@@ -57,4 +57,4 @@ final class InsertStatement<Tbl> extends WriteStatement {
 }
 
 InsertStatement<Tbl> insertInto<Tbl>(TableRef<Tbl> table) =>
-    InsertStatement(table.name);
+    InsertStatement(table.tableName);

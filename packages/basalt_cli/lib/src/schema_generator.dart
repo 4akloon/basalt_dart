@@ -34,17 +34,26 @@ final class SchemaGenerator {
     final body = StringBuffer();
     for (final table in tables) {
       final cls = _pascal(table.name);
-      body.writeln('abstract final class $cls {');
+      body
+        ..writeln('final class $cls extends TableRef<$cls> {')
+        ..writeln("  const $cls._() : super('${table.name}');")
+        ..writeln()
+        ..writeln('  static const table = $cls._();')
+        ..writeln();
       for (final column in table.columns) {
         body.writeln(
-          '  ${_columnDecl(table.name, cls, column, pkByTable, columnsByKey, imports)}',
+          _columnDecl(
+              table.name, cls, column, pkByTable, columnsByKey, imports),
         );
       }
       final fields = table.columns.map((c) => _camel(c.name)).join(', ');
-      body.writeln(
-        "  static const table = TableRef<$cls>('${table.name}', [$fields]);",
-      );
       body
+        ..writeln()
+        ..writeln('  @override')
+        ..writeln(
+          '  List<TableColumn<Object?, Object?>> get columns => '
+          'const [$fields];',
+        )
         ..writeln('}')
         ..writeln();
     }
@@ -81,6 +90,7 @@ final class SchemaGenerator {
     Set<String> imports,
   ) {
     final field = _camel(column.name);
+    _checkReservedName(tableName, column.name, field);
     final (dartType, sqlType, import) = _resolveType(tableName, column);
     if (import case final uri? when uri.isNotEmpty && uri != _basaltImport) {
       imports.add(uri);
@@ -92,8 +102,6 @@ final class SchemaGenerator {
         'dart_type) if it should allow NULL.',
       );
     }
-    final args = "'$tableName', '${column.name}', $sqlType";
-
     if (column.foreignKey case final fk?) {
       final targetCls = _pascal(fk.table);
       final targetColumn =
@@ -106,13 +114,40 @@ final class SchemaGenerator {
         targetColumn,
         columnsByKey,
       );
-      return 'static const $field = '
-          'Ref<$dartType, $cls, $targetCls>($args, references: $targetCls.${_camel(targetColumn)});';
+      return _decl(
+        field,
+        'Ref<$dartType, $cls, $targetCls>',
+        column.name,
+        sqlType,
+        references: '$targetCls.${_camel(targetColumn)}',
+      );
     }
     if (column.isPrimaryKey) {
-      return 'static const $field = PrimaryKey<$dartType, $cls>($args);';
+      return _decl(field, 'PrimaryKey<$dartType, $cls>', column.name, sqlType);
     }
-    return 'static const $field = ValueColumn<$dartType, $cls>($args);';
+    return _decl(field, 'ValueColumn<$dartType, $cls>', column.name, sqlType);
+  }
+
+  /// One `static const` column declaration, one argument per line with a
+  /// trailing comma — the split survives `dart format`, so generated files
+  /// stay diff-stable no matter how long the type arguments get.
+  String _decl(
+    String field,
+    String constructor,
+    String columnName,
+    String sqlType, {
+    String? references,
+  }) {
+    final buffer = StringBuffer()
+      ..writeln('  static const $field = $constructor(')
+      ..writeln('    table,')
+      ..writeln("    '$columnName',")
+      ..writeln('    $sqlType,');
+    if (references case final target?) {
+      buffer.writeln('    references: $target,');
+    }
+    buffer.write('  );');
+    return buffer.toString();
   }
 
   /// Resolves a column to `(dartType, sqlTypeExpr, import?)` — [typeOverrides]
@@ -127,6 +162,34 @@ final class SchemaGenerator {
     }
     final (dartType, sqlType) = _mapType(column.type, column.isNullable);
     return (dartType, sqlType, null);
+  }
+
+  /// Members every marker inherits from `TableRef`/`Object` (plus its own
+  /// `table` singleton) — a column whose camelCase field name lands on one of
+  /// these cannot be emitted as a `static const`.
+  static const _reservedFieldNames = {
+    'table',
+    'tableName',
+    'alias',
+    'columns',
+    'col',
+    'aliased',
+    'hashCode',
+    'runtimeType',
+    'toString',
+    'noSuchMethod',
+  };
+
+  /// Table markers extend `TableRef`, so a static column field may not shadow
+  /// an inherited instance member (`CONFLICTING_STATIC_AND_INSTANCE`) — fail
+  /// with a clear message instead of emitting code that won't compile.
+  void _checkReservedName(String tableName, String columnName, String field) {
+    if (!_reservedFieldNames.contains(field)) return;
+    throw StateError(
+      'Column $tableName.$columnName maps to the field name `$field`, which '
+      'collides with a `TableRef` member inherited by the generated table '
+      'class. Rename the column, or map it manually.',
+    );
   }
 
   /// A `Ref<T, …>` and the `PrimaryKey<T, …>` it references must share `T`.

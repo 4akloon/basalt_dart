@@ -8,32 +8,38 @@ import 'package:basalt_postgres/basalt_postgres.dart';
 import 'package:test/test.dart';
 
 // Native Postgres uuid / numeric / array columns via the native-type codecs.
-abstract final class Records {
-  static const id = PrimaryKey<int, Records>('records', 'id', IntSqlType());
+final class Records extends TableRef<Records> {
+  const Records._() : super('records');
+
+  static const table = Records._();
+
+  static const id = PrimaryKey<int, Records>(table, 'id', IntSqlType());
   static const ref =
-      ValueColumn<String, Records>('records', 'ref', PostgresUuidSqlType());
+      ValueColumn<String, Records>(table, 'ref', PostgresUuidSqlType());
   static const amount = ValueColumn<String, Records>(
-    'records',
+    table,
     'amount',
     PostgresNumericSqlType(),
   );
   static const tags = ValueColumn<List<String>, Records>(
-    'records',
+    table,
     'tags',
     PostgresArraySqlType<String>(),
   );
   static const scores = ValueColumn<List<int>, Records>(
-    'records',
+    table,
     'scores',
     PostgresArraySqlType<int>(),
   );
   static const notes = ValueColumn<List<String>?, Records>(
-    'records',
+    table,
     'notes',
     NullableSqlType(PostgresArraySqlType<String>()),
   );
-  static const table =
-      TableRef<Records>('records', [id, ref, amount, tags, scores, notes]);
+
+  @override
+  List<TableColumn<Object?, Object?>> get columns =>
+      const [id, ref, amount, tags, scores, notes];
 }
 
 void main() {

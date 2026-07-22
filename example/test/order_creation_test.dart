@@ -61,7 +61,7 @@ void main() {
   test('updateStatus moves the order to a new state', () async {
     await orders.updateStatus(1, OrderStatus.cancelled);
     final rows = await db.queryRaw(
-      'SELECT status FROM ${Orders.table.name} WHERE id = ?',
+      'SELECT status FROM ${Orders.table.tableName} WHERE id = ?',
       [1],
     );
     expect(rows.single['status'], 'cancelled');

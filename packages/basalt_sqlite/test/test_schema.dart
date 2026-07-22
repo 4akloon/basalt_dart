@@ -1,73 +1,102 @@
 import 'package:basalt/basalt.dart';
 
 /// Shared hand-written schema for tests.
-abstract final class Users {
-  static const _t = 'users';
-  static const id = PrimaryKey<int, Users>(_t, 'id', IntSqlType());
-  static const name = ValueColumn<String, Users>(_t, 'name', StringSqlType());
-  static const age = ValueColumn<int, Users>(_t, 'age', IntSqlType());
+final class Users extends TableRef<Users> {
+  const Users._() : super('users');
+
+  static const table = Users._();
+
+  static const id = PrimaryKey<int, Users>(table, 'id', IntSqlType());
+  static const name =
+      ValueColumn<String, Users>(table, 'name', StringSqlType());
+  static const age = ValueColumn<int, Users>(table, 'age', IntSqlType());
   static const active =
-      ValueColumn<bool, Users>(_t, 'active', BooleanSqlType());
-  static const table = TableRef<Users>(_t, [id, name, age, active]);
+      ValueColumn<bool, Users>(table, 'active', BooleanSqlType());
+
+  @override
+  List<TableColumn<Object?, Object?>> get columns =>
+      const [id, name, age, active];
 }
 
-abstract final class Posts {
-  static const _t = 'posts';
-  static const id = PrimaryKey<int, Posts>(_t, 'id', IntSqlType());
+final class Posts extends TableRef<Posts> {
+  const Posts._() : super('posts');
+
+  static const table = Posts._();
+
+  static const id = PrimaryKey<int, Posts>(table, 'id', IntSqlType());
   static const authorId = Ref<int, Posts, Users>(
-    _t,
+    table,
     'author_id',
     IntSqlType(),
     references: Users.id,
   );
-  static const title = ValueColumn<String, Posts>(_t, 'title', StringSqlType());
-  static const views = ValueColumn<int, Posts>(_t, 'views', IntSqlType());
-  static const table = TableRef<Posts>(_t, [id, authorId, title, views]);
+  static const title =
+      ValueColumn<String, Posts>(table, 'title', StringSqlType());
+  static const views = ValueColumn<int, Posts>(table, 'views', IntSqlType());
+
+  @override
+  List<TableColumn<Object?, Object?>> get columns =>
+      const [id, authorId, title, views];
 }
 
-abstract final class Comments {
-  static const _t = 'comments';
-  static const id = PrimaryKey<int, Comments>(_t, 'id', IntSqlType());
+final class Comments extends TableRef<Comments> {
+  const Comments._() : super('comments');
+
+  static const table = Comments._();
+
+  static const id = PrimaryKey<int, Comments>(table, 'id', IntSqlType());
   static const postId = Ref<int, Comments, Posts>(
-    _t,
+    table,
     'post_id',
     IntSqlType(),
     references: Posts.id,
   );
   static const body =
-      ValueColumn<String, Comments>(_t, 'body', StringSqlType());
-  static const table = TableRef<Comments>(_t, [id, postId, body]);
+      ValueColumn<String, Comments>(table, 'body', StringSqlType());
+
+  @override
+  List<TableColumn<Object?, Object?>> get columns => const [id, postId, body];
 }
 
 /// Two foreign keys to the SAME table — needs aliased self-joins.
-abstract final class Messages {
-  static const _t = 'messages';
-  static const id = PrimaryKey<int, Messages>(_t, 'id', IntSqlType());
+final class Messages extends TableRef<Messages> {
+  const Messages._() : super('messages');
+
+  static const table = Messages._();
+
+  static const id = PrimaryKey<int, Messages>(table, 'id', IntSqlType());
   static const senderId = Ref<int, Messages, Users>(
-    _t,
+    table,
     'sender_id',
     IntSqlType(),
     references: Users.id,
   );
   static const recipientId = Ref<int, Messages, Users>(
-    _t,
+    table,
     'recipient_id',
     IntSqlType(),
     references: Users.id,
   );
   static const body =
-      ValueColumn<String, Messages>(_t, 'body', StringSqlType());
-  static const table =
-      TableRef<Messages>(_t, [id, senderId, recipientId, body]);
+      ValueColumn<String, Messages>(table, 'body', StringSqlType());
+
+  @override
+  List<TableColumn<Object?, Object?>> get columns =>
+      const [id, senderId, recipientId, body];
 }
 
 /// Has a nullable column (`bio TEXT NULL`).
-abstract final class Profiles {
-  static const _t = 'profiles';
-  static const id = PrimaryKey<int, Profiles>(_t, 'id', IntSqlType());
+final class Profiles extends TableRef<Profiles> {
+  const Profiles._() : super('profiles');
+
+  static const table = Profiles._();
+
+  static const id = PrimaryKey<int, Profiles>(table, 'id', IntSqlType());
   static const bio = ValueColumn<String?, Profiles>(
-      _t, 'bio', NullableSqlType(StringSqlType()));
-  static const table = TableRef<Profiles>(_t, [id, bio]);
+      table, 'bio', NullableSqlType(StringSqlType()));
+
+  @override
+  List<TableColumn<Object?, Object?>> get columns => const [id, bio];
 }
 
 /// A message with both participants resolved (each from a different alias of

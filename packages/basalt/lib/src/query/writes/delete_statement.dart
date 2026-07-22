@@ -15,4 +15,4 @@ final class DeleteStatement<Tbl> extends WriteStatement {
 }
 
 DeleteStatement<Tbl> deleteFrom<Tbl>(TableRef<Tbl> table) =>
-    DeleteStatement(table.name);
+    DeleteStatement(table.tableName);

@@ -2,67 +2,280 @@
 import 'package:basalt/basalt.dart';
 import 'package:basalt_example/core/database/json_map_sql_type.dart';
 
-abstract final class Addresses {
-  static const id = PrimaryKey<int, Addresses>('addresses', 'id', IntSqlType());
-  static const customerId = Ref<int, Addresses, Customers>('addresses', 'customer_id', IntSqlType(), references: Customers.id);
-  static const label = ValueColumn<String, Addresses>('addresses', 'label', StringSqlType());
-  static const city = ValueColumn<String, Addresses>('addresses', 'city', StringSqlType());
-  static const street = ValueColumn<String, Addresses>('addresses', 'street', StringSqlType());
-  static const table = TableRef<Addresses>('addresses', [id, customerId, label, city, street]);
+final class Addresses extends TableRef<Addresses> {
+  const Addresses._() : super('addresses');
+
+  static const table = Addresses._();
+
+  static const id = PrimaryKey<int, Addresses>(
+    table,
+    'id',
+    IntSqlType(),
+  );
+  static const customerId = Ref<int, Addresses, Customers>(
+    table,
+    'customer_id',
+    IntSqlType(),
+    references: Customers.id,
+  );
+  static const label = ValueColumn<String, Addresses>(
+    table,
+    'label',
+    StringSqlType(),
+  );
+  static const city = ValueColumn<String, Addresses>(
+    table,
+    'city',
+    StringSqlType(),
+  );
+  static const street = ValueColumn<String, Addresses>(
+    table,
+    'street',
+    StringSqlType(),
+  );
+
+  @override
+  List<TableColumn<Object?, Object?>> get columns =>
+      const [id, customerId, label, city, street];
 }
 
-abstract final class Categories {
-  static const id = PrimaryKey<int, Categories>('categories', 'id', IntSqlType());
-  static const name = ValueColumn<String, Categories>('categories', 'name', StringSqlType());
-  static const parentId = Ref<int?, Categories, Categories>('categories', 'parent_id', NullableSqlType(IntSqlType()), references: Categories.id);
-  static const table = TableRef<Categories>('categories', [id, name, parentId]);
+final class Categories extends TableRef<Categories> {
+  const Categories._() : super('categories');
+
+  static const table = Categories._();
+
+  static const id = PrimaryKey<int, Categories>(
+    table,
+    'id',
+    IntSqlType(),
+  );
+  static const name = ValueColumn<String, Categories>(
+    table,
+    'name',
+    StringSqlType(),
+  );
+  static const parentId = Ref<int?, Categories, Categories>(
+    table,
+    'parent_id',
+    NullableSqlType(IntSqlType()),
+    references: Categories.id,
+  );
+
+  @override
+  List<TableColumn<Object?, Object?>> get columns => const [id, name, parentId];
 }
 
-abstract final class Customers {
-  static const id = PrimaryKey<int, Customers>('customers', 'id', IntSqlType());
-  static const name = ValueColumn<String, Customers>('customers', 'name', StringSqlType());
-  static const email = ValueColumn<String, Customers>('customers', 'email', StringSqlType());
-  static const loyaltyTier = ValueColumn<String, Customers>('customers', 'loyalty_tier', StringSqlType());
-  static const createdAt = ValueColumn<int, Customers>('customers', 'created_at', IntSqlType());
-  static const table = TableRef<Customers>('customers', [id, name, email, loyaltyTier, createdAt]);
+final class Customers extends TableRef<Customers> {
+  const Customers._() : super('customers');
+
+  static const table = Customers._();
+
+  static const id = PrimaryKey<int, Customers>(
+    table,
+    'id',
+    IntSqlType(),
+  );
+  static const name = ValueColumn<String, Customers>(
+    table,
+    'name',
+    StringSqlType(),
+  );
+  static const email = ValueColumn<String, Customers>(
+    table,
+    'email',
+    StringSqlType(),
+  );
+  static const loyaltyTier = ValueColumn<String, Customers>(
+    table,
+    'loyalty_tier',
+    StringSqlType(),
+  );
+  static const createdAt = ValueColumn<int, Customers>(
+    table,
+    'created_at',
+    IntSqlType(),
+  );
+
+  @override
+  List<TableColumn<Object?, Object?>> get columns =>
+      const [id, name, email, loyaltyTier, createdAt];
 }
 
-abstract final class OrderItems {
-  static const id = PrimaryKey<int, OrderItems>('order_items', 'id', IntSqlType());
-  static const orderId = Ref<int, OrderItems, Orders>('order_items', 'order_id', IntSqlType(), references: Orders.id);
-  static const productId = Ref<int, OrderItems, Products>('order_items', 'product_id', IntSqlType(), references: Products.id);
-  static const quantity = ValueColumn<int, OrderItems>('order_items', 'quantity', IntSqlType());
-  static const unitPrice = ValueColumn<double, OrderItems>('order_items', 'unit_price', DoubleSqlType());
-  static const table = TableRef<OrderItems>('order_items', [id, orderId, productId, quantity, unitPrice]);
+final class OrderItems extends TableRef<OrderItems> {
+  const OrderItems._() : super('order_items');
+
+  static const table = OrderItems._();
+
+  static const id = PrimaryKey<int, OrderItems>(
+    table,
+    'id',
+    IntSqlType(),
+  );
+  static const orderId = Ref<int, OrderItems, Orders>(
+    table,
+    'order_id',
+    IntSqlType(),
+    references: Orders.id,
+  );
+  static const productId = Ref<int, OrderItems, Products>(
+    table,
+    'product_id',
+    IntSqlType(),
+    references: Products.id,
+  );
+  static const quantity = ValueColumn<int, OrderItems>(
+    table,
+    'quantity',
+    IntSqlType(),
+  );
+  static const unitPrice = ValueColumn<double, OrderItems>(
+    table,
+    'unit_price',
+    DoubleSqlType(),
+  );
+
+  @override
+  List<TableColumn<Object?, Object?>> get columns =>
+      const [id, orderId, productId, quantity, unitPrice];
 }
 
-abstract final class Orders {
-  static const id = PrimaryKey<int, Orders>('orders', 'id', IntSqlType());
-  static const customerId = Ref<int, Orders, Customers>('orders', 'customer_id', IntSqlType(), references: Customers.id);
-  static const status = ValueColumn<String, Orders>('orders', 'status', StringSqlType());
-  static const shippingAddressId = Ref<int?, Orders, Addresses>('orders', 'shipping_address_id', NullableSqlType(IntSqlType()), references: Addresses.id);
-  static const createdAt = ValueColumn<int, Orders>('orders', 'created_at', IntSqlType());
-  static const table = TableRef<Orders>('orders', [id, customerId, status, shippingAddressId, createdAt]);
+final class Orders extends TableRef<Orders> {
+  const Orders._() : super('orders');
+
+  static const table = Orders._();
+
+  static const id = PrimaryKey<int, Orders>(
+    table,
+    'id',
+    IntSqlType(),
+  );
+  static const customerId = Ref<int, Orders, Customers>(
+    table,
+    'customer_id',
+    IntSqlType(),
+    references: Customers.id,
+  );
+  static const status = ValueColumn<String, Orders>(
+    table,
+    'status',
+    StringSqlType(),
+  );
+  static const shippingAddressId = Ref<int?, Orders, Addresses>(
+    table,
+    'shipping_address_id',
+    NullableSqlType(IntSqlType()),
+    references: Addresses.id,
+  );
+  static const createdAt = ValueColumn<int, Orders>(
+    table,
+    'created_at',
+    IntSqlType(),
+  );
+
+  @override
+  List<TableColumn<Object?, Object?>> get columns =>
+      const [id, customerId, status, shippingAddressId, createdAt];
 }
 
-abstract final class Products {
-  static const id = PrimaryKey<int, Products>('products', 'id', IntSqlType());
-  static const name = ValueColumn<String, Products>('products', 'name', StringSqlType());
-  static const description = ValueColumn<String, Products>('products', 'description', StringSqlType());
-  static const price = ValueColumn<double, Products>('products', 'price', DoubleSqlType());
-  static const stock = ValueColumn<int, Products>('products', 'stock', IntSqlType());
-  static const categoryId = Ref<int, Products, Categories>('products', 'category_id', IntSqlType(), references: Categories.id);
-  static const isActive = ValueColumn<int, Products>('products', 'is_active', IntSqlType());
-  static const metadata = ValueColumn<Map<String, Object?>?, Products>('products', 'metadata', NullableSqlType(JsonMapSqlType()));
-  static const table = TableRef<Products>('products', [id, name, description, price, stock, categoryId, isActive, metadata]);
+final class Products extends TableRef<Products> {
+  const Products._() : super('products');
+
+  static const table = Products._();
+
+  static const id = PrimaryKey<int, Products>(
+    table,
+    'id',
+    IntSqlType(),
+  );
+  static const name = ValueColumn<String, Products>(
+    table,
+    'name',
+    StringSqlType(),
+  );
+  static const description = ValueColumn<String, Products>(
+    table,
+    'description',
+    StringSqlType(),
+  );
+  static const price = ValueColumn<double, Products>(
+    table,
+    'price',
+    DoubleSqlType(),
+  );
+  static const stock = ValueColumn<int, Products>(
+    table,
+    'stock',
+    IntSqlType(),
+  );
+  static const categoryId = Ref<int, Products, Categories>(
+    table,
+    'category_id',
+    IntSqlType(),
+    references: Categories.id,
+  );
+  static const isActive = ValueColumn<int, Products>(
+    table,
+    'is_active',
+    IntSqlType(),
+  );
+  static const metadata = ValueColumn<Map<String, Object?>?, Products>(
+    table,
+    'metadata',
+    NullableSqlType(JsonMapSqlType()),
+  );
+
+  @override
+  List<TableColumn<Object?, Object?>> get columns => const [
+        id,
+        name,
+        description,
+        price,
+        stock,
+        categoryId,
+        isActive,
+        metadata
+      ];
 }
 
-abstract final class Reviews {
-  static const id = PrimaryKey<int, Reviews>('reviews', 'id', IntSqlType());
-  static const productId = Ref<int, Reviews, Products>('reviews', 'product_id', IntSqlType(), references: Products.id);
-  static const customerId = Ref<int, Reviews, Customers>('reviews', 'customer_id', IntSqlType(), references: Customers.id);
-  static const rating = ValueColumn<int, Reviews>('reviews', 'rating', IntSqlType());
-  static const comment = ValueColumn<String?, Reviews>('reviews', 'comment', NullableSqlType(StringSqlType()));
-  static const createdAt = ValueColumn<int, Reviews>('reviews', 'created_at', IntSqlType());
-  static const table = TableRef<Reviews>('reviews', [id, productId, customerId, rating, comment, createdAt]);
+final class Reviews extends TableRef<Reviews> {
+  const Reviews._() : super('reviews');
+
+  static const table = Reviews._();
+
+  static const id = PrimaryKey<int, Reviews>(
+    table,
+    'id',
+    IntSqlType(),
+  );
+  static const productId = Ref<int, Reviews, Products>(
+    table,
+    'product_id',
+    IntSqlType(),
+    references: Products.id,
+  );
+  static const customerId = Ref<int, Reviews, Customers>(
+    table,
+    'customer_id',
+    IntSqlType(),
+    references: Customers.id,
+  );
+  static const rating = ValueColumn<int, Reviews>(
+    table,
+    'rating',
+    IntSqlType(),
+  );
+  static const comment = ValueColumn<String?, Reviews>(
+    table,
+    'comment',
+    NullableSqlType(StringSqlType()),
+  );
+  static const createdAt = ValueColumn<int, Reviews>(
+    table,
+    'created_at',
+    IntSqlType(),
+  );
+
+  @override
+  List<TableColumn<Object?, Object?>> get columns =>
+      const [id, productId, customerId, rating, comment, createdAt];
 }

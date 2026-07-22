@@ -322,9 +322,27 @@ final class EdgeAnalyzer {
   ]) {
     final ann = checker.firstAnnotationOfExact(element);
     if (ann == null) return null;
+    return _markerFromTableAnnotation(ann)?.name;
+  }
+
+  /// The marker element out of a table-annotation value. The annotation holds
+  /// a `TableRef<Tbl>` instance; with the marker-extends-`TableRef<Self>`
+  /// schema shape the const object's own type IS the marker (non-generic), so
+  /// resolve `TableRef<Tbl>` from the type itself or its supertypes and take
+  /// `Tbl`'s element.
+  InterfaceElement? _markerFromTableAnnotation(DartObject ann) {
     final tableType = ConstantReader(ann).read('table').objectValue.type;
     if (tableType is! InterfaceType) return null;
-    return tableType.typeArguments.first.element?.name;
+    final refType = tableType.element.name == 'TableRef'
+        ? tableType
+        : tableType.allSupertypes
+            .where((s) => s.element.name == 'TableRef')
+            .firstOrNull;
+    if (refType?.typeArguments case [final markerType, ...]) {
+      final marker = markerType.element;
+      return marker is InterfaceElement ? marker : null;
+    }
+    return null;
   }
 
   /// Column args for a write derive (`@Insertable`/`@AsChangeset`): every
@@ -574,10 +592,7 @@ final class EdgeAnalyzer {
   InterfaceElement? _markerElement(ClassElement element) {
     final ann = queryableChecker.firstAnnotationOfExact(element);
     if (ann == null) return null;
-    final tableType = ConstantReader(ann).read('table').objectValue.type;
-    if (tableType is! InterfaceType) return null;
-    final marker = tableType.typeArguments.first.element;
-    return marker is InterfaceElement ? marker : null;
+    return _markerFromTableAnnotation(ann);
   }
 
   /// If [param]'s mapped column is a `PrimaryKey`, returns its Dart value type

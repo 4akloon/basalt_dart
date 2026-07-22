@@ -67,7 +67,7 @@ final class RoleSqlType extends SqlType<Role> {
 }
 
 // in the schema:
-static const role = ValueColumn<Role, Accounts>('accounts', 'role', RoleSqlType());
+static const role = ValueColumn<Role, Accounts>(table, 'role', RoleSqlType());
 ```
 
 The custom type flows through reads (`r.get(Accounts.role)` → `Role`), writes

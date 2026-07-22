@@ -24,4 +24,4 @@ final class UpdateStatement<Tbl> extends WriteStatement {
 }
 
 UpdateStatement<Tbl> update<Tbl>(TableRef<Tbl> table) =>
-    UpdateStatement(table.name);
+    UpdateStatement(table.tableName);

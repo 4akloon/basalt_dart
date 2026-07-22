@@ -3,12 +3,19 @@ import 'package:test/test.dart';
 
 // Const-constructibility in a `static const` column — the compile-time
 // guarantee that makes the wrapper usable in schemas and annotations.
-abstract final class Users {
+final class Users extends TableRef<Users> {
+  const Users._() : super('users');
+
+  static const table = Users._();
+
   static const nickname = ValueColumn<String?, Users>(
-    'users',
+    table,
     'nickname',
     NullableSqlType(StringSqlType()),
   );
+
+  @override
+  List<TableColumn<Object?, Object?>> get columns => const [nickname];
 }
 
 void main() {

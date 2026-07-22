@@ -8,11 +8,17 @@ import 'package:test/test.dart';
 
 /// Typed view of the table a test migration creates — lets us assert the up/down
 /// SQL really ran by querying through the ORM.
-abstract final class Widgets {
-  static const id = PrimaryKey<int, Widgets>('widgets', 'id', IntSqlType());
+final class Widgets extends TableRef<Widgets> {
+  const Widgets._() : super('widgets');
+
+  static const table = Widgets._();
+
+  static const id = PrimaryKey<int, Widgets>(table, 'id', IntSqlType());
   static const name =
-      ValueColumn<String, Widgets>('widgets', 'name', StringSqlType());
-  static const table = TableRef<Widgets>('widgets', [id, name]);
+      ValueColumn<String, Widgets>(table, 'name', StringSqlType());
+
+  @override
+  List<TableColumn<Object?, Object?>> get columns => const [id, name];
 }
 
 void writeMigration(
